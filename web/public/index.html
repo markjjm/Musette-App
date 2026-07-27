@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Shopping">
+<meta name="theme-color" content="#efe9db">
+<title>Shopping</title>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEuElEQVR4nO3dPW4TURSGYQexh4g0aZFIQ88uaFgiTXZBT2MkWldsgI6GIpJlOfezx5l7z/3OmfcRReRIiT3z+syPJ8Pdw8P9Dmh5N/sJwBdxQCIOSMQBiTggEQck4oD0Xn3j188fkc8DE336/KX5OJMDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCDJuwlinLO799neuJHJEe31fR3VnR6nI45QqgPPPtisxDkt4Pf3Dy9ffPz25/hdt+0LkyNIs4yzr93mB3FEO61BPWKCOCARByTiiHbcA73wiAniCHJ6JHJaw+nXbkcrHMrO0ZwWbkezTI4gboepSxCHF6uGiGOaw/75sH9+/bhPH8QR4db1bdIHcUzWHB4miGO45hg4bcJ240IcFjz7II6xro4NZ8ThwnB4EEe0C2PDrQ/iGKjXep3VR9nPVjyv8L66t3HYPz8+fY15MlfVnBwOV3i/+Tf6bFwKxpHrCu8mkz6qxXF2He/Lv+Z3w57G0foj2OA+SsWR8QpvxeFcSKk4juZe4d1rbEzfuNSMo4y5fRBHBIdtxBvUjGPiFd7d39YTh0epODJe4b3ErD5KnSE9W17xfw8S/Bns6KvV60yOhe+kLIeyZ6bstdSJY7lBfYweG/EblyJxqGWU9DBBCe6jSBxNL4ty4t5+WJqDXk6FOK4umoA+wnZlImdhhTializESjunI15L+jgWLpShb7j4q4hj+sgdx037odM/x0ondxxNwVfwzvrjg4DWE8fBm350H4njaFpyBe/rB/t2Nv3kSq+XkzWONa+/Yx/Tp9fQEFPGsZHzoQuNm4Up41ivywL1+TvYQX3ki6PX2NjCke3Kl5Mvjqb496vP2Bj3q5PFEXBYkXd4dH85meIYsR/acYE67A737SNTHD7yTpebpIlj3OFrl3ebw9h40fGZpImjqdeCuKmPjYyNXZY4trM+rCSII+Z86MLh4XYEO1SCOMIUO7Jdzz0Oh49Rjs9hU2Nj5x9H07j1UXhNv4F1HFNG+k0bl9oxWcfRVOMKvBR849jgynBjGsf0Mb7kF9Xepuxs42gKXhnl1/1VjnGk2KBsIR3HOJp8Lr/bDrs43MbG8j+eq8crjun7oTjlFYenszS3U6rRDeOcx4bDc4jnPjm2uVZMuMThth+KncNm5UIWjI25ZsbBtDA3bbPytru8IdKEybFkYFCGg9A4yCKXoDjIIqPhcZBFXgPjcLhDKNYYEgdZ1NA/DrYjZfSMgyyK6RMHWZS0Ng6yKGzsoSxZLb2s5UL/zshZWQ3ZHKQxVzH5f/33/2an9PhU9nTFA77Z8opo9vkoIl6+lzPQRkluVxDCkPEAYk4IHXYIX18+rr+h2CEC2ehlmByQCIOSMQBiTggEQck4oBEHJCIAxJxQCIOSB1On688RwtbTA5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARB6S7h4dVdyNEYUwOSMQBiTggEQck4oBEHJCIA9J/teazGY+ktsAAAAAASUVORK5CYII=">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAD7UlEQVR4nNWWfUyVVRzHz3nOOc/zcE2uckUvFsJd601bsUVDpvYyIxGqlSaOdEosTVKHa2MrmgUNmQO1BTIdmG1iaG9MC4UmQ8IYb72suAQtswaXhrRyENd7n+ec85z+uLzcF970Xv7o++fZOd/P+f1+53fOgUuXLqGUUsogBCGUEIAQTAjBlNLU5KTElfGUshACCMEtrd9eqLuEGWOJKx/duWO75nKHEKCEqQDA8zW1GABAKdVcbpc7lACPLQBACq1poP4PADjt+QsWgBBmHCKM5wSAMW5ray0uyOro6MBTMIICQAk1f3NpuaW9qfErjOxJtzFbLwiFEP6jwvjl2o0rAzYDdmcOXl+4cAHn3G/KzBFACAGUXG6GEPIeJ4TYu7p/7OysOLr/gXui8g4cQkgKLPhsUiR9cuaD0qKs36794c1ASKqv+mw1woO2+2Ly39rR87P91OlPVVW9NYAkSc6bmv37egv6yd7VQ4g85o76HH82NDa9vDUV6GxRZMThwr2lx8o77d2y7FOMGQCEYHtXZ33bP1//uqKxqZkx6kmCLJPqcxdil0XGP7KCU8Y0PXFVXOaW5Jzc/JERpyRN2E4HgBC63drB4tKNz6059eG7Pd32j858rqoKhHBo+N/qczXb01OwTDzF5249e3e6xUyK3yvzDmI6gKoqVR9XXx/o373zRfOC+YV5u44eP3H16u/z5pkaLl8xDG19UqKh657JQgiMpMOF2Q2XG85/WUtkMgMAIdTb119SVpGzb4v1zsXM6Xrs8fhnkxPeKSjWNL3qpHX6xqTwCLNhTJxdRlnM3dHZWZsqTp7mjAM4LUAmpKTshG1Z5Etp67hbBwAYOn3j9W3DQ3/t2femo78v7YW1Qqf+yziPWmwRQow3zeQARVHav/uh5mJdfu4rsjKaZYMb4eb5RfmvfVFT+8TquLtiogLbCgDADcO7G/w7GUKoKMrIiDOv4FBKUkJCwkNc0yeSoOlxD99bWf728vtjjdk9sT4ReKp/sa5+w+YMkyJyczIE5373A6MsZf2qmGirMdn2AzUWAQRCiOaW9iPvHxse+vvVzOfTNz2NJYmzSVyYFpB6L3HD0PSJoEcBGOHePkfhwaLNG57M2PqMar4DuHUgxFSX8JSSYGy0dd3aNeMX4+h6xnmUddGRA3stEeEOx6DRO3Brvl5SFLJn1zYAIRA+EaDBwRtpGfudzpvejX4bopSdrChJTX7KJwIhBCbEZovVNA3CoACMMZPJNN4HowDOuXVJ5NnK8mCsxyVJkj7Wgz419HtSblvebx8GABBClDD/hyJIKWEqIQQAgDHGLa0dAIi5+PxijOFcf9//A4u/qWdST9kSAAAAAElFTkSuQmCC">
+<style>
+:root {
+  --paper: #efe9db;
+  --card: #fbf8f1;
+  --ink: #14140f;
+  --gravel: #5e5a4f;
+  --rule: #d5cdbd;
+  --pen: #1e3a75;
+  --pen-soft: #e2e7f3;
+  --mark: #f5bf26;
+  --mark-soft: #fcf1d0;
+  --ok: #236946;
+  --ok-soft: #e3ede7;
+  --warn: #b07015;
+  --bad: #982d18;
+  --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --st: env(safe-area-inset-top, 20px);
+  --sb: env(safe-area-inset-bottom, 20px);
+  --hdr-h: 154px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sys);
+  font-size: 17px;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  padding-top: var(--hdr-h);
+  padding-bottom: calc(var(--sb) + 84px);
+  min-height: 100vh;
+}
+
+button, input, select {
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Header Container with Glass Blur */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: rgba(239, 233, 219, 0.95);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  padding-top: var(--st);
+  border-bottom: 1.5px solid var(--rule);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.htop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 6px;
+}
+
+.htop h1 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -.02em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gravel);
+  background: rgba(0,0,0,0.04);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gravel);
+  flex: none;
+}
+
+.dot.ok { background: var(--ok); }
+.dot.pend { background: var(--warn); }
+.dot.err { background: var(--bad); }
+
+.iconbtn {
+  border: 1px solid var(--rule);
+  background: var(--card);
+  border-radius: 10px;
+  width: 38px;
+  height: 36px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  flex: none;
+  cursor: pointer;
+}
+.iconbtn:active {
+  background: var(--rule);
+  transform: scale(0.96);
+}
+
+/* Horizontal Week Chips */
+.scroller {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 14px 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.scroller::-webkit-scrollbar { display: none; }
+
+.chip {
+  flex: none;
+  border: 1.5px solid var(--rule);
+  background: var(--card);
+  color: var(--gravel);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chip.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.chip:active { transform: scale(0.96); }
+
+/* Store / View Segment Control */
+.seg-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 14px 8px;
+}
+
+.seg {
+  display: flex;
+  flex: 1;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+}
+.seg button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--gravel);
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.seg button.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.filter-toggle {
+  flex: none;
+  border: 1.5px solid var(--rule);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.filter-toggle.active {
+  background: var(--mark);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Content Area */
+.wnote {
+  margin: 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #3c3a30;
+  background: var(--card);
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+}
+
+.sech {
+  position: sticky;
+  top: var(--hdr-h);
+  z-index: 10;
+  background: var(--paper);
+  padding: 8px 14px 7px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pen);
+  border-bottom: 1.5px solid var(--rule);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.sech.cook { color: var(--ink); background: var(--mark-soft); }
+.sech.mine { color: var(--ok); background: var(--ok-soft); }
+
+/* Item Rows - Designed for One-Handed Store Check-Off */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px;
+  background: var(--card);
+  border-bottom: 1px solid var(--rule);
+  min-height: 62px;
+  transition: background 0.15s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+.row:active {
+  background: #ede6d6 !important;
+}
+
+/* Accessible, Big 32px Checkbox */
+.box {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid var(--ink);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: transparent;
+  background: var(--card);
+  transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.mid {
+  flex: 1;
+  min-width: 0;
+}
+.q {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--pen);
+  display: inline-block;
+  background: var(--pen-soft);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+.n {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  display: block;
+  color: var(--ink);
+  -webkit-user-select: text;
+  user-select: text;
+}
+.note {
+  display: block;
+  font-size: 13px;
+  color: var(--gravel);
+  line-height: 1.35;
+  margin-top: 3px;
+}
+.c {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.del {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--bad);
+  font-size: 22px;
+  padding: 8px 10px;
+  margin: -8px -6px -8px 0;
+  border-radius: 8px;
+}
+.del:active {
+  background: rgba(152,45,24,0.1);
+}
+
+/* Checked Off State */
+.row.done {
+  background: rgba(251, 248, 241, 0.55);
+}
+.row.done .box {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+.row.done .n {
+  text-decoration: line-through;
+  color: #928d7e;
+}
+.row.done .q {
+  background: #e2ded4;
+  color: #837e70;
+  text-decoration: line-through;
+}
+.row.done .c {
+  text-decoration: line-through;
+  color: #928d7e;
+}
+
+/* Footer & Progress Bar */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--ink);
+  color: var(--paper);
+  padding-bottom: var(--sb);
+  box-shadow: 0 -3px 15px rgba(0,0,0,0.15);
+}
+.bar {
+  height: 5px;
+  background: #33312a;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--mark);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.fbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+}
+.fbar .big {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  display: block;
+}
+.fbar .lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #a29d8e;
+  display: block;
+}
+.fbar .grow { flex: 1; }
+.fbar button {
+  border: 1.5px solid #4a483d;
+  background: transparent;
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 14px;
+  border-radius: 9px;
+}
+.fbar button:active { background: #33312a; }
+
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--sb) + 88px);
+  z-index: 29;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--mark);
+  color: var(--ink);
+  font-size: 32px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.fab:active { transform: scale(0.92); }
+
+/* Dinners & Fuel Views */
+.din {
+  display: flex;
+  gap: 12px;
+  padding: 15px 14px;
+  background: var(--card);
+  border-bottom: 1px solid var(--rule);
+  align-items: center;
+}
+.din.heat { background: #efeade; }
+.din .d {
+  flex: 0 0 62px;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--gravel);
+}
+.din .x { flex: 1; }
+.din .x b { display: block; font-size: 17px; font-weight: 700; }
+.din .x span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gravel);
+  margin-top: 3px;
+}
+.din.cook .x span { color: var(--ink); font-weight: 800; }
+.din .cc { font-family: var(--mono); font-size: 14.5px; font-weight: 700; flex: none; }
+
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--rule);
+  border-radius: 12px;
+  margin: 14px;
+  padding: 16px;
+}
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-family: var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--pen);
+}
+.card p { margin: 0; font-size: 15.5px; line-height: 1.5; }
+.empty { padding: 50px 24px; text-align: center; color: var(--gravel); font-size: 16px; font-weight: 500; }
+.hint {
+  margin: 14px;
+  padding: 14px 16px;
+  background: var(--pen-soft);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Modals / Sheets for Add Item & Settings */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15,15,10,0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-end;
+}
+.sheet.open { display: flex; }
+.panel {
+  background: var(--paper);
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px;
+  padding-bottom: calc(var(--sb) + 20px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 -5px 25px rgba(0,0,0,0.2);
+}
+.panel h2 { margin: 0 0 14px; font-size: 21px; font-weight: 800; }
+.panel label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--gravel);
+  margin: 14px 0 6px;
+}
+.panel input, .panel select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 17px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+.panel .rowbtn { display: flex; gap: 10px; margin-top: 20px; }
+.panel .rowbtn button {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16.5px;
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.panel .go { background: var(--ink); color: var(--paper); }
+.panel .cancel { background: transparent; color: var(--ink); }
+.panel p.small { font-size: 14px; line-height: 1.45; color: var(--gravel); margin: 12px 0 0; }
+.status { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--gravel); margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="htop">
+    <div class="sync-badge">
+      <span class="dot" id="dot"></span>
+      <span id="synctx">Local</span>
+    </div>
+    <h1 id="wlab">Shopping</h1>
+    <button class="iconbtn" id="bsync" title="Sync">&#8635;</button>
+    <button class="iconbtn" id="bset" title="Settings">&#9881;</button>
+  </div>
+  <div class="scroller" id="weeks"></div>
+  <div class="seg-bar">
+    <div class="seg" id="tabs">
+      <button data-t="A" class="on">Aldi</button>
+      <button data-t="M">Meijer</button>
+      <button data-t="D">Dinners</button>
+      <button data-t="F">Fuel</button>
+    </div>
+    <button class="filter-toggle" id="bfilter" title="Toggle checked items">
+      <span id="flab">To Get</span>
+    </button>
+  </div>
+</header>
+
+<main id="main"></main>
+<button class="fab" id="badd" aria-label="Add item">+</button>
+
+<footer>
+  <div class="bar"><i id="prog"></i></div>
+  <div class="fbar">
+    <div><span class="lbl">In cart</span><span class="big" id="got">$0</span></div>
+    <div><span class="lbl">To get</span><span class="big" id="left">$0</span></div>
+    <span class="grow"></span>
+    <button id="reset">Clear week</button>
+  </div>
+</footer>
+
+<div class="sheet" id="addsheet"><div class="panel">
+  <h2>Add an item</h2>
+  <label>Item Name</label><input id="ai_n" placeholder="e.g., Milk" autocapitalize="sentences">
+  <label>Quantity / Size (optional)</label><input id="ai_q" placeholder="e.g., 1 gallon">
+  <label>Estimated Price (optional)</label><input id="ai_c" type="text" inputmode="decimal" placeholder="3.29">
+  <label>Store</label>
+  <select id="ai_s"><option value="A">Aldi</option><option value="M">Meijer</option></select>
+  <div class="rowbtn">
+    <button class="cancel" data-close>Cancel</button>
+    <button class="go" id="ai_go">Add Item</button>
+  </div>
+  <p class="small">Added items sync to every phone on the same key, so whoever is at the store sees them instantly.</p>
+</div></div>
+
+<div class="sheet" id="setsheet"><div class="panel">
+  <h2>Sync Configuration</h2>
+  <label>Worker URL</label>
+  <input id="s_url" placeholder="https://shopping-list-sync.you.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>List Key</label>
+  <input id="s_key" placeholder="The shared secret key" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="rowbtn">
+    <button class="cancel" data-close>Close</button>
+    <button class="go" id="s_go">Save &amp; Sync</button>
+  </div>
+  <p class="small">Leave both blank for local-only mode. With sync enabled, the list updates live across all family devices.</p>
+  <div class="status" id="s_stat"></div>
+</div></div>
+
+<script>
+const BUNDLED = {"block":"August 2026","weeks":[{"id":"pantry","label":"Pantry","dates":"Buy once · covers all 31 days","days":0,"cooks":0,"dinners":[],"lists":{"A":[{"sec":"Pantry staples","items":[{"q":"1 ×","n":"Baker’s Corner pancake mix, 32 oz","c":2.29,"note":"Month's use: 13.0 pancake of 40 per pack"},{"q":"1 ×","n":"Brown rice, 2 lb bag","c":2.29,"note":"Month's use: 4.6 oz dry of 32 per pack"},{"q":"1 ×","n":"Butter, 1 lb","c":3.99,"note":"Month's use: 12.0 tsp of 96 per pack"},{"q":"1 ×","n":"Dry black beans, 1 lb","c":1.29,"note":"Month's use: 1.5 cup cooked of 6 per pack"},{"q":"1 ×","n":"Fruit jam, 32 oz","c":2.49,"note":"Month's use: 10.0 tbsp of 64 per pack"},{"q":"1 ×","n":"Honey, 12 oz","c":3.49,"note":"Month's use: 16.0 tbsp of 24 per pack"},{"q":"1 ×","n":"Millville rolled oats, 42 oz","c":3.19,"note":"Month's use: 32.8 oz dry of 42 per pack"},{"q":"1 ×","n":"Olive oil, 17 oz","c":4.49,"note":"Month's use: 4.5 tbsp of 34 per pack"},{"q":"1 ×","n":"Peanut butter, 16 oz","c":1.89,"note":"Month's use: 18.0 tbsp of 32 per pack"},{"q":"1 ×","n":"Vinaigrette, 16 oz","c":1.89,"note":"Month's use: 2.0 tbsp of 32 per pack"},{"q":"1 ×","n":"White rice, 5 lb bag","c":3.49,"note":"Month's use: 10.4 oz dry of 80 per pack"}]}],"M":[{"sec":"Pantry staples","items":[{"q":"1 ×","n":"Real maple syrup, 8 oz","c":8.99,"note":"Month's use: 13.0 tbsp of 16 per pack"},{"q":"1 ×","n":"Whey protein, 1 lb","c":15.99,"note":"Month's use: 4.0 scoop of 15 per pack"}]}]},"note":"One trip at the start of the block. Nothing here needs rebuying weekly."},{"id":"weekend-top-up","label":"Weekend top-up","dates":"August 1–2","days":2,"cooks":2,"lists":{"A":[{"sec":"Produce","items":[{"q":"1","n":"Avocados","c":0.21},{"q":"5","n":"Bananas","c":0.9},{"q":"1 cup","n":"Michigan blueberries","c":1.15},{"q":"1 cup","n":"Mixed fruit, cut","c":1.1},{"q":"1","n":"Russet potatoes, 5 lb","c":0.4},{"q":"2 cup","n":"Watermelon","c":0.42}]},{"sec":"Meat & fish","items":[{"q":"3 oz","n":"Lunch Mate deli turkey","c":0.65}]},{"sec":"Dairy & eggs","items":[{"q":"2 cup","n":"Friendly Farms Greek, nonfat","c":2.1},{"q":"1.5 cup","n":"Friendly Farms cottage cheese 1%","c":1.25},{"q":"1 cup","n":"Friendly Farms skim milk","c":0.21},{"q":"4","n":"Large eggs","c":0.7},{"q":"3 cup","n":"Milk + cocoa + sugar","c":0.78}]},{"sec":"Bread & grains","items":[{"q":"1","n":"Bagels, 6-pack","c":0.37},{"q":"2 oz","n":"Millville granola","c":0.5},{"q":"1 oz","n":"Pretzels","c":0.11},{"q":"7 slices","n":"Specially Selected sourdough","c":1.47}]},{"sec":"Canned & jarred","items":[{"q":"1 cup","n":"Orange juice","c":0.43},{"q":"1 cup","n":"Pineapple in juice","c":0.52},{"q":"0 oz","n":"Southern Grove almonds","c":0.09},{"q":"1 cup","n":"Unsweetened applesauce","c":0.63}]},{"sec":"Ride fuel · make it yourself","items":[{"q":"1 pack","n":"Dates, 3 per pack replaced","c":0.81,"note":"Or buy chews at $2.50 a pack"},{"q":"2 eachs","n":"Fig bars","c":0.66,"note":"Store brand, 12 for $3.90"},{"q":"4 bottles","n":"Bottle of mix, 60 g carb","c":0.4,"note":"60 g sugar + 1/4 tsp salt + lemon. Store-bought mix: $3.00"},{"q":"1 each","n":"Homemade rice bar","c":0.22,"note":"Rice, honey, peanut butter, salt. Recipe in the weekly plan"},{"q":"1 bottle","n":"Bottle of mix, 34 g carb","c":0.08,"note":"Half-strength bottle. Store-bought: $1.30"}]},{"sec":"Sat 1 · Burgers on the grill (cook tonight)","items":[{"q":"1 lb","n":"Ground beef, 90/10","c":8.11},{"q":"4","n":"Hamburger buns","c":0.75},{"q":"4 oz","n":"Cheddar block","c":0.7},{"q":"4 ears","n":"Sweet corn — roadside is cheaper","c":1.4},{"q":"0.5 head","n":"Cabbage, for slaw","c":0.65},{"q":"","n":"Lettuce, tomato, onion","c":1.5}]},{"sec":"Sun 2 · Roast chicken, potatoes, green beans (cook tonight)","items":[{"q":"4 lb","n":"Whole chicken","c":5.16},{"q":"2.5 lb","n":"Russet potatoes","c":1.6},{"q":"1 lb","n":"Green beans","c":1.79},{"q":"4","n":"Dinner rolls","c":1.0}]}],"M":[]},"dinners":[{"d":"Sat 1","dish":"Burgers on the grill","cook":true,"tag":"cook tonight","c":13.11},{"d":"Sun 2","dish":"Roast chicken, potatoes, green beans","cook":true,"tag":"cook tonight","c":9.55}],"note":"Two days, and you already shopped for them in July. This is a top-up, not a shop."},{"id":"week-1","label":"Week 1","dates":"August 3–9","days":7,"cooks":5,"lists":{"A":[{"sec":"Produce","items":[{"q":"3","n":"Apples, 3 lb bag","c":1.17},{"q":"1","n":"Avocados","c":0.85},{"q":"1 cup","n":"Baby carrots","c":0.4},{"q":"9","n":"Bananas","c":1.62},{"q":"1 cup","n":"Bell peppers, 3-pack","c":0.92},{"q":"1 cup","n":"Cucumbers","c":0.4},{"q":"2 cup","n":"Grapes","c":1.12},{"q":"4 cup","n":"Michigan blueberries","c":4.6},{"q":"1 cup","n":"Mixed fruit, cut","c":1.1},{"q":"1 cup","n":"Onion + pepper, to sauté","c":0.9},{"q":"4","n":"Oranges, 4 lb bag","c":1.6},{"q":"1","n":"Pears","c":0.85},{"q":"1","n":"Russet potatoes, 5 lb","c":0.4},{"q":"3 cup","n":"Salad greens","c":0.81},{"q":"2 cup","n":"Strawberries","c":1.66},{"q":"1","n":"Tomatoes","c":0.5},{"q":"2 cup","n":"Watermelon","c":0.42}]},{"sec":"Meat & fish","items":[{"q":"6 oz cooked","n":"Kirkwood chicken breast","c":1.49},{"q":"3 oz","n":"Lunch Mate deli turkey","c":0.65},{"q":"6 oz cooked","n":"Turkey breast, to roast","c":1.49}]},{"sec":"Dairy & eggs","items":[{"q":"1 cup","n":"Friendly Farms Greek, 2%","c":1.12},{"q":"6 cup","n":"Friendly Farms Greek, nonfat","c":6.3},{"q":"2.5 cup","n":"Friendly Farms cottage cheese 1%","c":2.08},{"q":"7 cup","n":"Friendly Farms skim milk","c":1.44},{"q":"9","n":"Large eggs","c":1.57},{"q":"5","n":"Large eggs (use whole, skip cartons)","c":0.87},{"q":"3 cup","n":"Milk + cocoa + sugar","c":0.78},{"q":"1","n":"String cheese, 12-pack","c":0.33}]},{"sec":"Bread & grains","items":[{"q":"3","n":"Bagels, 6-pack","c":0.93},{"q":"1","n":"Flour tortillas, large","c":0.25},{"q":"2 slices","n":"L’oven Fresh whole wheat bread","c":0.18},{"q":"4 oz","n":"Millville granola","c":1.0},{"q":"3 oz","n":"Pretzels","c":0.32},{"q":"2","n":"Rice cakes","c":0.25},{"q":"11 slices","n":"Specially Selected sourdough","c":2.31},{"q":"1","n":"Whole wheat English muffins","c":0.3}]},{"sec":"Canned & jarred","items":[{"q":"4 tbsp","n":"Little Salad Bar hummus","c":0.46},{"q":"1 cup","n":"Mango, frozen","c":1.0},{"q":"1 cup","n":"Orange juice","c":0.43},{"q":"3 cup","n":"Pineapple in juice","c":1.56},{"q":"0 cup","n":"Salsa","c":0.24},{"q":"2 oz","n":"Southern Grove almonds","c":0.84},{"q":"1.5 oz","n":"Southern Grove walnuts","c":0.75},{"q":"5 oz","n":"Tuna in water","c":0.89},{"q":"3 cup","n":"Unsweetened applesauce","c":1.89}]},{"sec":"Ride fuel · make it yourself","items":[{"q":"3 eachs","n":"Fig bars","c":0.99,"note":"Store brand, 12 for $3.90"},{"q":"1 pack","n":"Dates, 3 per pack replaced","c":0.81,"note":"Or buy chews at $2.50 a pack"},{"q":"6 bottles","n":"Bottle of mix, 60 g carb","c":0.6,"note":"60 g sugar + 1/4 tsp salt + lemon. Store-bought mix: $3.00"},{"q":"2 eachs","n":"Homemade rice bar","c":0.44,"note":"Rice, honey, peanut butter, salt. Recipe in the weekly plan"},{"q":"4 bottles","n":"Bottle of mix, 34 g carb","c":0.32,"note":"Half-strength bottle. Store-bought: $1.30"}]},{"sec":"Mon 3 · Turkey chili + cornbread (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground turkey, 93%","c":6.98},{"q":"14 oz dry","n":"Kidney and black beans","c":1.14},{"q":"2 cans","n":"Diced tomatoes","c":1.38},{"q":"","n":"Onion, peppers, chili spices","c":1.75},{"q":"1 box","n":"Cornbread mix","c":0.89},{"q":"10.5 oz","n":"Happy Farms cheddar block","c":1.84},{"q":"2.5 cups dry","n":"White rice","c":0.75}]},{"sec":"Tue 4 · Pasta with meat sauce (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground turkey, 93%","c":6.98},{"q":"21 oz","n":"Pasta","c":1.17},{"q":"2 jars","n":"Marinara","c":2.26},{"q":"","n":"Parmesan","c":1.25},{"q":"1 loaf","n":"Garlic bread","c":2.01},{"q":"","n":"Salad greens and dressing","c":1.75}]},{"sec":"Fri 7 · Teriyaki chicken rice bowls (cook tonight)","items":[{"q":"1 lb","n":"Kirkwood chicken breast","c":3.74},{"q":"2.5 cups dry","n":"White rice","c":0.71},{"q":"1 lb","n":"Broccoli","c":1.79},{"q":"1 lb","n":"Carrots","c":0.9},{"q":"","n":"Soy sauce, honey, ginger, garlic","c":1.0}]},{"sec":"Sat 8 · Burgers on the grill (cook tonight)","items":[{"q":"1 lb","n":"Ground beef, 90/10","c":8.11},{"q":"4","n":"Hamburger buns","c":0.75},{"q":"4 oz","n":"Cheddar block","c":0.7},{"q":"4 ears","n":"Sweet corn — roadside is cheaper","c":1.4},{"q":"0.5 head","n":"Cabbage, for slaw","c":0.65},{"q":"","n":"Lettuce, tomato, onion","c":1.5}]},{"sec":"Sun 9 · Roast chicken, potatoes, green beans (cook tonight)","items":[{"q":"4 lb","n":"Whole chicken","c":5.16},{"q":"2.5 lb","n":"Russet potatoes","c":1.6},{"q":"1 lb","n":"Green beans","c":1.79},{"q":"4","n":"Dinner rolls","c":1.0}]}],"M":[{"sec":"Bread & grains","items":[{"q":"2","n":"Whole wheat pitas","c":1.0}]},{"sec":"Canned & jarred","items":[{"q":"1","n":"Medjool dates","c":0.32}]}]},"dinners":[{"d":"Mon 3","dish":"Turkey chili + cornbread","cook":true,"tag":"cook double ×1.75","c":14.73},{"d":"Tue 4","dish":"Pasta with meat sauce","cook":true,"tag":"cook double ×1.75","c":15.43},{"d":"Wed 5","dish":"Turkey chili + cornbread","cook":false,"tag":"reheat","c":0.0},{"d":"Thu 6","dish":"Pasta with meat sauce","cook":false,"tag":"reheat","c":0.0},{"d":"Fri 7","dish":"Teriyaki chicken rice bowls","cook":true,"tag":"cook tonight","c":8.14},{"d":"Sat 8","dish":"Burgers on the grill","cook":true,"tag":"cook tonight","c":13.11},{"d":"Sun 9","dish":"Roast chicken, potatoes, green beans","cook":true,"tag":"cook tonight","c":9.55}],"note":"The baseline shop. Everything in the pantry column is a buy-once — you will not repeat those next week."},{"id":"week-2","label":"Week 2","dates":"August 10–16","days":7,"cooks":5,"lists":{"A":[{"sec":"Produce","items":[{"q":"4","n":"Apples, 3 lb bag","c":1.56},{"q":"1","n":"Avocados","c":0.43},{"q":"7","n":"Bananas","c":1.26},{"q":"1 cup","n":"Cucumbers","c":0.4},{"q":"1 cup","n":"Grapes","c":0.56},{"q":"6 cup","n":"Michigan blueberries","c":6.9},{"q":"2","n":"Michigan peaches","c":1.2},{"q":"1 cup","n":"Onion + pepper, to sauté","c":0.9},{"q":"5","n":"Oranges, 4 lb bag","c":2.0},{"q":"2","n":"Pears","c":1.7},{"q":"1","n":"Russet potatoes, 5 lb","c":0.4},{"q":"7 cup","n":"Salad greens","c":1.89},{"q":"2","n":"Tomatoes","c":1.0},{"q":"2 cup","n":"Watermelon","c":0.42}]},{"sec":"Meat & fish","items":[{"q":"7 oz cooked","n":"Kirkwood chicken breast","c":1.74},{"q":"7 oz","n":"Lunch Mate deli turkey","c":1.53},{"q":"7 oz cooked","n":"Turkey breast, to roast","c":1.74}]},{"sec":"Dairy & eggs","items":[{"q":"7 cup","n":"Friendly Farms Greek, nonfat","c":7.35},{"q":"4 cup","n":"Friendly Farms cottage cheese 1%","c":3.53},{"q":"8 cup","n":"Friendly Farms skim milk","c":1.65},{"q":"3","n":"Large eggs","c":0.52},{"q":"3","n":"Large eggs (use whole, skip cartons)","c":0.52},{"q":"3.5 cup","n":"Milk + cocoa + sugar","c":0.91},{"q":"2","n":"String cheese, 12-pack","c":0.66}]},{"sec":"Bread & grains","items":[{"q":"3","n":"Bagels, 6-pack","c":0.93},{"q":"1","n":"Benton’s fig bars","c":0.25},{"q":"1","n":"Flour tortillas, large","c":0.25},{"q":"4 oz","n":"Millville granola","c":1.0},{"q":"2 oz","n":"Pretzels","c":0.21},{"q":"2","n":"Rice cakes","c":0.25},{"q":"11 slices","n":"Specially Selected sourdough","c":2.31},{"q":"1","n":"Whole wheat English muffins","c":0.3}]},{"sec":"Canned & jarred","items":[{"q":"2 tbsp","n":"Little Salad Bar hummus","c":0.23},{"q":"1 cup","n":"Mango, frozen","c":1.0},{"q":"1 cup","n":"Orange juice","c":0.43},{"q":"3 cup","n":"Pineapple in juice","c":1.56},{"q":"0 cup","n":"Salsa","c":0.24},{"q":"1 oz","n":"Southern Grove almonds","c":0.37},{"q":"2.5 oz","n":"Southern Grove walnuts","c":1.25},{"q":"5 oz","n":"Tuna in water","c":0.89},{"q":"3 cup","n":"Unsweetened applesauce","c":1.89}]},{"sec":"Ride fuel · make it yourself","items":[{"q":"1 pack","n":"Dates, 3 per pack replaced","c":0.81,"note":"Or buy chews at $2.50 a pack"},{"q":"7 bottles","n":"Bottle of mix, 60 g carb","c":0.7,"note":"60 g sugar + 1/4 tsp salt + lemon. Store-bought mix: $3.00"},{"q":"3 eachs","n":"Homemade rice bar","c":0.66,"note":"Rice, honey, peanut butter, salt. Recipe in the weekly plan"},{"q":"2 eachs","n":"Fig bars","c":0.66,"note":"Store brand, 12 for $3.90"},{"q":"3 bottles","n":"Bottle of mix, 34 g carb","c":0.24,"note":"Half-strength bottle. Store-bought: $1.30"}]},{"sec":"Mon 10 · Shepherd’s pie (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground beef, 90/10","c":11.36},{"q":"4.5 lb","n":"Russet potatoes","c":2.8},{"q":"2.5 lb","n":"Mixed vegetables","c":4.71},{"q":"","n":"Butter and parmesan","c":1.35}]},{"sec":"Tue 11 · Taco night (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground turkey, 93%","c":6.98},{"q":"21","n":"Corn tortillas","c":1.58},{"q":"14 oz dry","n":"Black beans","c":1.14},{"q":"2.5 cups dry","n":"White rice","c":0.75},{"q":"14 oz","n":"Salsa","c":1.66},{"q":"10.5 oz","n":"Cheddar block","c":1.84},{"q":"","n":"Lettuce, tomato, 1 avocado","c":3.68}]},{"sec":"Fri 14 · Chicken and rice bowls (cook tonight)","items":[{"q":"1 lb","n":"Kirkwood chicken breast","c":3.74},{"q":"2.5 cups dry","n":"White rice","c":0.71},{"q":"1 lb","n":"Green beans","c":1.79},{"q":"1 lb","n":"Carrots","c":0.9},{"q":"","n":"Sauce and seasoning","c":1.0}]},{"sec":"Sat 15 · Grilled chicken, corn, potatoes (cook tonight)","items":[{"q":"1.5 lb","n":"Kirkwood chicken breast","c":4.49},{"q":"4 ears","n":"Sweet corn","c":1.4},{"q":"2.5 lb","n":"Russet potatoes","c":1.6},{"q":"0.5 head","n":"Cabbage, for slaw","c":0.65},{"q":"4","n":"Dinner rolls","c":1.0}]},{"sec":"Sun 16 · Baked salmon + quinoa (cook tonight)","items":[{"q":"1 lb","n":"Salmon fillets, frozen","c":8.74},{"q":"1 lb","n":"Asparagus","c":2.99},{"q":"12 oz","n":"Brussels sprouts","c":1.87},{"q":"4","n":"Dinner rolls","c":1.0}]}],"M":[{"sec":"Bread & grains","items":[{"q":"1","n":"Whole wheat pitas","c":0.5}]},{"sec":"Canned & jarred","items":[{"q":"2","n":"Medjool dates","c":0.64}]},{"sec":"Sun 16 · Baked salmon + quinoa (cook tonight)","items":[{"q":"8 oz","n":"Quinoa","c":2.25}]}]},"dinners":[{"d":"Mon 10","dish":"Shepherd’s pie","cook":true,"tag":"cook double ×1.75","c":20.22},{"d":"Tue 11","dish":"Taco night","cook":true,"tag":"cook double ×1.75","c":17.62},{"d":"Wed 12","dish":"Shepherd’s pie","cook":false,"tag":"reheat","c":0.0},{"d":"Thu 13","dish":"Taco night","cook":false,"tag":"reheat","c":0.0},{"d":"Fri 14","dish":"Chicken and rice bowls","cook":true,"tag":"cook tonight","c":8.14},{"d":"Sat 15","dish":"Grilled chicken, corn, potatoes","cook":true,"tag":"cook tonight","c":9.14},{"d":"Sun 16","dish":"Baked salmon + quinoa","cook":true,"tag":"cook tonight","c":16.85}],"note":"Cheaper than week 1 despite more riding, because the pantry staples are already in the cupboard."},{"id":"week-3","label":"Week 3","dates":"August 17–23","days":7,"cooks":5,"lists":{"A":[{"sec":"Produce","items":[{"q":"3","n":"Apples, 3 lb bag","c":1.17},{"q":"1","n":"Avocados","c":0.64},{"q":"1 cup","n":"Baby carrots","c":0.4},{"q":"6","n":"Bananas","c":1.08},{"q":"1 cup","n":"Bell peppers, 3-pack","c":0.92},{"q":"2 cup","n":"Cucumbers","c":0.8},{"q":"3 cup","n":"Grapes","c":1.68},{"q":"3 cup","n":"Michigan blueberries","c":3.45},{"q":"1 cup","n":"Mixed fruit, cut","c":1.1},{"q":"1 cup","n":"Onion + pepper, to sauté","c":0.9},{"q":"3","n":"Oranges, 4 lb bag","c":1.2},{"q":"1","n":"Pears","c":0.85},{"q":"1","n":"Russet potatoes, 5 lb","c":0.4},{"q":"3 cup","n":"Salad greens","c":0.81},{"q":"3 cup","n":"Strawberries","c":2.49},{"q":"1","n":"Tomatoes","c":0.5},{"q":"4 cup","n":"Watermelon","c":0.84}]},{"sec":"Meat & fish","items":[{"q":"4 oz cooked","n":"Ground turkey, 93%","c":1.33},{"q":"12 oz cooked","n":"Kirkwood chicken breast","c":2.99},{"q":"4 oz cooked","n":"Turkey breast, to roast","c":1.0}]},{"sec":"Dairy & eggs","items":[{"q":"3 cup","n":"Friendly Farms Greek, 2%","c":3.36},{"q":"3 cup","n":"Friendly Farms Greek, nonfat","c":3.15},{"q":"5 cup","n":"Friendly Farms cottage cheese 1%","c":4.36},{"q":"7 cup","n":"Friendly Farms skim milk","c":1.44},{"q":"0.5 oz","n":"Happy Farms cheddar block","c":0.09},{"q":"7","n":"Large eggs","c":1.22},{"q":"2","n":"Large eggs (use whole, skip cartons)","c":0.35},{"q":"3.5 cup","n":"Milk + cocoa + sugar","c":0.91}]},{"sec":"Bread & grains","items":[{"q":"1","n":"Bagels, 6-pack","c":0.37},{"q":"2","n":"Flour tortillas, large","c":0.5},{"q":"4 oz","n":"Millville granola","c":1.0},{"q":"2 oz","n":"Pretzels","c":0.21},{"q":"4","n":"Rice cakes","c":0.5},{"q":"6 slices","n":"Specially Selected sourdough","c":1.26},{"q":"5","n":"Whole wheat English muffins","c":1.5}]},{"sec":"Canned & jarred","items":[{"q":"8 tbsp","n":"Little Salad Bar hummus","c":0.92},{"q":"2 cup","n":"Mango, frozen","c":2.0},{"q":"2 cup","n":"Orange juice","c":0.86},{"q":"4 cup","n":"Pineapple in juice","c":2.08},{"q":"0 cup","n":"Salsa","c":0.24},{"q":"2.5 oz","n":"Southern Grove almonds","c":0.94},{"q":"2 oz","n":"Southern Grove walnuts","c":1.0}]},{"sec":"Ride fuel · make it yourself","items":[{"q":"1 pack","n":"Dates, 3 per pack replaced","c":0.81,"note":"Or buy chews at $2.50 a pack"},{"q":"8 bottles","n":"Bottle of mix, 60 g carb","c":0.8,"note":"60 g sugar + 1/4 tsp salt + lemon. Store-bought mix: $3.00"},{"q":"2 eachs","n":"Fig bars","c":0.66,"note":"Store brand, 12 for $3.90"},{"q":"2 eachs","n":"Homemade rice bar","c":0.44,"note":"Rice, honey, peanut butter, salt. Recipe in the weekly plan"},{"q":"2 bottles","n":"Bottle of mix, 34 g carb","c":0.16,"note":"Half-strength bottle. Store-bought: $1.30"}]},{"sec":"Mon 17 · Chicken, rice and vegetable bake (cook double ×1.75)","items":[{"q":"2 lb","n":"Kirkwood chicken breast","c":6.55},{"q":"3.5 cups dry","n":"White rice","c":1.0},{"q":"2.5 lb","n":"Mixed vegetables","c":4.71},{"q":"10.5 oz","n":"Cheddar block","c":1.84},{"q":"","n":"Stock and seasoning","c":0.8}]},{"sec":"Tue 18 · Baked ziti with turkey (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground turkey, 93%","c":6.98},{"q":"21 oz","n":"Ziti or penne","c":1.17},{"q":"2 jars","n":"Marinara","c":2.26},{"q":"14 oz","n":"Mozzarella","c":2.91},{"q":"","n":"Parmesan","c":1.25},{"q":"","n":"Salad greens and dressing","c":1.75}]},{"sec":"Fri 21 · Teriyaki chicken rice bowls (cook tonight)","items":[{"q":"1 lb","n":"Kirkwood chicken breast","c":3.74},{"q":"2.5 cups dry","n":"White rice","c":0.71},{"q":"1 lb","n":"Broccoli","c":1.79},{"q":"1 lb","n":"Carrots","c":0.9},{"q":"","n":"Soy sauce, honey, ginger, garlic","c":1.0}]},{"sec":"Sat 22 · Burgers on the grill (cook tonight)","items":[{"q":"1 lb","n":"Ground beef, 90/10","c":8.11},{"q":"4","n":"Hamburger buns","c":0.75},{"q":"4 oz","n":"Cheddar block","c":0.7},{"q":"4 ears","n":"Sweet corn — roadside is cheaper","c":1.4},{"q":"0.5 head","n":"Cabbage, for slaw","c":0.65},{"q":"","n":"Lettuce, tomato, onion","c":1.5}]},{"sec":"Sun 23 · Baked tilapia + quinoa (cook tonight)","items":[{"q":"1 lb","n":"Fremont Fish Market tilapia, frozen","c":3.12},{"q":"1.5 lb","n":"Mixed vegetables","c":2.69},{"q":"12 oz","n":"Asparagus","c":2.24}]}],"M":[{"sec":"Bread & grains","items":[{"q":"3","n":"Whole wheat pitas","c":1.5}]},{"sec":"Canned & jarred","items":[{"q":"5","n":"Medjool dates","c":1.6}]},{"sec":"Sun 23 · Baked tilapia + quinoa (cook tonight)","items":[{"q":"8 oz","n":"Quinoa","c":2.25}]}]},"dinners":[{"d":"Mon 17","dish":"Chicken, rice and vegetable bake","cook":true,"tag":"cook double ×1.75","c":14.89},{"d":"Tue 18","dish":"Baked ziti with turkey","cook":true,"tag":"cook double ×1.75","c":16.32},{"d":"Wed 19","dish":"Chicken, rice and vegetable bake","cook":false,"tag":"reheat","c":0.0},{"d":"Thu 20","dish":"Baked ziti with turkey","cook":false,"tag":"reheat","c":0.0},{"d":"Fri 21","dish":"Teriyaki chicken rice bowls","cook":true,"tag":"cook tonight","c":8.14},{"d":"Sat 22","dish":"Burgers on the grill","cook":true,"tag":"cook tonight","c":13.11},{"d":"Sun 23","dish":"Baked tilapia + quinoa","cook":true,"tag":"cook tonight","c":10.3}],"note":"Peak week. The 4 h 15 Saturday is the most expensive day of the month to fuel, and almost all of that cost is sugar and rice."},{"id":"week-4","label":"Week 4","dates":"August 24–31","days":8,"cooks":4,"lists":{"A":[{"sec":"Produce","items":[{"q":"7","n":"Apples, 3 lb bag","c":2.73},{"q":"1","n":"Avocados","c":0.64},{"q":"6","n":"Bananas","c":1.08},{"q":"2 cup","n":"Bell peppers, 3-pack","c":1.84},{"q":"2 cup","n":"Cucumbers","c":0.8},{"q":"4 cup","n":"Grapes","c":2.24},{"q":"5 cup","n":"Michigan blueberries","c":5.75},{"q":"2","n":"Michigan peaches","c":1.2},{"q":"1 cup","n":"Onion + pepper, to sauté","c":0.9},{"q":"4","n":"Oranges, 4 lb bag","c":1.6},{"q":"1","n":"Pears","c":0.85},{"q":"6 cup","n":"Salad greens","c":1.62},{"q":"2 cup","n":"Strawberries","c":1.66},{"q":"3","n":"Tomatoes","c":1.5},{"q":"6 cup","n":"Watermelon","c":1.26}]},{"sec":"Meat & fish","items":[{"q":"9 oz cooked","n":"Kirkwood chicken breast","c":2.24},{"q":"6 oz","n":"Lunch Mate deli turkey","c":1.31},{"q":"3 oz cooked","n":"Turkey breast, to roast","c":0.75}]},{"sec":"Dairy & eggs","items":[{"q":"2 cup","n":"Friendly Farms Greek, 2%","c":2.24},{"q":"6 cup","n":"Friendly Farms Greek, nonfat","c":6.3},{"q":"5 cup","n":"Friendly Farms cottage cheese 1%","c":3.94},{"q":"6 cup","n":"Friendly Farms skim milk","c":1.24},{"q":"9","n":"Large eggs","c":1.57},{"q":"4","n":"Large eggs (use whole, skip cartons)","c":0.7},{"q":"4.5 cup","n":"Milk + cocoa + sugar","c":1.17},{"q":"2","n":"String cheese, 12-pack","c":0.66}]},{"sec":"Bread & grains","items":[{"q":"1","n":"Flour tortillas, large","c":0.25},{"q":"2 slices","n":"L’oven Fresh whole wheat bread","c":0.18},{"q":"2 oz","n":"Millville granola","c":0.5},{"q":"2 oz","n":"Pretzels","c":0.21},{"q":"11 slices","n":"Specially Selected sourdough","c":2.31},{"q":"3","n":"Whole wheat English muffins","c":0.9}]},{"sec":"Canned & jarred","items":[{"q":"6 tbsp","n":"Little Salad Bar hummus","c":0.69},{"q":"2 cup","n":"Orange juice","c":0.86},{"q":"1 cup","n":"Pineapple in juice","c":0.52},{"q":"3 oz","n":"Southern Grove almonds","c":1.22},{"q":"2 oz","n":"Southern Grove walnuts","c":1.0},{"q":"10 oz","n":"Tuna in water","c":1.78},{"q":"2 cup","n":"Unsweetened applesauce","c":1.26}]},{"sec":"Ride fuel · make it yourself","items":[{"q":"2 eachs","n":"Fig bars","c":0.66,"note":"Store brand, 12 for $3.90"},{"q":"4 bottles","n":"Bottle of mix, 60 g carb","c":0.4,"note":"60 g sugar + 1/4 tsp salt + lemon. Store-bought mix: $3.00"},{"q":"2 bottles","n":"Bottle of mix, 34 g carb","c":0.16,"note":"Half-strength bottle. Store-bought: $1.30"}]},{"sec":"Mon 24 · Turkey chili + cornbread (cook double ×2.5)","items":[{"q":"2.5 lb","n":"Ground turkey, 93%","c":9.98},{"q":"20 oz dry","n":"Kidney and black beans","c":1.63},{"q":"3 cans","n":"Diced tomatoes","c":1.98},{"q":"","n":"Onion, peppers, chili spices","c":1.75},{"q":"1 box","n":"Cornbread mix","c":0.89},{"q":"15 oz","n":"Happy Farms cheddar block","c":2.63},{"q":"4 cups dry","n":"White rice","c":1.08}]},{"sec":"Wed 26 · Taco night (cook double ×1.75)","items":[{"q":"2 lb","n":"Ground turkey, 93%","c":6.98},{"q":"21","n":"Corn tortillas","c":1.58},{"q":"14 oz dry","n":"Black beans","c":1.14},{"q":"2.5 cups dry","n":"White rice","c":0.75},{"q":"14 oz","n":"Salsa","c":1.66},{"q":"10.5 oz","n":"Cheddar block","c":1.84},{"q":"","n":"Lettuce, tomato, 1 avocado","c":3.68}]},{"sec":"Fri 28 · Chicken and rice bowls (cook tonight)","items":[{"q":"1 lb","n":"Kirkwood chicken breast","c":3.74},{"q":"2.5 cups dry","n":"White rice","c":0.71},{"q":"1 lb","n":"Green beans","c":1.79},{"q":"1 lb","n":"Carrots","c":0.9},{"q":"","n":"Sauce and seasoning","c":1.0}]},{"sec":"Sat 29 · Grilled chicken, corn, potatoes (cook double ×1.75)","items":[{"q":"2.5 lb","n":"Kirkwood chicken breast","c":7.86},{"q":"7 ears","n":"Sweet corn","c":2.45},{"q":"4.5 lb","n":"Russet potatoes","c":2.8},{"q":"1 head","n":"Cabbage, for slaw","c":1.14},{"q":"7","n":"Dinner rolls","c":1.75}]}],"M":[{"sec":"Bread & grains","items":[{"q":"2","n":"Whole wheat pitas","c":1.0}]}]},"dinners":[{"d":"Mon 24","dish":"Turkey chili + cornbread","cook":true,"tag":"cook double ×2.5","c":19.92},{"d":"Tue 25","dish":"Turkey chili + cornbread","cook":false,"tag":"reheat","c":0.0},{"d":"Wed 26","dish":"Taco night","cook":true,"tag":"cook double ×1.75","c":17.62},{"d":"Thu 27","dish":"Taco night","cook":false,"tag":"reheat","c":0.0},{"d":"Fri 28","dish":"Chicken and rice bowls","cook":true,"tag":"cook tonight","c":8.14},{"d":"Sat 29","dish":"Grilled chicken, corn, potatoes","cook":true,"tag":"cook double ×1.75","c":16.0},{"d":"Sun 30","dish":"Grilled chicken, corn, potatoes","cook":false,"tag":"reheat","c":0.0},{"d":"Mon 31","dish":"Turkey chili + cornbread","cook":false,"tag":"reheat","c":0.0}],"note":"Eight days, and the recovery week. Less riding means less ride fuel and smaller portions — this is the cheapest week per day of the block."}],"fuel":[["Bottle mix · 60 g carb","5 level tbsp table sugar, 1/4 tsp salt, squeeze of lemon. Fill a 500 ml bottle and shake. About 8¢. Saturday wants three plus solid food."],["Rice bars · makes 6","2 cups cooked short-grain white rice, 2 tbsp honey, 1 tbsp peanut butter, pinch of salt. Mix warm, press into a pan, chill, cut into six, wrap in foil. 200 kcal and 38 g carb each, about 20¢."],["On the bike","60–90 g carbohydrate per hour past 90 minutes. 20–28 oz fluid per hour. 500–800 mg sodium per hour past two hours or on a hot day."]]};
+
+/* Local Storage Helper with Fallback */
+const mem = {};
+const LS = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return mem[k] ?? null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){ mem[k]=v; } }
+};
+const jget = (k,d) => { try { return JSON.parse(LS.get(k)) ?? d; } catch(e){ return d; } };
+const jset = (k,v) => LS.set(k, JSON.stringify(v));
+
+/* App State */
+let plan   = jget('v2.plan', null) || BUNDLED;
+let ticks  = jget('v2.ticks', {});
+let extras = jget('v2.extras', {});
+let cfg    = jget('v2.cfg', {url:'', key:''});
+let dirty  = jget('v2.dirty', false);
+let lastSync = LS.get('v2.lastSync') || '';
+
+let wi = Number(LS.get('v2.week') || 1);
+let tab = LS.get('v2.tab') || 'A';
+let hideChecked = jget('v2.hideChecked', false); // Store check-off filter mode
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now = () => Date.now();
+const uid = () => 'x' + now().toString(36) + Math.random().toString(36).slice(2,7);
+const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); };
+
+function weeks(){ return (plan && plan.weeks) || []; }
+function curWeek(){ const w = weeks(); return w[Math.min(wi, w.length-1)] || w[0]; }
+
+/* Dynamic Header Height Calculation for Perfect Sticky Positioning on Safari */
+function updateHeaderHeight(){
+  const hdr = $('#hdr');
+  if (hdr) {
+    const h = hdr.offsetHeight;
+    document.documentElement.style.setProperty('--hdr-h', h + 'px');
+  }
+}
+window.addEventListener('resize', updateHeaderHeight);
+
+/* Sync Backend Logic */
+let syncing = false;
+function setDot(){
+  const d = $('#dot');
+  const txt = $('#synctx');
+  if (!cfg.url) {
+    d.className = 'dot';
+    txt.textContent = 'Local';
+  } else if (syncing) {
+    d.className = 'dot pend';
+    txt.textContent = 'Syncing...';
+  } else if (dirty) {
+    d.className = 'dot pend';
+    txt.textContent = 'Saving...';
+  } else if (lastSync) {
+    d.className = 'dot ok';
+    txt.textContent = 'Synced';
+  } else {
+    d.className = 'dot err';
+    txt.textContent = 'Offline';
+  }
+}
+
+async function sync(push){
+  if (!cfg.url || !cfg.key || syncing) { setDot(); return; }
+  syncing = true; setDot();
+  try {
+    const base = cfg.url.replace(/\/+$/,'');
+    const h = {'Content-Type':'application/json','X-List-Key':cfg.key};
+    let r;
+    if (push || dirty){
+      r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras})});
+    } else {
+      r = await fetch(base + '/state', {headers:h});
+    }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const s = await r.json();
+    ticks  = s.ticks  || {};
+    extras = s.extras || {};
+    if (s.plan && Array.isArray(s.plan.weeks)) { plan = s.plan; jset('v2.plan', plan); }
+    dirty = false;
+    lastSync = new Date().toISOString();
+    LS.set('v2.lastSync', lastSync);
+    persist();
+    render();
+  } catch(e){
+    lastSync = lastSync || '';
+    $('#s_stat').textContent = 'Sync failed: ' + e.message;
+  } finally {
+    syncing = false; setDot();
+  }
+}
+
+const queue = () => {
+  dirty = true; persist(); setDot();
+  clearTimeout(queue._t);
+  queue._t = setTimeout(()=>sync(true), 1200);
+};
+
+/* Rendering UI */
+function chips(){
+  $('#weeks').innerHTML = weeks().map((w,i) =>
+    `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(w.label)}</button>`).join('');
+  updateHeaderHeight();
+}
+
+function myExtras(weekId, store){
+  return Object.entries(extras)
+    .filter(([id,e]) => !e.deleted && e.week === weekId && e.store === store)
+    .sort((a,b) => a[1].t - b[1].t);
+}
+
+function render(){
+  const w = curWeek();
+  if (!w){ $('#main').innerHTML = '<div class="empty">No plan loaded.</div>'; return; }
+  
+  $('#wlab').textContent = w.label + (w.cooks ? ' \u00b7 ' + w.cooks + ' cook' : '');
+  
+  document.querySelectorAll('#tabs button').forEach(b =>
+    b.classList.toggle('on', b.dataset.t === tab));
+    
+  $('#badd').style.display = (tab === 'A' || tab === 'M') ? 'flex' : 'none';
+  $('#bfilter').style.display = (tab === 'A' || tab === 'M') ? 'flex' : 'none';
+  
+  // Filter button state
+  const btnF = $('#bfilter');
+  btnF.classList.toggle('active', hideChecked);
+  $('#flab').textContent = hideChecked ? 'To Get Only' : 'All Items';
+
+  const m = $('#main');
+
+  if (tab === 'D'){
+    m.innerHTML = (w.dinners||[]).length
+      ? w.dinners.map(d => `<div class="din ${d.cook?'cook':'heat'}">
+          <div class="d">${esc(d.d)}</div>
+          <div class="x"><b>${esc(d.dish)}</b><span>${esc(d.tag)}</span></div>
+          <div class="cc">${d.c ? '$'+d.c.toFixed(2) : '\u2014'}</div></div>`).join('')
+      : '<div class="empty">No dinners planned for this week.</div>';
+    totals(); updateHeaderHeight(); return;
+  }
+  
+  if (tab === 'F'){
+    m.innerHTML = (plan.fuel||[]).map(([h,p]) =>
+      `<div class="card"><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`).join('')
+      + `<div class="hint">Made at home, a month of ride fuel is about $12 vs $132 for branded gels.<br><br>Ingredients can appear under two cook nights — this is deliberate and total amounts add up.</div>`;
+    totals(); updateHeaderHeight(); return;
+  }
+
+  const secs = (w.lists && w.lists[tab]) || [];
+  let html = (w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '';
+  
+  let sectionCount = 0;
+  
+  secs.forEach(s => {
+    const cook = /cook (double|tonight)/.test(s.sec);
+    
+    // Sort items so unchecked remain at top, checked move to bottom
+    const itemsWithKeys = s.items.map(it => {
+      const k = w.id + '|' + tab + '|' + s.sec + '\u241f' + it.n + '|' + it.q;
+      const on = ticks[k] && ticks[k].v;
+      return { it, k, on };
+    });
+
+    const visibleItems = hideChecked ? itemsWithKeys.filter(x => !x.on) : itemsWithKeys;
+
+    if (visibleItems.length > 0) {
+      sectionCount++;
+      html += `<div class="sech${cook?' cook':''}">${esc(s.sec)}</div>`;
+      
+      // Render unchecked first, then checked
+      const sorted = hideChecked ? visibleItems : [...visibleItems].sort((a,b) => (a.on === b.on ? 0 : a.on ? 1 : -1));
+      
+      html += sorted.map(({it, k, on}) => {
+        return `<div class="row${on?' done':''}" data-k="${esc(k)}" data-c="${Number(it.c) || 0}">
+          <div class="box">\u2713</div>
+          <div class="mid">
+            ${it.q ? `<span class="q">${esc(it.q)}</span>`:''}
+            <span class="n">${esc(it.n)}</span>
+            ${it.note ? `<span class="note">${esc(it.note)}</span>`:''}
+          </div>
+          <div class="c">${it.c > 0 ? it.c.toFixed(2) : ''}</div>
+        </div>`;
+      }).join('');
+    }
+  });
+
+  const mine = myExtras(w.id, tab);
+  const visibleMine = mine.map(([id, e]) => {
+    const k = 'x|' + id;
+    const on = ticks[k] && ticks[k].v;
+    return { id, e, k, on, c: Number(e.cost) || 0 };
+  }).filter(x => !hideChecked || !x.on);
+
+  if (visibleMine.length) {
+    sectionCount++;
+    html += `<div class="sech mine">Added by you</div>` + visibleMine.map(({id, e, k, on, c}) => {
+      return `<div class="row${on?' done':''}" data-k="${esc(k)}" data-c="${c}">
+        <div class="box">\u2713</div>
+        <div class="mid">
+          ${e.qty ? `<span class="q">${esc(e.qty)}</span>`:''}
+          <span class="n">${esc(e.name)}</span>
+        </div>
+        <div class="c">${c ? c.toFixed(2) : ''}</div>
+        <button class="del" data-del="${esc(id)}" aria-label="Delete item">\u00d7</button>
+      </div>`;
+    }).join('');
+  }
+
+  if (sectionCount === 0) {
+    html += `<div class="empty">${hideChecked ? 'All items checked off!' : 'Nothing from ' + (tab==='M'?'Meijer':'Aldi') + ' this week.'}<br><br>Tap <b>+</b> to add an item.</div>`;
+  }
+
+  m.innerHTML = html;
+  totals();
+  updateHeaderHeight();
+}
+
+function totals(){
+  let got = 0, left = 0;
+  const w = curWeek();
+  if (!w) return;
+
+  // Calculate totals from entire list (including hidden items)
+  const secs = (w.lists && w.lists[tab]) || [];
+  secs.forEach(s => {
+    s.items.forEach(it => {
+      const k = w.id + '|' + tab + '|' + s.sec + '\u241f' + it.n + '|' + it.q;
+      const c = Number(it.c) || 0;
+      if (ticks[k] && ticks[k].v) got += c; else left += c;
+    });
+  });
+
+  myExtras(w.id, tab).forEach(([id, e]) => {
+    const k = 'x|' + id;
+    const c = Number(e.cost) || 0;
+    if (ticks[k] && ticks[k].v) got += c; else left += c;
+  });
+
+  $('#got').textContent = '$' + got.toFixed(2);
+  $('#left').textContent = '$' + left.toFixed(2);
+  $('#prog').style.width = ((got+left) > 0 ? (got/(got+left)*100) : 0) + '%';
+}
+
+/* Haptic Feedback Helper for Store Usability */
+function triggerHaptic(){
+  if ('vibrate' in navigator) {
+    try { navigator.vibrate(15); } catch(e){}
+  }
+}
+
+/* Touch & Click Event Delegation */
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (chip){
+    wi = Number(chip.dataset.w);
+    LS.set('v2.week', wi);
+    chips();
+    render();
+    window.scrollTo(0,0);
+    return;
+  }
+
+  const tb = e.target.closest('#tabs button');
+  if (tb){
+    tab = tb.dataset.t;
+    LS.set('v2.tab', tab);
+    render();
+    window.scrollTo(0,0);
+    return;
+  }
+
+  if (e.target.closest('#bfilter')){
+    hideChecked = !hideChecked;
+    persist();
+    render();
+    triggerHaptic();
+    return;
+  }
+
+  if (e.target.closest('#bsync')){ sync(false); triggerHaptic(); return; }
+  
+  if (e.target.closest('#bset')){
+    $('#s_url').value = cfg.url;
+    $('#s_key').value = cfg.key;
+    $('#s_stat').textContent = lastSync ? 'Last synced ' + new Date(lastSync).toLocaleString() : 'Never synced';
+    $('#setsheet').classList.add('open');
+    return;
+  }
+
+  if (e.target.closest('#badd')){
+    $('#ai_n').value = ''; $('#ai_q').value = ''; $('#ai_c').value = '';
+    $('#ai_s').value = (tab === 'M') ? 'M' : 'A';
+    $('#addsheet').classList.add('open');
+    setTimeout(()=> $('#ai_n').focus(), 150);
+    return;
+  }
+
+  if (e.target.closest('[data-close]') || e.target.classList.contains('sheet')){
+    document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+    return;
+  }
+
+  if (e.target.closest('#s_go')){
+    cfg = {url: $('#s_url').value.trim(), key: $('#s_key').value.trim()};
+    jset('v2.cfg', cfg);
+    document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+    sync(false);
+    return;
+  }
+
+  if (e.target.closest('#ai_go')){
+    const n = $('#ai_n').value.trim().slice(0,200);
+    if (!n) return;
+    const id = uid();
+    extras[id] = {
+      name: n,
+      qty: $('#ai_q').value.trim().slice(0,200),
+      cost: parseFloat($('#ai_c').value) || 0,
+      store: $('#ai_s').value,
+      week: curWeek().id,
+      t: now()
+    };
+    document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+    persist();
+    queue();
+    render();
+    triggerHaptic();
+    return;
+  }
+
+  const del = e.target.closest('[data-del]');
+  if (del){
+    e.stopPropagation();
+    const id = del.dataset.del;
+    extras[id] = {...extras[id], deleted: true, t: now()};
+    persist();
+    queue();
+    render();
+    triggerHaptic();
+    return;
+  }
+
+  if (e.target.closest('#reset')){
+    const w = curWeek();
+    if (confirm('Clear all checked items for ' + w.label + '?')) {
+      Object.keys(ticks).forEach(k => {
+        if (k.startsWith(w.id + '|')) ticks[k] = {v: false, t: now()};
+      });
+      persist();
+      queue();
+      render();
+      triggerHaptic();
+    }
+    return;
+  }
+
+  const row = e.target.closest('.row');
+  if (row){
+    const k = row.dataset.k;
+    const on = !(ticks[k] && ticks[k].v);
+    ticks[k] = {v: on, t: now()};
+    
+    // Haptic feedback & instant animation
+    triggerHaptic();
+    row.classList.toggle('done', on);
+    
+    persist();
+    queue();
+    
+    // If filter mode is hiding checked items, re-render smoothly
+    if (hideChecked) {
+      setTimeout(() => render(), 180);
+    } else {
+      totals();
+    }
+  }
+});
+
+/* Re-sync when returning to app foreground */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) sync(dirty);
+});
+window.addEventListener('online', () => sync(dirty));
+
+/* Init */
+chips();
+render();
+setDot();
+updateHeaderHeight();
+
+if (cfg.url && cfg.key) sync(dirty);
+</script>
+</body>
+</html>

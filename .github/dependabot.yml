@@ -1,0 +1,25 @@
+version: 2
+
+# Reality check: the app ships ZERO third-party runtime code. No npm package
+# reaches a browser or the Worker. So the only things here worth patching are
+# the CI action pins and the wrangler CLI. Kept on purpose, but small.
+updates:
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, ci]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, tooling]
+    open-pull-requests-limit: 5
+    # Majors can change wrangler's config schema or deploy semantics - review those.
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]

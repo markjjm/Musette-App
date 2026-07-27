@@ -1,0 +1,73 @@
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so a finding surfaces even in a month nobody touches the repo.
+    - cron: '17 13 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: regression scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # tools/*.mjs use only Node built-ins - nothing to install, no supply chain
+      # in the security gate itself.
+      - name: CSP freshness + source invariants
+        run: |
+          node tools/build-csp.mjs --check
+          node tools/scan.mjs
+
+  codeql:
+    name: codeql
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+
+  headers:
+    name: live header check
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      # Catches drift between the repo and what production actually serves -
+      # e.g. someone deploying by hand from a laptop without _headers.
+      - uses: actions/checkout@v4
+      - name: production must serve the expected CSP
+        run: |
+          set -euo pipefail
+          h=$(curl -sS -D- -o /dev/null https://shopping-list-app-9an.pages.dev/)
+          echo "$h" | grep -qi 'content-security-policy' \
+            || { echo "::error::production is not serving a CSP"; exit 1; }
+          for want in "default-src 'none'" "frame-ancestors 'none'" "base-uri 'none'"; do
+            echo "$h" | grep -qi -- "$want" \
+              || { echo "::error::CSP missing: $want"; exit 1; }
+          done
+          echo "$h" | grep -qi 'x-content-type-options: nosniff' \
+            || { echo "::error::missing nosniff"; exit 1; }
+          echo "production headers ok"
+      - name: sync worker must reject an unauthenticated read
+        run: |
+          set -euo pipefail
+          c=$(curl -sS -o /dev/null -w '%{http_code}' \
+            "https://shopping-list-sync.markpjacobs1.workers.dev/state?cb=${GITHUB_RUN_ID}")
+          [ "$c" = "401" ] \
+            || { echo "::error::expected 401 from /state without a key, got $c"; exit 1; }
+          echo "worker auth ok"

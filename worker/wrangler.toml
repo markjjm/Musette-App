@@ -1,0 +1,24 @@
+name = "shopping-list-sync"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
+
+# Shared state blob lives at key "state:v1" in this namespace.
+[[kv_namespaces]]
+binding = "LIST"
+id = "890f1540fea749baa8c86eff063d925c"
+
+# Per-IP rate limit, checked before any secret comparison so LIST_KEY cannot be
+# brute forced. 60 requests / 60s is far above two phones syncing.
+# The Worker fails open if this binding is absent, so it is safe to remove.
+[[unsafe.bindings]]
+name = "RL"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }
+
+# Secrets are NOT in this file. They are already set in Cloudflare:
+#   LIST_KEY   - shared family key, sent by the app as X-List-Key
+#   ADMIN_KEY  - admin key for PUT /plan, sent as X-Admin-Key
+# Manage with:  npx wrangler secret put LIST_KEY
+# For local dev, put them in worker/.dev.vars (gitignored).

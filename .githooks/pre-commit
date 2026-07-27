@@ -1,0 +1,14 @@
+#!/bin/sh
+# Local gate. Enabled by: git config core.hooksPath .githooks
+#
+# Rebuilds the CSP if index.html changed, then runs the regression scan.
+# Bypass with `git commit --no-verify` if you really need to.
+set -e
+
+if git diff --cached --name-only | grep -q '^web/public/index.html$'; then
+  echo "pre-commit: index.html changed - regenerating CSP hashes"
+  node tools/build-csp.mjs
+  git add web/public/_headers
+fi
+
+node tools/scan.mjs

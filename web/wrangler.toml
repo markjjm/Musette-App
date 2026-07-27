@@ -1,0 +1,4 @@
+name = "shopping-list-app"
+compatibility_date = "2026-07-01"
+account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
+pages_build_output_dir = "public"

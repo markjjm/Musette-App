@@ -1,0 +1,76 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - 'worker/**'
+      - 'tools/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Gate: never deploy a stale CSP or a source-invariant regression.
+      - name: security gate
+        run: |
+          node tools/build-csp.mjs --check
+          node tools/scan.mjs
+
+      - name: deploy worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --config worker/wrangler.toml
+
+      - name: deploy pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy web/public --project-name shopping-list-app
+
+      - name: post-deploy verification
+        run: |
+          set -euo pipefail
+          sleep 10
+          cb=${GITHUB_RUN_ID}
+          echo "--- CSP present in production ---"
+          curl -sS -D- -o /dev/null "https://shopping-list-app-9an.pages.dev/?cb=$cb" \
+            | grep -qi 'content-security-policy' \
+            || { echo "::error::no CSP after deploy"; exit 1; }
+
+          echo "--- the served CSP hash must match the deployed HTML ---"
+          # If these disagree the app is white-screened by its own policy.
+          hdr=$(curl -sS -D- -o /dev/null "https://shopping-list-app-9an.pages.dev/?cb=$cb" \
+            | tr -d '\r' | grep -i '^content-security-policy:')
+          for h in $(grep -o "sha256-[A-Za-z0-9+/=]*" web/public/_headers); do
+            echo "$hdr" | grep -q "$h" \
+              || { echo "::error::deployed CSP is missing $h"; exit 1; }
+          done
+
+          echo "--- worker rejects unauthenticated reads ---"
+          c=$(curl -sS -o /dev/null -w '%{http_code}' \
+            "https://shopping-list-sync.markpjacobs1.workers.dev/state?cb=$cb")
+          [ "$c" = "401" ] || { echo "::error::worker /state returned $c, expected 401"; exit 1; }
+
+          echo "--- worker is alive ---"
+          curl -sS "https://shopping-list-sync.markpjacobs1.workers.dev/health?cb=$cb" \
+            | grep -q '"ok":true' || { echo "::error::worker health failed"; exit 1; }
+          echo "deploy verified"

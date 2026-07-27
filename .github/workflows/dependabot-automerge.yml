@@ -1,0 +1,41 @@
+name: dependabot auto-merge
+
+# Patch and minor updates merge themselves once the security workflow is green.
+# Majors are excluded in dependabot.yml and never reach this path.
+#
+# Requires, once, in repo Settings:
+#   - General > "Allow auto-merge" enabled
+#   - Branch protection on main requiring the "regression scan" and "codeql" checks
+# Without the required checks, auto-merge would land the PR unverified.
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dependabot/fetch-metadata@v2
+        id: meta
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: enable auto-merge for patch and minor
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          steps.meta.outputs.update-type == 'version-update:semver-minor'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: leave majors for review
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        run: gh pr comment "$PR_URL" --body "Major update - not auto-merged. Review wrangler changelog before merging."
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

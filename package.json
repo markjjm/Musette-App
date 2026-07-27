@@ -1,0 +1,19 @@
+{
+  "name": "shopping-list",
+  "private": true,
+  "type": "module",
+  "description": "Family meal-plan and grocery list. Cloudflare Pages front end + Worker sync.",
+  "scripts": {
+    "build": "node tools/build-csp.mjs",
+    "scan": "node tools/scan.mjs",
+    "scan:baseline": "node tools/scan.mjs --baseline",
+    "check": "npm run build -- --check && npm run scan",
+    "dev:web": "wrangler pages dev web/public",
+    "dev:worker": "wrangler dev --config worker/wrangler.toml",
+    "deploy:web": "npm run build && wrangler pages deploy web/public --project-name shopping-list-app",
+    "deploy:worker": "wrangler deploy --config worker/wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "4.114.0"
+  }
+}
