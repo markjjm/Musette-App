@@ -21,6 +21,15 @@ the app's sync sheet. `PUT /plan` additionally needs `X-Admin-Key`.
 browser or the Worker. That removes the entire dependency-CVE class, and it is
 why the dependency automation here is deliberately small.
 
+The one supply chain that does exist is **build-time**: `wrangler` and its ~90
+transitive packages, which run on a CI machine holding a Cloudflare deploy token.
+A compromised package there could exfiltrate that token or tamper with what gets
+deployed — and Dependabot auto-merges wrangler's patch/minor updates unattended.
+That is the gap [Socket.dev](https://socket.dev) covers (`socket.yml`): it reviews
+each dependency PR for malware, install scripts, obfuscated code and typosquats.
+For it to actually gate anything, **"Socket Security: Pull Request Alerts" must be
+a required status check** — otherwise auto-merge merges straight past its findings.
+
 ## Controls in place
 
 Front end:

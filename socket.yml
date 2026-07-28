@@ -1,0 +1,31 @@
+version: 2
+
+# Why Socket is here even though this app ships ZERO runtime dependencies:
+#
+# Nothing from npm reaches a browser or the Worker. The only package is wrangler,
+# which is dev/CI tooling - but it pulls in ~90 transitive packages, and
+# .github/workflows/dependabot-automerge.yml merges its patch/minor updates
+# WITHOUT a human looking. Socket is the review step for those auto-merges:
+# it flags malware, install scripts, obfuscated code, typosquats and sudden
+# permission changes in the dependency tree before the merge lands.
+#
+# Make "Socket Security: Pull Request Alerts" a required status check on main,
+# or auto-merge will happily merge past Socket's findings.
+
+githubApp:
+  enabled: true
+  # Post check runs and alert comments on PRs. This is the gate that auto-merge
+  # must respect, so leave it on.
+  pullRequestAlertsEnabled: true
+  dependencyOverviewEnabled: true
+  projectReportsEnabled: true
+
+# triggerPaths is deliberately NOT set.
+#
+# It defaults to ["*"], so Socket runs and reports a check on every PR. That
+# matters: if it were narrowed to package.json/package-lock.json, a PR touching
+# only index.html would never get a Socket check, and a *required* check that
+# never reports blocks the PR forever. Same trap that made CodeQL advisory here.
+#
+# issueRules is also deliberately NOT set - it is deprecated in favour of
+# managing alert policy in the Socket dashboard. Do not reintroduce it.

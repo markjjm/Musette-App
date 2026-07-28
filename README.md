@@ -54,6 +54,7 @@ on any interpolation it has not seen before; review it, then approve with
 | merge to main | deploy Worker + Pages, then verify the live CSP and Worker auth |
 | weekly | scan, plus a live check that production still serves the CSP and the Worker still returns 401 unauthenticated |
 | weekly | Dependabot for CI actions and wrangler; patch/minor auto-merge on green, majors wait |
+| every PR | Socket.dev supply-chain review of the dependency tree (see `socket.yml`) |
 
 CI needs two repo secrets: `CLOUDFLARE_API_TOKEN` (Workers + Pages edit) and
 `CLOUDFLARE_ACCOUNT_ID`.
