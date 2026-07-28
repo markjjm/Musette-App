@@ -31,14 +31,15 @@ jobs:
   codeql:
     name: codeql
     runs-on: ubuntu-latest
-    # Advisory only. Code scanning needs GitHub Advanced Security on a PRIVATE
-    # repo, which personal plans do not include - the upload then 403s. Marked
-    # continue-on-error so a private repo does not sit permanently red, and so
-    # branch protection can require "regression scan" (which always works)
-    # without deadlocking dependabot auto-merge.
-    # If you ever make this repo public, CodeQL runs free: drop the next line
-    # and add it as a required check.
-    continue-on-error: true
+    # BLOCKING. Code scanning is free on public repos, so this is a real gate -
+    # make it a required status check alongside "regression scan".
+    #
+    # WARNING: if this repo is ever switched to Private, the SARIF upload will
+    # 403 (code scanning needs GitHub Advanced Security, which personal plans do
+    # not include). This job would then fail on every push, and any branch
+    # protection requiring it would deadlock dependabot auto-merge permanently.
+    # If you go private: add `continue-on-error: true` back here AND drop
+    # "codeql" from the required checks.
     permissions:
       contents: read
       security-events: write

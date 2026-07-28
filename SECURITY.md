@@ -67,6 +67,21 @@ Worker:
   are rendered via `.toFixed()`, so a malformed plan breaks rendering rather than
   executing anything — availability, not XSS.
 - **`/health` is unauthenticated.** It returns `{"ok":true}` and nothing else.
+- **This repository is public, deliberately.** Consequences, accepted:
+  - *No credentials are in it.* `LIST_KEY`/`ADMIN_KEY` are Cloudflare secrets and
+    the deploy token is a GitHub secret; `.dev.vars` is gitignored and has never
+    been committed. Verified across full history.
+  - *The design is disclosed*, including that auth is a single shared header key.
+    That is fine — obscurity was never the control. The controls are the rate
+    limiter in front of the key check, the timing-safe comparison, and the CSP.
+  - *The bundled August plan is world-readable*: 344 grocery line items, 31 named
+    dinners, ~$586 of monthly spend, the stores and region, and ride durations.
+    No credential value, but it is a real lifestyle profile. Accepted in exchange
+    for free CodeQL code scanning. If that ever stops being an acceptable trade,
+    go private and re-read the CodeQL warning in `.github/workflows/security.yml`.
+  - The Cloudflare account and KV namespace IDs are visible. These are
+    identifiers, not credentials — they appear in dashboard URLs and cannot be
+    used without a token.
 
 ## The one way to break production
 

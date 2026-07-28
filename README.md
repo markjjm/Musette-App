@@ -50,7 +50,7 @@ on any interpolation it has not seen before; review it, then approve with
 | When | What |
 |---|---|
 | pre-commit | regenerate CSP, run the scan |
-| every push / PR | scan (blocking) + CodeQL (advisory — needs GHAS on a private repo) |
+| every push / PR | scan + CodeQL `security-extended`, both blocking (repo is public, so code scanning is free) |
 | merge to main | deploy Worker + Pages, then verify the live CSP and Worker auth |
 | weekly | scan, plus a live check that production still serves the CSP and the Worker still returns 401 unauthenticated |
 | weekly | Dependabot for CI actions and wrangler; patch/minor auto-merge on green, majors wait |
