@@ -3,7 +3,20 @@ main = "worker.js"
 compatibility_date = "2026-07-01"
 account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
 
-# Shared state blob lives at key "state:v1" in this namespace.
+# The list lives in a Durable Object now: Cloudflare runs one request at a time
+# per object, so read-modify-write is indivisible. KV had no compare-and-swap,
+# and two phones syncing in the same second silently lost one side's changes.
+[[durable_objects.bindings]]
+name = "LIST_DO"
+class_name = "ListDO"
+
+# New namespaces must be SQLite-backed, and SQLite DOs are on the free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ListDO"]
+
+# Kept so the Durable Object can adopt the old blob on first read, and as a
+# cold backup of the pre-migration state. Nothing writes to it any more.
 [[kv_namespaces]]
 binding = "LIST"
 id = "890f1540fea749baa8c86eff063d925c"
