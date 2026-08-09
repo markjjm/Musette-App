@@ -511,7 +511,30 @@ const jset = (k,v) => LS.set(k, JSON.stringify(v));
 
 /* App State */
 let plan   = jget('v2.plan', null) || BUNDLED;
-let ticks  = jget('v2.ticks', {});
+let ticks  = migrateTicks(jget('v2.ticks', {}));
+
+/* Old keys were weekId|store|section␟name|qty. Sections and quantities now
+   change when items are regrouped and combined, so the key is weekId|store|name.
+   Convert once; if two old lines merge into one product, a tick on either
+   counts (you bought the turkey, it does not matter which recipe wanted it). */
+function migrateTicks(t){
+  if (LS.get('v2.tickfmt') === '3') return t;
+  const out = {};
+  Object.keys(t || {}).forEach(k => {
+    if (k.indexOf('␟') < 0){ out[k] = t[k]; return; }   // extras, or already migrated
+    const half = k.split('␟');
+    const lead = half[0].split('|');
+    const name = half[1].replace(/\|[^|]*$/, '').trim();
+    if (lead.length < 2 || !name){ out[k] = t[k]; return; }
+    const nk = lead[0] + '|' + lead[1] + '|' + name;
+    const prev = out[nk];
+    out[nk] = !prev ? t[k]
+      : { v: !!(prev.v || t[k].v), t: Math.max(prev.t || 0, t[k].t || 0) };
+  });
+  LS.set('v2.tickfmt', '3');
+  jset('v2.ticks', out);
+  return out;
+}
 let extras = jget('v2.extras', {});
 let cfg    = jget('v2.cfg', {url:'', key:''});
 let dirty  = jget('v2.dirty', false);
@@ -607,6 +630,108 @@ const queue = () => {
 };
 
 /* Rendering UI */
+/* ---- Shopping list normalisation --------------------------------------
+   The plan groups a lot of items by recipe ("Mon 3 · Turkey chili"), which is
+   how you cook but not how you walk a shop — 55% of items sat in recipe
+   sections, and the same product appeared on several lines. shopList() folds
+   those into real aisles and combines repeats into one line per product,
+   summing the quantity when the units agree. The recipes are not lost: each
+   item carries a note saying which meals it is for. */
+const COOK_SEC = /\(cook (double|tonight)/i;
+
+/* Order matters and there is no trailing \b: "carrot" has to match "Carrots",
+   and \bcarrot\b does not. Jarred/canned goods are matched by phrase first so
+   "Diced tomatoes" lands in the cupboard aisle while "Lettuce, tomato, onion"
+   stays in produce. */
+const AISLE_RULES = [
+  [/\b(diced tomato|canned|marinara|salsa|broth|stock|soy sauce|seasoning|chili spice)/i, 'Canned & jarred'],
+  [/\b(turkey|beef|pork|chicken|salmon|tilapia|fish|bacon|sausage|deli)/i, 'Meat & fish'],
+  [/\b(cheddar|parmesan|mozzarella|butter|milk|yogurt|egg|cheese|cream)/i, 'Dairy & eggs'],
+  [/\b(rice|pasta|ziti|penne|quinoa|tortilla|bun|roll|bread|cornbread|oats|granola|bagel|muffin|pita)/i, 'Bread & grains'],
+  [/\b(green bean|potato|cabbage|carrot|lettuce|onion|pepper|broccoli|asparagus|brussels|sweet corn|vegetable|salad|avocado|garlic|ginger|greens|tomato|fruit|berr|apple|banana|orange|melon)/i, 'Produce'],
+  [/\b(bean|sauce|honey|jam|oil|vinegar|spice|nut|almond|walnut)/i, 'Canned & jarred'],
+];
+const aisleFor = n => {
+  for (const [re, sec] of AISLE_RULES) if (re.test(n)) return sec;
+  return 'Also needed';
+};
+
+/* "2.5 cups dry" -> {n:2.5, u:"cups dry"}. Returns n:null when there is no number. */
+function qtyParts(q){
+  const m = String(q == null ? '' : q).trim().match(/^(\d+(?:\.\d+)?|\d+\/\d+)?\s*(.*)$/);
+  if (!m) return { n: null, u: '' };
+  let n = null;
+  if (m[1]){
+    n = m[1].indexOf('/') >= 0
+      ? Number(m[1].split('/')[0]) / Number(m[1].split('/')[1])
+      : Number(m[1]);
+    if (!isFinite(n)) n = null;
+  }
+  return { n: n, u: (m[2] || '').trim() };
+}
+
+function combineQty(list){
+  const raw = list.filter(q => String(q == null ? '' : q).trim() !== '');
+  if (!raw.length) return '';
+  if (raw.length === 1) return String(raw[0]).trim();
+  const parts = raw.map(qtyParts);
+  const units = [];
+  parts.forEach(p => { if (units.indexOf(p.u.toLowerCase()) < 0) units.push(p.u.toLowerCase()); });
+  if (units.length === 1 && parts.every(p => p.n !== null)){
+    const sum = Math.round(parts.reduce((a, p) => a + p.n, 0) * 100) / 100;
+    return sum + (parts[0].u ? ' ' + parts[0].u : '');
+  }
+  return raw.map(q => String(q).trim()).join(' + ');   // mixed units: show both
+}
+
+/* One line per product, grouped into the plan's own aisle order. */
+function shopList(w, store){
+  const secs = (w.lists && w.lists[store]) || [];
+  const order = [];
+  secs.forEach(s => { if (!COOK_SEC.test(s.sec) && order.indexOf(s.sec) < 0) order.push(s.sec); });
+
+  const bag = new Map();
+  secs.forEach(s => {
+    const isCook = COOK_SEC.test(s.sec);
+    const meal = isCook
+      ? s.sec.replace(/\s*\(cook[^)]*\)\s*/i, '').replace(/^[^·]*·\s*/, '').trim()
+      : '';
+    s.items.forEach(it => {
+      const name = String(it.n || '').trim();
+      if (!name) return;
+      const key = name.toLowerCase();
+      let e = bag.get(key);
+      if (!e){
+        e = { n: name, sec: isCook ? aisleFor(name) : s.sec, fromCook: isCook,
+              qs: [], c: 0, meals: [], note: it.note || '' };
+        bag.set(key, e);
+      } else if (!isCook && e.fromCook){
+        e.sec = s.sec; e.fromCook = false;      // a real aisle beats a guessed one
+      }
+      e.qs.push(it.q);
+      e.c += Number(it.c) || 0;
+      if (meal && e.meals.indexOf(meal) < 0) e.meals.push(meal);
+      if (!e.note && it.note) e.note = it.note;
+    });
+  });
+
+  const bySec = new Map();
+  bag.forEach(e => {
+    e.q = combineQty(e.qs);
+    if (!e.note && e.meals.length) e.note = 'For ' + e.meals.join(', ');
+    if (order.indexOf(e.sec) < 0) order.push(e.sec);
+    if (!bySec.has(e.sec)) bySec.set(e.sec, []);
+    bySec.get(e.sec).push(e);
+  });
+
+  return order.filter(sec => bySec.has(sec)).map(sec => ({ sec: sec, items: bySec.get(sec) }));
+}
+
+/* A product is identified by week + store + name. Section and quantity are
+   deliberately NOT in the key: both change when items are regrouped or
+   combined, and that would silently detach every existing check-off. */
+const tickKey = (weekId, store, name) => weekId + '|' + store + '|' + String(name).trim();
+
 function chips(){
   $('#weeks').innerHTML = weeks().map((w,i) =>
     `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(w.label)}</button>`).join('');
@@ -688,17 +813,17 @@ function render(){
     totals(); updateHeaderHeight(); return;
   }
 
-  const secs = (w.lists && w.lists[tab]) || [];
+  const secs = shopList(w, tab);
   let html = (w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '';
-  
+
   let sectionCount = 0;
-  
+
   secs.forEach(s => {
-    const cook = /cook (double|tonight)/.test(s.sec);
-    
+    const cook = false;   // recipes are folded into aisles now; no cook sections in the list
+
     // Sort items so unchecked remain at top, checked move to bottom
     const itemsWithKeys = s.items.map(it => {
-      const k = w.id + '|' + tab + '|' + s.sec + '\u241f' + it.n + '|' + it.q;
+      const k = tickKey(w.id, tab, it.n);
       const on = ticks[k] && ticks[k].v;
       return { it, k, on };
     });
@@ -763,10 +888,9 @@ function totals(){
   if (!w) return;
 
   // Calculate totals from entire list (including hidden items)
-  const secs = (w.lists && w.lists[tab]) || [];
-  secs.forEach(s => {
+  shopList(w, tab).forEach(s => {
     s.items.forEach(it => {
-      const k = w.id + '|' + tab + '|' + s.sec + '\u241f' + it.n + '|' + it.q;
+      const k = tickKey(w.id, tab, it.n);
       const c = Number(it.c) || 0;
       if (ticks[k] && ticks[k].v) got += c; else { left += c; nLeft++; }
     });
