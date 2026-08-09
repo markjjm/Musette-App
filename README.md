@@ -10,6 +10,8 @@ for cross-device sync.
 ## Layout
 
 ```
+plan.json               source of truth for the current block's meal plan
+tools/publish-plan.py   push plan.json to the Worker; phones pick it up on sync
 web/public/index.html   the entire app - one self-contained file
 web/public/_headers     GENERATED. Security headers + hash-based CSP.
 worker/worker.js        sync API: GET/PUT /state, PUT /plan, GET /health
@@ -34,6 +36,31 @@ npm run deploy:worker # deploys the Worker
 ```
 
 Local Worker dev reads secrets from `worker/.dev.vars` (gitignored, dummy values).
+
+## Updating the meal plan
+
+The app has five tabs: Aldi, Meijer, **Plan**, Dinners, Fuel. The Plan tab renders
+`plan.days` - a day-by-day fuelling schedule (ride hours, kcal/carb targets, and
+timed meals) filtered to the calendar days the selected week covers.
+
+Two ways to ship a new block:
+
+```sh
+# 1. Bundle it (needed for a fresh device with no sync configured)
+#    Replace the BUNDLED const in web/public/index.html with plan.json's "plan"
+#    object, then rebuild the CSP hash and deploy:
+npm run build && npm run deploy:web
+
+# 2. Publish it to the Worker - every phone picks it up on its next sync,
+#    no redeploy, no reinstall:
+export LIST_URL=https://shopping-list-sync.markpjacobs1.workers.dev
+export LIST_KEY=...   # the shared list key
+export ADMIN_KEY=...  # the admin key
+python3 tools/publish-plan.py plan.json      # --keep-ticks to preserve check-offs
+```
+
+Do both when the block changes: (2) updates the phones immediately, (1) makes a
+freshly-installed device show the right plan before it has ever synced.
 
 ## Editing the app
 
