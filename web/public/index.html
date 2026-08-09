@@ -217,6 +217,7 @@ button { background: none; border: 0; padding: 0; cursor: pointer; }
 }
 .seg button.on { background: var(--card); color: var(--pen-text); border-color: var(--rule); box-shadow: 0 1px 2px rgba(23,21,15,.07); }
 .seg button[hidden] { display: none; }
+.seg[style*='none'] + .filter-toggle { margin-left: auto; }
 .filter-toggle {
   min-height: 44px; padding: 0 13px; border-radius: 10px;
   font-size: var(--t-micro); font-weight: 650; white-space: nowrap;
@@ -422,6 +423,56 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------------- recipe cards (Dinners) ------------------------------ */
+.rcard {
+  background: var(--card); border: 1px solid var(--rule-soft);
+  border-radius: 14px; margin: 12px 16px; padding: 16px 18px 18px;
+  box-shadow: var(--shadow);
+}
+.rhd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rday {
+  font-family: var(--mono); font-size: var(--t-eyebrow); font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--pen-text);
+}
+.rcost { font-family: var(--mono); font-size: var(--t-meta); font-weight: 650; color: var(--gravel); font-variant-numeric: tabular-nums; }
+.rdish { margin: 5px 0 3px; font-size: 21px; font-weight: 750; letter-spacing: -.02em; line-height: 1.2; }
+.rtag {
+  margin: 0 0 14px; font-family: var(--mono); font-size: var(--t-eyebrow);
+  letter-spacing: .07em; text-transform: uppercase; color: var(--mark-ink);
+}
+.rsec {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--gravel);
+  margin: 0 0 7px; padding-top: 4px; border-top: 1px solid var(--rule-soft);
+}
+.ring { list-style: none; margin: 0 0 16px; padding: 0; }
+.ring li { display: flex; gap: 10px; font-size: 15.5px; line-height: 1.5; align-items: baseline; }
+.ring li i {
+  font-style: normal; font-family: var(--mono); font-size: var(--t-micro);
+  color: var(--gravel); flex: 0 0 76px; font-variant-numeric: tabular-nums;
+}
+.ring li b, .tagM {
+  font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--mark-ink); background: var(--mark-soft);
+  border-radius: 4px; padding: 1px 5px; margin-left: 6px; white-space: nowrap;
+}
+.rsteps { margin: 0 0 14px; padding-left: 20px; }
+.rsteps li { font-size: 15.5px; line-height: 1.55; margin-bottom: 9px; padding-left: 3px; }
+.rsteps li::marker { font-family: var(--mono); font-size: var(--t-micro); color: var(--pen-text); font-weight: 700; }
+.rtip {
+  margin: 0; padding: 10px 12px; border-radius: 9px;
+  background: var(--mark-soft); color: var(--mark-ink);
+  font-size: var(--t-meta); line-height: 1.45;
+}
+.rheat {
+  display: flex; align-items: baseline; gap: 12px;
+  margin: 0 16px 12px; padding: 12px 16px;
+  background: var(--card-sunk); border-radius: 11px;
+  border-left: 3px solid var(--rule);
+}
+.rheat .rtext { font-size: var(--t-meta); color: var(--gravel); }
+.rheat .rtext i { font-style: normal; color: var(--gravel); opacity: .8; }
 </style>
 </head>
 <body>
@@ -445,8 +496,7 @@ footer {
   <div class="scroller" id="weeks"></div>
   <div class="seg-bar">
     <div class="seg" id="tabs">
-      <button data-t="A" class="on">Aldi</button>
-      <button data-t="M">Meijer</button>
+      <button data-t="A" class="on">List</button>
       <button data-t="P">Days</button>
       <button data-t="D">Dinners</button>
       <button data-t="F">Fuel</button>
@@ -473,8 +523,6 @@ footer {
   <label>Item Name</label><input id="ai_n" placeholder="e.g., Milk" autocapitalize="sentences">
   <label>Quantity / Size (optional)</label><input id="ai_q" placeholder="e.g., 1 gallon">
   <label>Estimated Price (optional)</label><input id="ai_c" type="text" inputmode="decimal" placeholder="3.29">
-  <label>Store</label>
-  <select id="ai_s"><option value="A">Aldi</option><option value="M">Meijer</option></select>
   <div class="rowbtn">
     <button class="cancel" data-close>Cancel</button>
     <button class="go" id="ai_go">Add Item</button>
@@ -518,7 +566,8 @@ let ticks  = migrateTicks(jget('v2.ticks', {}));
    Convert once; if two old lines merge into one product, a tick on either
    counts (you bought the turkey, it does not matter which recipe wanted it). */
 function migrateTicks(t){
-  if (LS.get('v2.tickfmt') === '3') return t;
+  const fmt = LS.get('v2.tickfmt');
+  if (fmt === '4') return t;
   const out = {};
   Object.keys(t || {}).forEach(k => {
     if (k.indexOf('␟') < 0){ out[k] = t[k]; return; }   // extras, or already migrated
@@ -526,12 +575,25 @@ function migrateTicks(t){
     const lead = half[0].split('|');
     const name = half[1].replace(/\|[^|]*$/, '').trim();
     if (lead.length < 2 || !name){ out[k] = t[k]; return; }
-    const nk = lead[0] + '|' + lead[1] + '|' + name;
+    const nk = lead[0] + '|' + name;
     const prev = out[nk];
     out[nk] = !prev ? t[k]
       : { v: !!(prev.v || t[k].v), t: Math.max(prev.t || 0, t[k].t || 0) };
   });
-  LS.set('v2.tickfmt', '3');
+  /* v3 keys were weekId|store|name; the store is gone, so drop that segment. */
+  if (fmt === '3'){
+    Object.keys(out).forEach(k => {
+      const q = k.split('|');
+      if (q.length === 3 && (q[1] === 'A' || q[1] === 'M')){
+        const nk = q[0] + '|' + q[2];
+        const prev = out[nk];
+        out[nk] = !prev ? out[k]
+          : { v: !!(prev.v || out[k].v), t: Math.max(prev.t || 0, out[k].t || 0) };
+        delete out[k];
+      }
+    });
+  }
+  LS.set('v2.tickfmt', '4');
   jset('v2.ticks', out);
   return out;
 }
@@ -546,10 +608,17 @@ let hideChecked = jget('v2.hideChecked', false); // Store check-off filter mode
 
 /* Two modes over the same five tabs. The tab ids A/M/P/D/F are load-bearing:
    they are baked into every tick key, so they must never be renamed. */
-const SHOP_TABS = ['A','M'];
-const TAB_NAME  = {A:'Aldi', M:'Meijer', P:'Days', D:'Dinners', F:'Fuel'};
+/* Aldi and Meijer are one list now. 'A' stays the shop tab id so the mode
+   memory keeps working; only four items a month were Meijer-only, and those
+   are marked with a tag on the row instead of a whole separate list. */
+const SHOP_TABS = ['A'];
+const TAB_NAME  = {A:'Shopping list', P:'Days', D:'Dinners', F:'Fuel'};
 const modeOf = t => SHOP_TABS.indexOf(t) >= 0 ? 'shop' : 'plan';
 let lastTab = jget('v2.lastTab', {shop:'A', plan:'P'});
+/* 'M' was a tab until the two stores merged. Anything unknown falls back. */
+if (!TAB_NAME[tab]) tab = 'A';
+if (!TAB_NAME[lastTab.shop]) lastTab.shop = 'A';
+if (!TAB_NAME[lastTab.plan]) lastTab.plan = 'P';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -557,7 +626,12 @@ const now = () => Date.now();
 const uid = () => 'x' + now().toString(36) + Math.random().toString(36).slice(2,7);
 const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); };
 
-function weeks(){ return (plan && plan.weeks) || []; }
+/* 'weekend' was a two-day top-up at the start of the August block and is no
+   longer wanted. Filtered here rather than in the data so a regenerated
+   plan cannot bring it back. */
+const HIDE_WEEKS = ['weekend'];
+function weeks(){ return ((plan && plan.weeks) || []).filter(w => HIDE_WEEKS.indexOf(w.id) < 0); }
+const weekLabel = w => (w && (w.dates || w.label)) || '';
 function curWeek(){ const w = weeks(); return w[Math.min(wi, w.length-1)] || w[0]; }
 
 /* Dynamic Header Height Calculation for Perfect Sticky Positioning on Safari */
@@ -685,8 +759,11 @@ function combineQty(list){
 }
 
 /* One line per product, grouped into the plan's own aisle order. */
-function shopList(w, store){
-  const secs = (w.lists && w.lists[store]) || [];
+function shopList(w){
+  const secs = [].concat((w.lists && w.lists.A) || [], (w.lists && w.lists.M) || []);
+  const storeOf = new Map();
+  ['A','M'].forEach(st => ((w.lists && w.lists[st]) || []).forEach(s =>
+    s.items.forEach(it => { if (!storeOf.has(it.n)) storeOf.set(it.n, st); })));
   const order = [];
   secs.forEach(s => { if (!COOK_SEC.test(s.sec) && order.indexOf(s.sec) < 0) order.push(s.sec); });
 
@@ -703,6 +780,7 @@ function shopList(w, store){
       let e = bag.get(key);
       if (!e){
         e = { n: name, sec: isCook ? aisleFor(name) : s.sec, fromCook: isCook,
+              store: storeOf.get(it.n) || 'A',
               qs: [], c: 0, meals: [], note: it.note || '' };
         bag.set(key, e);
       } else if (!isCook && e.fromCook){
@@ -727,20 +805,161 @@ function shopList(w, store){
   return order.filter(sec => bySec.has(sec)).map(sec => ({ sec: sec, items: bySec.get(sec) }));
 }
 
+/* ---- Recipes -----------------------------------------------------------
+   The plan says what to buy and what night to cook it, but never how. These
+   live in the app rather than in plan.json so a regenerated block does not
+   wipe them; they are keyed on the dish name, which is stable across blocks.
+   Amounts come from the plan itself and are already scaled for a double
+   batch where the plan calls for one, so the method just uses what is listed.
+   A dish with no entry here still shows its ingredients. */
+const RECIPES = {
+  'Turkey chili + cornbread': {
+    serves: 'Double batch: tonight, plus two reheats later in the week.',
+    method: [
+      'Soak the beans overnight, or cover with water and simmer 60 minutes until tender.',
+      'Brown the turkey in a heavy pot, breaking it up. Onion and peppers in, 5 minutes, then the chili spices for one more.',
+      'Tomatoes and drained beans in. Simmer uncovered 40 minutes; it should thicken enough to sit on a spoon.',
+      'Cornbread per the box while it simmers. Rice on in the last 20 minutes.',
+      'Cheese grated at the table, not stirred through — it keeps better without it.'
+    ]
+  },
+  'Pasta with turkey meat sauce': {
+    serves: 'Double batch: half tonight, half in the fridge for the reheat.',
+    method: [
+      'Brown the turkey hard and break it fine. Marinara in, simmer 20 minutes.',
+      'Pasta to just under done. Save a mug of the cooking water before draining.',
+      'Toss pasta through the sauce with a splash of that water so it clings.',
+      'Garlic bread in the oven for the last 10 minutes. Parmesan and salad at the table.'
+    ]
+  },
+  'Taco night · ground turkey': {
+    serves: 'Double batch: the seasoned turkey keeps three days.',
+    method: [
+      'Beans on to simmer. Rice alongside.',
+      'Brown the turkey with the spices, then a third of the salsa in and reduce until it stops running.',
+      'Warm the tortillas dry in a hot pan, 20 seconds a side, and keep them in a folded towel.',
+      'Everything in bowls in the middle of the table and let people build their own.'
+    ]
+  },
+  'Baked ziti with turkey': {
+    serves: 'Double batch: bake one tray now, the second goes in the fridge unbaked.',
+    method: [
+      'Boil the ziti two minutes short of the packet — it finishes in the oven.',
+      'Brown the turkey, marinara in, simmer 15 minutes.',
+      'Fold the pasta through the sauce, then layer into trays with the mozzarella.',
+      '375°F for 25 minutes, the last 5 uncovered so the top blisters.'
+    ]
+  },
+  'Shepherd’s pie · beef': {
+    serves: 'Double batch: two dishes, one straight to the fridge.',
+    method: [
+      'Boil the potatoes, then mash with the butter and parmesan. Keep it stiff, not loose.',
+      'Brown the beef, vegetables in, season well, and let it thicken — a wet filling will bleed through the mash.',
+      'Spread the filling, top with mash, and drag a fork over the surface.',
+      '400°F for 25 minutes until the peaks catch.'
+    ]
+  },
+  'Beef, rice and vegetable bake': {
+    serves: 'Double batch: assemble both dishes, bake one.',
+    method: [
+      'Brown the beef and season it.',
+      'Rice, vegetables, stock and beef into a deep dish. Cover tightly — the rice cooks in the steam.',
+      '375°F for 40 minutes, until the rice has drunk the stock.',
+      'Cheese over the top and back in uncovered for 10 minutes.'
+    ]
+  },
+  'Burgers on the grill': {
+    serves: 'Cook tonight. Four burgers.',
+    method: [
+      'Divide the beef into four, press a dimple into the centre of each so they stay flat, and salt the outside only.',
+      'Grill 4 minutes a side, cheese on for the last minute with the lid down.',
+      'Corn straight on the grill about 10 minutes, turning.',
+      'Shred the cabbage with oil, vinegar and salt for slaw. Toast the buns cut-side down.'
+    ]
+  },
+  'Grilled pork chops, corn, potatoes': {
+    serves: 'Cook tonight.',
+    method: [
+      'Potatoes into wedges, 425°F, 35 minutes, turning once.',
+      'Chops seasoned and grilled 4–5 minutes a side to 145°F. Rest 5 minutes — this is the difference between juicy and dry.',
+      'Corn on the grill for the last 10 minutes.',
+      'Slaw from the cabbage with vinegar, oil and salt.'
+    ]
+  },
+  'Pork loin roast, potatoes, green beans': {
+    serves: 'Cook tonight.',
+    method: [
+      'Oven to 400°F. Season the loin and sear it on all sides in a hot pan first.',
+      'Roast 25–35 minutes to 145°F at the thickest point. Rest 10 minutes before slicing.',
+      'Potatoes in wedges alongside from the start.',
+      'Green beans in for the last 12 minutes.'
+    ]
+  },
+  'Teriyaki pork rice bowls': {
+    serves: 'Cook tonight.',
+    method: [
+      'Rice on first. Slice the pork thin, across the grain.',
+      'Mix the soy, honey, grated ginger and garlic.',
+      'Sear the pork hard in batches — crowd the pan and it steams. Sauce in at the end and let it glaze.',
+      'Broccoli and carrots steamed 5 minutes. Build the bowls rice first.'
+    ]
+  },
+  'Ground turkey rice bowls': {
+    serves: 'Cook tonight.',
+    method: [
+      'Rice on. Brown the turkey hard and leave it alone long enough to crisp at the edges.',
+      'Green beans and carrots steamed 6 minutes.',
+      'Sauce and seasoning through the turkey, then over the bowls.'
+    ]
+  },
+  'Baked salmon + quinoa': {
+    serves: 'Cook tonight.',
+    method: [
+      'Thaw the fillets in a bowl of cold water, about 20 minutes. Oven to 400°F.',
+      'Quinoa on — 15 minutes, then let it sit covered off the heat.',
+      'Salmon skin-side down on a tray with the sprouts halved around it, 12–14 minutes.',
+      'Asparagus in for the last 8 minutes. The salmon is done when it flakes but still looks slightly translucent.'
+    ]
+  },
+  'Baked tilapia + quinoa': {
+    serves: 'Cook tonight.',
+    method: [
+      'Thaw the fillets in cold water. Oven to 400°F. Quinoa on.',
+      'Fish on an oiled tray, salt and lemon, 10–12 minutes until it flakes.',
+      'Mixed vegetables and asparagus roasted alongside, 20 minutes.'
+    ]
+  }
+};
+
+/* Ingredients for a dish, gathered from BOTH store lists — a couple of dishes
+   have one item on the Meijer list and the rest on Aldi. */
+function dishIngredients(w, dish){
+  const out = [];
+  ['A','M'].forEach(st => ((w.lists && w.lists[st]) || []).forEach(s => {
+    if (!COOK_SEC.test(s.sec)) return;
+    const nm = s.sec.replace(/\s*\(cook[^)]*\)\s*/i, '').replace(/^[^·]*·\s*/, '').trim();
+    if (nm === dish) s.items.forEach(it => out.push({ n: it.n, q: it.q, c: it.c, store: st }));
+  }));
+  return out;
+}
+
+const reheatDays = (w, dish) =>
+  (w.dinners || []).filter(x => !x.cook && x.dish === dish).map(x => x.d);
+
 /* A product is identified by week + store + name. Section and quantity are
    deliberately NOT in the key: both change when items are regrouped or
    combined, and that would silently detach every existing check-off. */
-const tickKey = (weekId, store, name) => weekId + '|' + store + '|' + String(name).trim();
+const tickKey = (weekId, name) => weekId + '|' + String(name).trim();
 
 function chips(){
   $('#weeks').innerHTML = weeks().map((w,i) =>
-    `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(w.label)}</button>`).join('');
+    `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(weekLabel(w))}</button>`).join('');
   updateHeaderHeight();
 }
 
-function myExtras(weekId, store){
+function myExtras(weekId){
   return Object.entries(extras)
-    .filter(([id,e]) => !e.deleted && e.week === weekId && e.store === store)
+    .filter(([id,e]) => !e.deleted && e.week === weekId)
     .sort((a,b) => a[1].t - b[1].t);
 }
 
@@ -766,6 +985,7 @@ function render(){
   document.querySelectorAll('#modebar button').forEach(b =>
     b.classList.toggle('on', b.dataset.m === mode));
 
+  $('#tabs').style.display = (mode === 'shop') ? 'none' : 'flex';
   $('#badd').style.display = (mode === 'shop') ? 'flex' : 'none';
   $('#bfilter').style.display = (mode === 'shop') ? 'flex' : 'none';
   
@@ -797,11 +1017,36 @@ function render(){
   }
 
   if (tab === 'D'){
-    m.innerHTML = (w.dinners||[]).length
-      ? w.dinners.map(d => `<div class="din ${d.cook?'cook':'heat'}">
-          <div class="d">${esc(d.d)}</div>
-          <div class="x"><b>${esc(d.dish)}</b><span>${esc(d.tag)}</span></div>
-          <div class="cc">${d.c ? '$'+d.c.toFixed(2) : '\u2014'}</div></div>`).join('')
+    const nights = (w.dinners || []);
+    m.innerHTML = nights.length
+      ? nights.map(dn => {
+          if (!dn.cook){
+            /* A reheat night is not a recipe. Point back at the night it came from. */
+            const from = nights.filter(x => x.cook && x.dish === dn.dish)[0];
+            return `<div class="rheat">
+              <span class="rday">${esc(dn.d)}</span>
+              <span class="rtext">Reheat &middot; ${esc(dn.dish)}${from ? ' <i>from ' + esc(from.d) + '</i>' : ''}</span>
+            </div>`;
+          }
+          const r = RECIPES[dn.dish];
+          const ings = dishIngredients(w, dn.dish);
+          const heats = reheatDays(w, dn.dish);
+          return `<article class="rcard">
+            <header class="rhd">
+              <span class="rday">${esc(dn.d)}</span>
+              <span class="rcost">${dn.c ? '$' + (Number(dn.c) || 0).toFixed(2) : ''}</span>
+            </header>
+            <h3 class="rdish">${esc(dn.dish)}</h3>
+            <p class="rtag">${esc(dn.tag || 'cook tonight')}${heats.length ? ' &middot; reheats ' + esc(heats.join(', ')) : ''}</p>
+            ${ings.length ? `<div class="rsec">What you need</div>
+              <ul class="ring">${ings.map(it =>
+                `<li><i>${esc(it.q || '')}</i>${esc(it.n)}${it.store === 'M' ? '<b>Meijer</b>' : ''}</li>`).join('')}</ul>` : ''}
+            ${r ? `<div class="rsec">Method</div>
+              <ol class="rsteps">${r.method.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+              <p class="rtip">${esc(r.serves)}</p>` :
+              `<p class="rtip">No method written for this one yet.</p>`}
+          </article>`;
+        }).join('')
       : '<div class="empty">No dinners planned for this week.</div>';
     totals(); updateHeaderHeight(); return;
   }
@@ -813,7 +1058,7 @@ function render(){
     totals(); updateHeaderHeight(); return;
   }
 
-  const secs = shopList(w, tab);
+  const secs = shopList(w);
   let html = (w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '';
 
   let sectionCount = 0;
@@ -823,7 +1068,7 @@ function render(){
 
     // Sort items so unchecked remain at top, checked move to bottom
     const itemsWithKeys = s.items.map(it => {
-      const k = tickKey(w.id, tab, it.n);
+      const k = tickKey(w.id, it.n);
       const on = ticks[k] && ticks[k].v;
       return { it, k, on };
     });
@@ -842,7 +1087,7 @@ function render(){
           <div class="box">\u2713</div>
           <div class="mid">
             ${it.q ? `<span class="q">${esc(it.q)}</span>`:''}
-            <span class="n">${esc(it.n)}</span>
+            <span class="n">${esc(it.n)}${it.store === 'M' ? ' <b class="tagM">Meijer</b>' : ''}</span>
             ${it.note ? `<span class="note">${esc(it.note)}</span>`:''}
           </div>
           <div class="c">${it.c > 0 ? it.c.toFixed(2) : ''}</div>
@@ -851,7 +1096,7 @@ function render(){
     }
   });
 
-  const mine = myExtras(w.id, tab);
+  const mine = myExtras(w.id);
   const visibleMine = mine.map(([id, e]) => {
     const k = 'x|' + id;
     const on = ticks[k] && ticks[k].v;
@@ -888,15 +1133,15 @@ function totals(){
   if (!w) return;
 
   // Calculate totals from entire list (including hidden items)
-  shopList(w, tab).forEach(s => {
+  shopList(w).forEach(s => {
     s.items.forEach(it => {
-      const k = tickKey(w.id, tab, it.n);
+      const k = tickKey(w.id, it.n);
       const c = Number(it.c) || 0;
       if (ticks[k] && ticks[k].v) got += c; else { left += c; nLeft++; }
     });
   });
 
-  myExtras(w.id, tab).forEach(([id, e]) => {
+  myExtras(w.id).forEach(([id, e]) => {
     const k = 'x|' + id;
     const c = Number(e.cost) || 0;
     if (ticks[k] && ticks[k].v) got += c; else { left += c; nLeft++; }
@@ -983,7 +1228,6 @@ document.addEventListener('click', e => {
 
   if (e.target.closest('#badd')){
     $('#ai_n').value = ''; $('#ai_q').value = ''; $('#ai_c').value = '';
-    $('#ai_s').value = (tab === 'M') ? 'M' : 'A';
     $('#addsheet').classList.add('open');
     setTimeout(()=> $('#ai_n').focus(), 150);
     return;
@@ -1010,7 +1254,7 @@ document.addEventListener('click', e => {
       name: n,
       qty: $('#ai_q').value.trim().slice(0,200),
       cost: parseFloat($('#ai_c').value) || 0,
-      store: $('#ai_s').value,
+      store: 'A',
       week: curWeek().id,
       t: now()
     };
