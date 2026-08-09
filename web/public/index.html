@@ -520,7 +520,9 @@ footer {
 
 <div class="sheet" id="addsheet"><div class="panel">
   <h2>Add an item</h2>
-  <label>Item Name</label><input id="ai_n" placeholder="e.g., Milk" autocapitalize="sentences">
+  <label>Item Name</label>
+  <input id="ai_n" placeholder="e.g., Milk" autocapitalize="sentences" autocomplete="off" list="ai_list">
+  <datalist id="ai_list"></datalist>
   <label>Quantity / Size (optional)</label><input id="ai_q" placeholder="e.g., 1 gallon">
   <label>Estimated Price (optional)</label><input id="ai_c" type="text" inputmode="decimal" placeholder="3.29">
   <div class="rowbtn">
@@ -802,6 +804,19 @@ function shopList(w){
     bySec.get(e.sec).push(e);
   });
 
+  /* Anything added by hand is filed into a real aisle too, rather than piling
+     up in an "Added by you" bucket at the bottom — you want the milk you added
+     to appear next to the dairy you were already buying. */
+  Object.keys(extras).forEach(id => {
+    const e = extras[id];
+    if (!e || e.deleted || e.week !== w.id) return;
+    const sec = aisleFor(e.name || '');
+    if (order.indexOf(sec) < 0) order.push(sec);
+    if (!bySec.has(sec)) bySec.set(sec, []);
+    bySec.get(sec).push({ n: (e.name || '').trim(), q: e.qty || '', c: Number(e.cost) || 0,
+                          note: '', store: e.store || 'A', extraId: id });
+  });
+
   return order.filter(sec => bySec.has(sec)).map(sec => ({ sec: sec, items: bySec.get(sec) }));
 }
 
@@ -950,11 +965,26 @@ const reheatDays = (w, dish) =>
    deliberately NOT in the key: both change when items are regrouped or
    combined, and that would silently detach every existing check-off. */
 const tickKey = (weekId, name) => weekId + '|' + String(name).trim();
+/* Added items keep their own id so renaming or re-adding cannot collide with
+   a plan item. render() and totals() MUST agree on this or the budget drifts. */
+const rowKey = (weekId, it) => it.extraId ? 'x|' + it.extraId : tickKey(weekId, it.n);
 
 function chips(){
   $('#weeks').innerHTML = weeks().map((w,i) =>
     `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(weekLabel(w))}</button>`).join('');
   updateHeaderHeight();
+}
+
+/* Everything this household has ever put on a list, for type-ahead. They buy
+   the same couple of hundred things, so suggesting from their own history beats
+   any generic product catalogue. */
+function itemCorpus(){
+  const set = new Set();
+  weeks().forEach(wk => ['A','M'].forEach(st =>
+    ((wk.lists && wk.lists[st]) || []).forEach(s =>
+      s.items.forEach(it => { if (it.n) set.add(String(it.n).trim()); }))));
+  Object.keys(extras).forEach(id => { const e = extras[id]; if (e && e.name) set.add(String(e.name).trim()); });
+  return [...set].sort((a, b) => a.localeCompare(b));
 }
 
 function myExtras(weekId){
@@ -1068,7 +1098,7 @@ function render(){
 
     // Sort items so unchecked remain at top, checked move to bottom
     const itemsWithKeys = s.items.map(it => {
-      const k = tickKey(w.id, it.n);
+      const k = rowKey(w.id, it);
       const on = ticks[k] && ticks[k].v;
       return { it, k, on };
     });
@@ -1091,32 +1121,11 @@ function render(){
             ${it.note ? `<span class="note">${esc(it.note)}</span>`:''}
           </div>
           <div class="c">${it.c > 0 ? it.c.toFixed(2) : ''}</div>
+          ${it.extraId ? `<button class="del" data-del="${esc(it.extraId)}" aria-label="Remove ${esc(it.n)}">\u00d7</button>` : ''}
         </div>`;
       }).join('');
     }
   });
-
-  const mine = myExtras(w.id);
-  const visibleMine = mine.map(([id, e]) => {
-    const k = 'x|' + id;
-    const on = ticks[k] && ticks[k].v;
-    return { id, e, k, on, c: Number(e.cost) || 0 };
-  }).filter(x => !hideChecked || !x.on);
-
-  if (visibleMine.length) {
-    sectionCount++;
-    html += `<div class="sech mine">Added by you</div>` + visibleMine.map(({id, e, k, on, c}) => {
-      return `<div class="row${on?' done':''}" data-k="${esc(k)}" data-c="${c}">
-        <div class="box">\u2713</div>
-        <div class="mid">
-          ${e.qty ? `<span class="q">${esc(e.qty)}</span>`:''}
-          <span class="n">${esc(e.name)}</span>
-        </div>
-        <div class="c">${c ? c.toFixed(2) : ''}</div>
-        <button class="del" data-del="${esc(id)}" aria-label="Delete item">\u00d7</button>
-      </div>`;
-    }).join('');
-  }
 
   if (sectionCount === 0) {
     html += `<div class="empty">${hideChecked ? 'All items checked off!' : 'Nothing from ' + (tab==='M'?'Meijer':'Aldi') + ' this week.'}<br><br>Tap <b>+</b> to add an item.</div>`;
@@ -1135,17 +1144,13 @@ function totals(){
   // Calculate totals from entire list (including hidden items)
   shopList(w).forEach(s => {
     s.items.forEach(it => {
-      const k = tickKey(w.id, it.n);
+      const k = rowKey(w.id, it);
       const c = Number(it.c) || 0;
       if (ticks[k] && ticks[k].v) got += c; else { left += c; nLeft++; }
     });
   });
 
-  myExtras(w.id).forEach(([id, e]) => {
-    const k = 'x|' + id;
-    const c = Number(e.cost) || 0;
-    if (ticks[k] && ticks[k].v) got += c; else { left += c; nLeft++; }
-  });
+  /* extras are inside shopList() now, so they are already counted above */
 
   if (modeOf(tab) === 'shop'){
     const all = got + left;
@@ -1227,6 +1232,7 @@ document.addEventListener('click', e => {
   }
 
   if (e.target.closest('#badd')){
+    $('#ai_list').innerHTML = itemCorpus().map(x => `<option value="${esc(x)}"></option>`).join('');
     $('#ai_n').value = ''; $('#ai_q').value = ''; $('#ai_c').value = '';
     $('#addsheet').classList.add('open');
     setTimeout(()=> $('#ai_n').focus(), 150);
