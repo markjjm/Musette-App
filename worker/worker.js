@@ -68,7 +68,7 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {} });
+const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {} });
 
 const clamp = (v) => (typeof v === 'string' ? v.slice(0, MAX_STR) : '');
 
@@ -92,6 +92,15 @@ function cleanExtra(v) {
   };
   if (v.deleted) out.deleted = true;
   return out;
+}
+
+/* Pantry staples carry a standing state that is NOT week-scoped: mark the
+   peanut butter low and it stays low until someone buys it. */
+const PANTRY_STATES = new Set(['ok', 'low', 'out']);
+function cleanPantry(v) {
+  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!PANTRY_STATES.has(v.s)) return null;
+  return { s: v.s, t: v.t };
 }
 
 /* Last-write-wins per key, using each entry's own timestamp. */
@@ -157,6 +166,7 @@ export class ListDO extends DurableObject {
       const state = await this.load();
       state.ticks = mergeByTime(state.ticks, body.ticks, cleanTick);
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
+      state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
       prune(state);
       state.rev = (state.rev || 0) + 1;
       state.updated = new Date().toISOString();

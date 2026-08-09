@@ -473,6 +473,29 @@ footer {
 }
 .rheat .rtext { font-size: var(--t-meta); color: var(--gravel); }
 .rheat .rtext i { font-style: normal; color: var(--gravel); opacity: .8; }
+
+/* ---------------- pantry stock view ----------------------------------- */
+.row.pan { cursor: pointer; }
+.pdot {
+  flex: 0 0 14px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft);
+}
+.row.pan.low .pdot { background: var(--mark); box-shadow: 0 0 0 3px var(--mark-soft); }
+.row.pan.out .pdot { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.pstate {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 5px 9px; border-radius: 7px;
+  background: var(--ok-soft); color: var(--ok); white-space: nowrap;
+}
+.row.pan.low .pstate { background: var(--mark-soft); color: var(--mark-ink); }
+.row.pan.out .pstate { background: var(--bad-soft); color: var(--bad); }
+.row.pan.low, .row.pan.out { background: var(--card); }
+.tagP {
+  font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--bad); background: var(--bad-soft);
+  border-radius: 4px; padding: 2px 6px; margin-left: 8px; white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -608,6 +631,16 @@ let wi = Number(LS.get('v2.week') || 1);
 let tab = LS.get('v2.tab') || 'A';
 let hideChecked = jget('v2.hideChecked', false); // Store check-off filter mode
 
+/* Pantry staples hold a standing state that does NOT reset with the week:
+   'ok' | 'low' | 'out'. Anything not 'ok' is added to the shopping list until
+   somebody buys it. Synced like everything else, so noticing the peanut butter
+   is nearly gone puts it on the other phone's list too. */
+let pantryState = jget('v2.pantry', {});
+const PANTRY_WEEK = 'pantry';
+const PANTRY_NEXT = { ok: 'low', low: 'out', out: 'ok' };
+const PANTRY_LABEL = { ok: 'Have', low: 'Running low', out: 'Out' };
+const pantryOf = n => (pantryState[n] && pantryState[n].s) || 'ok';
+
 /* Two modes over the same five tabs. The tab ids A/M/P/D/F are load-bearing:
    they are baked into every tick key, so they must never be renamed. */
 /* Aldi and Meijer are one list now. 'A' stays the shop tab id so the mode
@@ -628,7 +661,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now = () => Date.now();
 const uid = () => 'x' + now().toString(36) + Math.random().toString(36).slice(2,7);
-const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); };
+const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); jset('v2.pantry', pantryState); };
 
 /* 'weekend' was a two-day top-up at the start of the August block and is no
    longer wanted. Filtered here rather than in the data so a regenerated
@@ -679,7 +712,7 @@ async function sync(push){
     const h = {'Content-Type':'application/json','X-List-Key':cfg.key};
     let r;
     if (push || dirty){
-      r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras})});
+      r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras, pantry: pantryState})});
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
@@ -687,6 +720,7 @@ async function sync(push){
     const s = await r.json();
     ticks  = s.ticks  || {};
     extras = s.extras || {};
+    pantryState = s.pantry || pantryState;
     if (s.plan && Array.isArray(s.plan.weeks)) { plan = s.plan; jset('v2.plan', plan); }
     dirty = false;
     lastSync = new Date().toISOString();
@@ -722,12 +756,15 @@ const COOK_SEC = /\(cook (double|tonight)/i;
    "Diced tomatoes" lands in the cupboard aisle while "Lettuce, tomato, onion"
    stays in produce. */
 const AISLE_RULES = [
-  [/\b(diced tomato|canned|marinara|salsa|broth|stock|soy sauce|seasoning|chili spice)/i, 'Canned & jarred'],
+  /* Cupboard goods first, by phrase: "Peanut butter" is not dairy and
+     "Fruit jam" is not produce, but the generic butter/fruit rules below
+     would claim both. */
+  [/\b(peanut butter|fruit jam|jam|jelly|maple syrup|syrup|vinaigrette|olive oil|diced tomato|canned|marinara|salsa|broth|stock|soy sauce|seasoning|chili spice)/i, 'Canned & jarred'],
   [/\b(turkey|beef|pork|chicken|salmon|tilapia|fish|bacon|sausage|deli)/i, 'Meat & fish'],
   [/\b(cheddar|parmesan|mozzarella|butter|milk|yogurt|egg|cheese|cream)/i, 'Dairy & eggs'],
-  [/\b(rice|pasta|ziti|penne|quinoa|tortilla|bun|roll|bread|cornbread|oats|granola|bagel|muffin|pita)/i, 'Bread & grains'],
+  [/\b(rice|pasta|ziti|penne|quinoa|tortilla|bun|roll|bread|cornbread|oats|granola|bagel|muffin|pita|pancake|flour)/i, 'Bread & grains'],
   [/\b(green bean|potato|cabbage|carrot|lettuce|onion|pepper|broccoli|asparagus|brussels|sweet corn|vegetable|salad|avocado|garlic|ginger|greens|tomato|fruit|berr|apple|banana|orange|melon)/i, 'Produce'],
-  [/\b(bean|sauce|honey|jam|oil|vinegar|spice|nut|almond|walnut)/i, 'Canned & jarred'],
+  [/\b(bean|sauce|honey|jam|oil|vinegar|spice|nut|almond|walnut|protein|powder)/i, 'Canned & jarred'],
 ];
 const aisleFor = n => {
   for (const [re, sec] of AISLE_RULES) if (re.test(n)) return sec;
@@ -763,6 +800,17 @@ function combineQty(list){
 }
 
 /* One line per product, grouped into the plan's own aisle order. */
+/* The pantry week doubles as the stock list. */
+function pantryItems(){
+  const pw = ((plan && plan.weeks) || []).filter(x => x.id === PANTRY_WEEK)[0];
+  if (!pw) return [];
+  const out = [];
+  ['A','M'].forEach(st => ((pw.lists && pw.lists[st]) || []).forEach(s =>
+    s.items.forEach(it => out.push({ n: String(it.n || '').trim(), q: it.q || '', c: Number(it.c) || 0,
+                                     note: it.note || '', store: st }))));
+  return out;
+}
+
 function shopList(w){
   const secs = [].concat((w.lists && w.lists.A) || [], (w.lists && w.lists.M) || []);
   const storeOf = new Map();
@@ -818,6 +866,19 @@ function shopList(w){
     bySec.get(sec).push({ n: (e.name || '').trim(), q: e.qty || '', c: Number(e.cost) || 0,
                           note: '', store: e.store || 'A', extraId: id });
   });
+
+  /* Staples you have flagged low or out ride along on whatever week you are
+     shopping, filed into their aisle like anything else. */
+  if (w.id !== PANTRY_WEEK){
+    pantryItems().forEach(it => {
+      const st = pantryOf(it.n);
+      if (st === 'ok') return;
+      const sec = aisleFor(it.n);
+      if (order.indexOf(sec) < 0) order.push(sec);
+      if (!bySec.has(sec)) bySec.set(sec, []);
+      bySec.get(sec).push({ n: it.n, q: it.q, c: it.c, note: '', store: it.store, pantry: st });
+    });
+  }
 
   return order.filter(sec => bySec.has(sec)).map(sec => ({ sec: sec, items: bySec.get(sec) }));
 }
@@ -1165,6 +1226,27 @@ function render(){
     totals(); updateHeaderHeight(); return;
   }
 
+  if (w.id === PANTRY_WEEK){
+    const staples = pantryItems();
+    const low = staples.filter(it => pantryOf(it.n) !== 'ok').length;
+    m.innerHTML = `<p class="wnote">${low
+        ? esc(low + (low === 1 ? ' staple is' : ' staples are') + ' on the shopping list until you buy ' + (low === 1 ? 'it' : 'them') + '.')
+        : 'Everything stocked. Tap a staple when it starts running out.'}</p>`
+      + `<div class="sech">Pantry staples</div>`
+      + staples.map(it => {
+          const st = pantryOf(it.n);
+          return `<div class="row pan ${esc(st)}" data-pan="${esc(it.n)}">
+            <div class="pdot"></div>
+            <div class="mid">
+              <span class="n">${esc(it.n)}${it.store === 'M' ? ' <b class="tagM">Meijer</b>' : ''}</span>
+              ${it.note ? `<span class="note">${esc(it.note)}</span>` : ''}
+            </div>
+            <div class="pstate">${esc(PANTRY_LABEL[st])}</div>
+          </div>`;
+        }).join('');
+    totals(); updateHeaderHeight(); return;
+  }
+
   const secs = shopList(w);
   let html = (w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '';
 
@@ -1190,7 +1272,7 @@ function render(){
       const sorted = hideChecked ? visibleItems : [...visibleItems].sort((a,b) => (a.on === b.on ? 0 : a.on ? 1 : -1));
       
       html += sorted.map(({it, k, on}) => {
-        return `<div class="row${on?' done':''}" data-k="${esc(k)}" data-c="${Number(it.c) || 0}">
+        return `<div class="row${on?' done':''}" data-k="${esc(k)}" data-c="${Number(it.c) || 0}"${it.pantry ? ` data-pantry-name="${esc(it.n)}"` : ''}>
           <div class="box">\u2713</div>
           <div class="mid">
             ${it.q ? `<span class="q">${esc(it.q)}</span>`:''}
@@ -1199,6 +1281,7 @@ function render(){
           </div>
           <div class="c">${it.c > 0 ? it.c.toFixed(2) : ''}</div>
           ${it.extraId ? `<button class="del" data-del="${esc(it.extraId)}" aria-label="Remove ${esc(it.n)}">\u00d7</button>` : ''}
+          ${it.pantry ? `<span class="tagP">${it.pantry === 'out' ? 'Out' : 'Low'}</span>` : ''}
         </div>`;
       }).join('');
     }
@@ -1376,7 +1459,21 @@ document.addEventListener('click', e => {
     return;
   }
 
+  const pan = e.target.closest('[data-pan]');
+  if (pan){
+    const nm = pan.dataset.pan;
+    pantryState[nm] = { s: PANTRY_NEXT[pantryOf(nm)] || 'low', t: now() };
+    persist(); queue(); triggerHaptic(); render();
+    return;
+  }
+
   const row = e.target.closest('.row');
+  if (row && row.dataset.pantryName){
+    /* Ticking a flagged staple on the shop list means you bought it. */
+    pantryState[row.dataset.pantryName] = { s: 'ok', t: now() };
+    persist(); queue(); triggerHaptic(); render();
+    return;
+  }
   if (row){
     const k = row.dataset.k;
     const on = !(ticks[k] && ticks[k].v);
