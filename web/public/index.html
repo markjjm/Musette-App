@@ -695,21 +695,30 @@ window.addEventListener('resize', updateHeaderHeight);
 
 /* Sync Backend Logic */
 let syncing = false;
+let needCode = false;   // set when the Worker rejects the access code
+function openSettings(){
+  $('#s_url').value = cfg.url;
+  $('#s_key').value = cfg.key;
+  $('#s_stat').textContent = lastSync ? 'Last synced ' + new Date(lastSync).toLocaleString() : '';
+  $('#setsheet').classList.add('open');
+  setTimeout(() => { try { $('#s_key').focus(); } catch(e){} }, 250);
+}
+
 function setDot(){
   const d = $('#dot');
   const txt = $('#synctx');
   if (!cfg.url) {
     d.className = 'dot';
     txt.textContent = 'Local';
+  } else if (!cfg.key || needCode) {
+    d.className = 'dot err';
+    txt.textContent = 'Tap to enter code';
   } else if (syncing) {
     d.className = 'dot pend';
     txt.textContent = 'Syncing...';
   } else if (dirty) {
     d.className = 'dot pend';
     txt.textContent = 'Saving...';
-  } else if (cfg.url && cfg.key === '') {
-    d.className = 'dot err';
-    txt.textContent = 'Code needed';
   } else if (lastSync) {
     d.className = 'dot ok';
     txt.textContent = 'Synced';
@@ -721,6 +730,7 @@ function setDot(){
 
 async function sync(push){
   if (!cfg.url || syncing) { setDot(); return; }
+  if (!cfg.key) { setDot(); return; }   // nothing to send until there is a code
   syncing = true; setDot();
   try {
     const base = cfg.url.replace(/\/+$/,'');
@@ -732,7 +742,7 @@ async function sync(push){
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
-    if (r.status === 401) throw new Error('Access code not accepted');
+    if (r.status === 401){ needCode = true; openSettings(); throw new Error('Access code not accepted'); }
     if (r.status === 429) throw new Error('Too many attempts — wait a minute');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const s = await r.json();
@@ -1399,7 +1409,10 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if (e.target.closest('#bsync')){ sync(false); triggerHaptic(); return; }
+  if (e.target.closest('#bsync')){
+    if (!cfg.key || needCode) { openSettings(); return; }
+    sync(false); triggerHaptic(); return;
+  }
   
   if (e.target.closest('#bset')){
     $('#s_url').value = cfg.url;
@@ -1424,6 +1437,7 @@ document.addEventListener('click', e => {
 
   if (e.target.closest('#s_go')){
     cfg = {url: $('#s_url').value.trim(), key: $('#s_key').value.trim()};
+    needCode = false;
     jset('v2.cfg', cfg);
     document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
     sync(false);
@@ -1525,7 +1539,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (cfg.url) sync(dirty);
+if (cfg.url && !cfg.key) openSettings(); else if (cfg.url) sync(dirty);
 </script>
 </body>
 </html>
