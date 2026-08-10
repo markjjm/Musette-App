@@ -179,6 +179,33 @@ export class ListDO extends DurableObject {
     });
   }
 
+/* Failed-attempt throttle, counted here rather than with the platform rate
+     limiter. The [[ratelimits]] binding deploys and reports correctly but did
+     not actually limit anything in testing — 20 wrong codes in a row all came
+     back 401 with no 429. This object already serialises every request, so it
+     can count reliably, and the behaviour is testable. Only wrong codes reach
+     it; a correct code never pays this cost. */
+  async noteFailure(ip) {
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      const NOW = Date.now(), WINDOW = 60000, MAX = 10;
+      const all = (await this.ctx.storage.get('fails')) || {};
+      const fresh = (all[ip] || []).filter(t => NOW - t < WINDOW);
+      if (fresh.length >= MAX) {
+        all[ip] = fresh;                     // already blocked: stop growing it
+        await this.ctx.storage.put('fails', all);
+        return { blocked: true, tries: fresh.length };
+      }
+      fresh.push(NOW);
+      all[ip] = fresh;
+      for (const k of Object.keys(all)) {    // never let other IPs accumulate
+        all[k] = all[k].filter(t => NOW - t < WINDOW);
+        if (!all[k].length) delete all[k];
+      }
+      await this.ctx.storage.put('fails', all);
+      return { blocked: false, tries: fresh.length };
+    });
+  }
+
   async undo() {
     return await this.ctx.blockConcurrencyWhile(async () => {
       const prev = await this.ctx.storage.get('prev');
@@ -251,9 +278,26 @@ export default {
            npx wrangler secret put LIST_KEY --config worker/wrangler.toml
        Deleting the secret reopens it. /plan stays behind ADMIN_KEY either way,
        because replacing the whole meal plan is the one destructive operation. */
-    if (env.LIST_KEY) {
-      if (!(await safeEqual(request.headers.get('X-List-Key') || '', env.LIST_KEY)))
-        return json({ error: 'bad or missing X-List-Key' }, 401, origin);
+    /* Fail CLOSED. Inferring "open" from a missing secret meant that during
+       secret propagation — or any accidental deletion — the list silently
+       served to anyone. Observed once in testing: a request landed on a colo
+       that had not received LIST_KEY yet and was allowed straight through.
+       Open access now has to be asked for explicitly. */
+    const openList = env.OPEN_LIST === 'yes';
+    if (!openList) {
+      if (!env.LIST_KEY)
+        return json({ error: 'access code not configured' }, 503, origin);
+      if (!(await safeEqual(request.headers.get('X-List-Key') || '', env.LIST_KEY))) {
+        /* The access code is short by design — four digits typed on a phone.
+           That is only defensible if guessing is slow, so a WRONG code costs an
+           attempt from a much tighter per-IP budget than ordinary traffic.
+           Legitimate use never touches this limiter, because it only runs on a
+           failure. Without it, 10,000 combinations fall in minutes. */
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+        const gate = await listStub(env).noteFailure(ip);
+        if (gate.blocked) return json({ error: 'too many attempts, wait a minute' }, 429, origin);
+        return json({ error: 'bad or missing access code' }, 401, origin);
+      }
     }
 
     if (path === '/state' && request.method === 'GET') {

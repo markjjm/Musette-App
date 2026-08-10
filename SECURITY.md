@@ -15,31 +15,40 @@ stored XSS across both phones. Everything here is aimed at those two.
 | Durable Object `ListDO` | Owns `{rev, updated, plan, extras, ticks, pantry}`. One object, one request at a time, so read-modify-write is atomic. |
 | KV `LIST` | Cold backup of the pre-migration blob. Nothing writes to it. |
 
-**The list is deliberately open.** `GET`/`PUT /state` require no credential:
-either phone, or anyone who finds the Worker URL, can read and write the
-grocery list. That is a decision the owner made knowingly for a two-person
-family list carrying no PII, no payments and no third-party data. The realistic
-worst case is somebody scribbling on a shopping list.
+**The list is behind a 4-digit access code**, entered once per phone and sent
+as `X-List-Key`. Be clear-eyed about what that is worth: 10,000 combinations is
+not a lot. What makes it defensible is that guessing is throttled to **10 wrong
+attempts per minute per IP**, so a single source needs on the order of 17 hours
+to exhaust the space, and a distributed attacker still has to want a grocery
+list badly. It stops casual and scripted guessing; it is not a password.
 
-What is still enforced, because those are the operations worth protecting:
+Auth **fails closed**: with no `LIST_KEY` set, the Worker returns 503 rather
+than serving the list. An earlier version inferred "open" from a missing secret,
+and that was observed opening for real — during secret propagation a request
+landed on a colo that had not received the value yet and was let straight
+through. Running open now requires an explicit `OPEN_LIST = "yes"` var.
+
+What else is enforced:
 
 - `PUT /plan` and `PUT /undo` require `X-Admin-Key`. Replacing the whole meal
   plan (which also clears every check-off) is the one destructive operation,
   and it only ever runs from a laptop, so a key there costs nothing.
-- The per-IP rate limiter, the 256 KB body cap and the write schema validation
-  all still run, and matter more now than they did behind a key.
+- The 256 KB body cap and write schema validation.
+- **The failed-attempt throttle is counted in the Durable Object**, not by the
+  platform rate limiter. The `[[ratelimits]]` binding deploys cleanly and is
+  reported correctly by wrangler, but did not limit anything under test: 90
+  requests in a burst, and separately 20 wrong codes in a row, all returned
+  without a single 429. The DO already serialises every request, so it counts
+  reliably and the behaviour is testable. Verified: attempts 1-10 return 401,
+  11+ return 429, and a correct code still succeeds throughout.
 - CORS stays pinned to the app's own origin, so a hostile page cannot drive
   writes from a family member's browser.
 
-Re-securing it is a one-liner and needs no code change — the auth gate is
-conditional on the secret existing:
+Changing the code is one command plus re-entering it on each phone:
 
 ```sh
-npx wrangler secret put LIST_KEY --config worker/wrangler.toml   # closed
+printf '1234' | npx wrangler secret put LIST_KEY --config worker/wrangler.toml
 ```
-
-Then enter that key once on each phone under the gear icon. Deleting the
-secret opens it again.
 
 Because writes are unauthenticated, the Durable Object keeps the previous good
 state and `PUT /undo` (admin key) rolls back one step.
@@ -88,8 +97,10 @@ Worker:
 
 ## Known and accepted
 
-- **Anyone can read and write the list.** Chosen deliberately; see above. The
-  data is a grocery list, and `PUT /undo` walks back a bad write.
+- **A 4-digit code is weak in absolute terms.** Chosen deliberately: it is a
+  grocery list, the code is typed on a phone, and the throttle plus `PUT /undo`
+  bound the damage. Move to a long random value any time — same command, then
+  re-enter on both phones.
 - **No per-device identity.** There is no record of which phone changed what
   beyond the `rev` counter. Fine at this scale.
 - **`plan` is rendered from server data.** Writing it requires `ADMIN_KEY`. Costs

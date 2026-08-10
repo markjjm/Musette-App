@@ -565,13 +565,14 @@ footer {
   <h2>Sync Configuration</h2>
   <label>Worker URL</label>
   <input id="s_url" placeholder="https://shopping-list-sync.you.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>List Key <span class="opt">optional</span></label>
-  <input id="s_key" placeholder="Only if the Worker requires one" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Access code</label>
+  <input id="s_key" inputmode="numeric" autocomplete="one-time-code" maxlength="12"
+         placeholder="4-digit code" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="rowbtn">
     <button class="cancel" data-close>Close</button>
     <button class="go" id="s_go">Save &amp; Sync</button>
   </div>
-  <p class="small">This list is shared openly between your devices &mdash; there is nothing to set up. Clear the Worker URL to go local-only. If you ever put a key on the Worker, enter it here on both phones.</p>
+  <p class="small">Enter the access code once on each phone and the list stays in step between them. Clear the Worker URL to go local-only.</p>
   <div class="status" id="s_stat"></div>
   <div class="rowbtn"><button class="danger" id="reset">Clear this week's check-offs</button></div>
 </div></div>
@@ -706,6 +707,9 @@ function setDot(){
   } else if (dirty) {
     d.className = 'dot pend';
     txt.textContent = 'Saving...';
+  } else if (cfg.url && cfg.key === '') {
+    d.className = 'dot err';
+    txt.textContent = 'Code needed';
   } else if (lastSync) {
     d.className = 'dot ok';
     txt.textContent = 'Synced';
@@ -728,6 +732,8 @@ async function sync(push){
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
+    if (r.status === 401) throw new Error('Access code not accepted');
+    if (r.status === 429) throw new Error('Too many attempts — wait a minute');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const s = await r.json();
     ticks  = s.ticks  || {};

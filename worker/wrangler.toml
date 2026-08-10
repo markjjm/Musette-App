@@ -3,9 +3,9 @@ main = "worker.js"
 compatibility_date = "2026-07-01"
 account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
 
-# The list lives in a Durable Object now: Cloudflare runs one request at a time
-# per object, so read-modify-write is indivisible. KV had no compare-and-swap,
-# and two phones syncing in the same second silently lost one side's changes.
+# The list lives in a Durable Object: Cloudflare runs one request at a time per
+# object, so read-modify-write is indivisible. KV had no compare-and-swap, and
+# two phones syncing in the same second silently lost one side's changes.
 [[durable_objects.bindings]]
 name = "LIST_DO"
 class_name = "ListDO"
@@ -21,17 +21,34 @@ new_sqlite_classes = ["ListDO"]
 binding = "LIST"
 id = "890f1540fea749baa8c86eff063d925c"
 
-# Per-IP rate limit, checked before any secret comparison so LIST_KEY cannot be
-# brute forced. 60 requests / 60s is far above two phones syncing.
-# The Worker fails open if this binding is absent, so it is safe to remove.
-[[unsafe.bindings]]
-name = "RL"
-type = "ratelimit"
-namespace_id = "1001"
-simple = { limit = 60, period = 60 }
+# Rate limiting went GA in September 2025 with this top-level [[ratelimits]]
+# key. The older [[unsafe.bindings]] form deployed without complaint and even
+# showed up in the binding list, but limited nothing: 90 requests in a burst all
+# returned 200. Do not go back to it.
 
-# Secrets are NOT in this file. They are already set in Cloudflare:
-#   LIST_KEY   - shared family key, sent by the app as X-List-Key
-#   ADMIN_KEY  - admin key for PUT /plan, sent as X-Admin-Key
-# Manage with:  npx wrangler secret put LIST_KEY
-# For local dev, put them in worker/.dev.vars (gitignored).
+# Ordinary traffic. Two phones syncing come nowhere near this.
+[[ratelimits]]
+name = "RL"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 60
+  period = 60
+
+# Charged only on a WRONG access code. The code is four digits, so guessing has
+# to be expensive; legitimate use never touches this budget.
+[[ratelimits]]
+name = "RL_AUTH"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+# Secrets are NOT in this file. Set in Cloudflare:
+#   LIST_KEY   - the access code, sent by the app as X-List-Key
+#   ADMIN_KEY  - for PUT /plan and PUT /undo, sent as X-Admin-Key
+# Manage with:  npx wrangler secret put LIST_KEY --config worker/wrangler.toml
+#
+# Auth fails CLOSED: with no LIST_KEY the Worker returns 503 rather than serving
+# the list. To run the list open on purpose, set a plain var OPEN_LIST = "yes".
+#
+# For local dev, put the secrets in worker/.dev.vars (gitignored).
