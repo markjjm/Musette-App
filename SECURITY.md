@@ -1,10 +1,10 @@
 # Security notes
 
 Threat model, honestly stated: a two-person family grocery list. There is no PII
-beyond meal choices, no payments, no accounts. The realistic risks are (a) someone
-who learns `LIST_KEY` scribbling on the list or running up KV usage, and (b) a
-scripting bug turning a synced item name into stored XSS across both phones.
-Everything below is aimed at those two, not at a nation-state.
+beyond meal choices, no payments, no accounts. The list is intentionally open
+(see below), so the realistic risks are (a) a stranger scribbling on the list or
+trying to run up storage, and (b) a scripting bug turning a synced item name into
+stored XSS across both phones. Everything here is aimed at those two.
 
 ## Architecture
 
@@ -12,10 +12,37 @@ Everything below is aimed at those two, not at a nation-state.
 |---|---|
 | `web/public/index.html` | The whole front end. One file, inline `<script>`/`<style>`, no third-party code. Data in `localStorage`. |
 | `worker/worker.js` | Sync API at `shopping-list-sync.markpjacobs1.workers.dev`. |
-| KV `LIST` | One key, `state:v1`, holding `{rev, updated, plan, extras, ticks}`. |
+| Durable Object `ListDO` | Owns `{rev, updated, plan, extras, ticks, pantry}`. One object, one request at a time, so read-modify-write is atomic. |
+| KV `LIST` | Cold backup of the pre-migration blob. Nothing writes to it. |
 
-Auth is a shared secret in the `X-List-Key` header, entered once per device in
-the app's sync sheet. `PUT /plan` additionally needs `X-Admin-Key`.
+**The list is deliberately open.** `GET`/`PUT /state` require no credential:
+either phone, or anyone who finds the Worker URL, can read and write the
+grocery list. That is a decision the owner made knowingly for a two-person
+family list carrying no PII, no payments and no third-party data. The realistic
+worst case is somebody scribbling on a shopping list.
+
+What is still enforced, because those are the operations worth protecting:
+
+- `PUT /plan` and `PUT /undo` require `X-Admin-Key`. Replacing the whole meal
+  plan (which also clears every check-off) is the one destructive operation,
+  and it only ever runs from a laptop, so a key there costs nothing.
+- The per-IP rate limiter, the 256 KB body cap and the write schema validation
+  all still run, and matter more now than they did behind a key.
+- CORS stays pinned to the app's own origin, so a hostile page cannot drive
+  writes from a family member's browser.
+
+Re-securing it is a one-liner and needs no code change — the auth gate is
+conditional on the secret existing:
+
+```sh
+npx wrangler secret put LIST_KEY --config worker/wrangler.toml   # closed
+```
+
+Then enter that key once on each phone under the gear icon. Deleting the
+secret opens it again.
+
+Because writes are unauthenticated, the Durable Object keeps the previous good
+state and `PUT /undo` (admin key) rolls back one step.
 
 **There are zero third-party runtime dependencies.** Nothing from npm reaches a
 browser or the Worker. That removes the entire dependency-CVE class, and it is
@@ -45,9 +72,12 @@ Front end:
 Worker:
 - Secrets compared with **double-HMAC** (`safeEqual`), not `!==`, so the
   comparison is timing-independent.
-- **Per-IP rate limit checked before any secret comparison**, so `LIST_KEY`
-  cannot be ground down by brute force. Fails open if the binding is missing,
-  so a limiter outage cannot lock the family out.
+- **Per-IP rate limit before anything else**, which is the front line now that
+  `/state` is open, and stops `ADMIN_KEY` being ground down. Fails open if the
+  binding is missing, so a limiter outage cannot lock the family out.
+- **Writes are serialised** through the Durable Object, so two phones syncing in
+  the same second cannot lose each other's changes. The previous KV design lost
+  60-85% of concurrent writes, silently.
 - **256 KB body cap** (413), rejected on both `Content-Length` and actual length.
 - **Schema-validated writes**: only `name/qty/cost/store/week/t/deleted` are kept,
   strings capped at 200 chars, `cost` coerced to a finite number, `store`
@@ -58,11 +88,10 @@ Worker:
 
 ## Known and accepted
 
-- **`LIST_KEY` lives in `localStorage`.** An XSS bug would leak it. That is what
-  the strict CSP is defending, and why `esc()` is pinned by the scanner. Accepted:
-  the alternative (a real login) is not worth it for two people.
-- **The key is shared, not per-device.** Rotating it means re-entering it on both
-  phones. Fine at this scale.
+- **Anyone can read and write the list.** Chosen deliberately; see above. The
+  data is a grocery list, and `PUT /undo` walks back a bad write.
+- **No per-device identity.** There is no record of which phone changed what
+  beyond the `rev` counter. Fine at this scale.
 - **`plan` is rendered from server data.** Writing it requires `ADMIN_KEY`. Costs
   are rendered via `.toFixed()`, so a malformed plan breaks rendering rather than
   executing anything — availability, not XSS.
@@ -71,9 +100,10 @@ Worker:
   - *No credentials are in it.* `LIST_KEY`/`ADMIN_KEY` are Cloudflare secrets and
     the deploy token is a GitHub secret; `.dev.vars` is gitignored and has never
     been committed. Verified across full history.
-  - *The design is disclosed*, including that auth is a single shared header key.
-    That is fine — obscurity was never the control. The controls are the rate
-    limiter in front of the key check, the timing-safe comparison, and the CSP.
+  - *The design is disclosed*, including that `/state` is unauthenticated. That
+    is fine — obscurity was never the control, and publishing the URL only makes
+    explicit what a public repo already implies. The controls that remain are the
+    rate limiter, the body cap, write validation, pinned CORS and the CSP.
   - *The bundled August plan is world-readable*: 344 grocery line items, 31 named
     dinners, ~$586 of monthly spend, the stores and region, and ride durations.
     No credential value, but it is a real lifestyle profile. Accepted in exchange
@@ -99,12 +129,13 @@ If you ever hand-deploy, run `npm run build` first.
 ## Rotating secrets
 
 ```sh
-npx wrangler secret put LIST_KEY  --config worker/wrangler.toml
-npx wrangler secret put ADMIN_KEY --config worker/wrangler.toml
+npx wrangler secret put ADMIN_KEY --config worker/wrangler.toml   # plan + undo
+npx wrangler secret put LIST_KEY  --config worker/wrangler.toml   # closes the list
 ```
 
-Then re-enter `LIST_KEY` in the app's sync sheet on each phone. Use a long random
-value: `openssl rand -base64 24`.
+Use a long random value: `openssl rand -base64 24`. Setting `LIST_KEY` closes the
+list immediately with no code change; then enter it once per phone under the gear
+icon. Deleting the secret reopens it.
 
 ## Recommended, not yet done
 

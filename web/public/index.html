@@ -496,6 +496,12 @@ footer {
   text-transform: uppercase; color: var(--bad); background: var(--bad-soft);
   border-radius: 4px; padding: 2px 6px; margin-left: 8px; white-space: nowrap;
 }
+
+.opt {
+  font-family: var(--sys); font-size: 10px; font-weight: 600; letter-spacing: 0;
+  text-transform: none; color: var(--gravel); background: var(--card-sunk);
+  border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+}
 </style>
 </head>
 <body>
@@ -559,13 +565,13 @@ footer {
   <h2>Sync Configuration</h2>
   <label>Worker URL</label>
   <input id="s_url" placeholder="https://shopping-list-sync.you.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>List Key</label>
-  <input id="s_key" placeholder="The shared secret key" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>List Key <span class="opt">optional</span></label>
+  <input id="s_key" placeholder="Only if the Worker requires one" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="rowbtn">
     <button class="cancel" data-close>Close</button>
     <button class="go" id="s_go">Save &amp; Sync</button>
   </div>
-  <p class="small">Leave both blank for local-only mode. With sync enabled, the list updates live across all family devices.</p>
+  <p class="small">This list is shared openly between your devices &mdash; there is nothing to set up. Clear the Worker URL to go local-only. If you ever put a key on the Worker, enter it here on both phones.</p>
   <div class="status" id="s_stat"></div>
   <div class="rowbtn"><button class="danger" id="reset">Clear this week's check-offs</button></div>
 </div></div>
@@ -623,7 +629,12 @@ function migrateTicks(t){
   return out;
 }
 let extras = jget('v2.extras', {});
-let cfg    = jget('v2.cfg', {url:'', key:''});
+/* The family list is deliberately open, so the app points at the sync Worker
+   out of the box and neither phone has anything to set up. A key is still
+   supported: if one is configured server-side, enter it below and it is sent. */
+const SYNC_URL = 'https://shopping-list-sync.markpjacobs1.workers.dev';
+let cfg    = jget('v2.cfg', null) || {url: SYNC_URL, key: ''};
+if (!cfg.url) cfg.url = SYNC_URL;
 let dirty  = jget('v2.dirty', false);
 let lastSync = LS.get('v2.lastSync') || '';
 
@@ -705,11 +716,12 @@ function setDot(){
 }
 
 async function sync(push){
-  if (!cfg.url || !cfg.key || syncing) { setDot(); return; }
+  if (!cfg.url || syncing) { setDot(); return; }
   syncing = true; setDot();
   try {
     const base = cfg.url.replace(/\/+$/,'');
-    const h = {'Content-Type':'application/json','X-List-Key':cfg.key};
+    const h = {'Content-Type':'application/json'};
+    if (cfg.key) h['X-List-Key'] = cfg.key;
     let r;
     if (push || dirty){
       r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras, pantry: pantryState})});
@@ -1507,7 +1519,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (cfg.url && cfg.key) sync(dirty);
+if (cfg.url) sync(dirty);
 </script>
 </body>
 </html>

@@ -164,14 +164,28 @@ export class ListDO extends DurableObject {
   async merge(body) {
     return await this.ctx.blockConcurrencyWhile(async () => {
       const state = await this.load();
+      const prev = JSON.parse(JSON.stringify(state));
       state.ticks = mergeByTime(state.ticks, body.ticks, cleanTick);
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
       state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
       prune(state);
+      /* One-deep undo. Writes are unauthenticated, so keep the previous good
+         state to roll back to rather than relying on nobody ever scribbling. */
+      await this.ctx.storage.put('prev', prev);
       state.rev = (state.rev || 0) + 1;
       state.updated = new Date().toISOString();
       await this.ctx.storage.put('state', state);
       return state;
+    });
+  }
+
+  async undo() {
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      const prev = await this.ctx.storage.get('prev');
+      if (!prev) return { ...empty(), error: 'nothing to undo' };
+      const restored = { ...empty(), ...prev, rev: (prev.rev || 0) + 1, updated: new Date().toISOString() };
+      await this.ctx.storage.put('state', restored);
+      return restored;
     });
   }
 
@@ -231,9 +245,16 @@ export default {
 
     if (path === '/health') return json({ ok: true }, 200, origin);
 
-    if (!env.LIST_KEY) return json({ error: 'LIST_KEY not configured' }, 500, origin);
-    if (!(await safeEqual(request.headers.get('X-List-Key') || '', env.LIST_KEY)))
-      return json({ error: 'bad or missing X-List-Key' }, 401, origin);
+    /* Open by design: this household chose an unauthenticated family list.
+       The gate is not deleted, it is conditional — set a LIST_KEY secret and
+       it is enforced again, no code change:
+           npx wrangler secret put LIST_KEY --config worker/wrangler.toml
+       Deleting the secret reopens it. /plan stays behind ADMIN_KEY either way,
+       because replacing the whole meal plan is the one destructive operation. */
+    if (env.LIST_KEY) {
+      if (!(await safeEqual(request.headers.get('X-List-Key') || '', env.LIST_KEY)))
+        return json({ error: 'bad or missing X-List-Key' }, 401, origin);
+    }
 
     if (path === '/state' && request.method === 'GET') {
       return json(await listStub(env).read(), 200, origin);
@@ -244,6 +265,13 @@ export default {
       if (r.tooLarge) return json({ error: 'payload too large' }, 413, origin);
       if (r.bad) return json({ error: 'bad json' }, 400, origin);
       return json(await listStub(env).merge(r.body), 200, origin);
+    }
+
+    if (path === '/undo' && request.method === 'PUT') {
+      if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+      if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+        return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+      return json(await listStub(env).undo(), 200, origin);
     }
 
     if (path === '/plan' && request.method === 'PUT') {

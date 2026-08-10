@@ -83,6 +83,10 @@ on any interpolation it has not seen before; review it, then approve with
 | weekly | Dependabot for CI actions and wrangler; patch/minor auto-merge on green, majors wait |
 | every PR | Socket.dev supply-chain review of the dependency tree (see `socket.yml`) |
 
+The sync list is open: both phones sync out of the box with nothing to enter.
+`PUT /plan` and `PUT /undo` still need `ADMIN_KEY`. To close the list, set a
+`LIST_KEY` secret on the Worker and enter it on each phone.
+
 CI needs two repo secrets: `CLOUDFLARE_API_TOKEN` (Workers + Pages edit) and
 `CLOUDFLARE_ACCOUNT_ID`.
 
