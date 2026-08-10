@@ -814,6 +814,29 @@ const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('
    longer wanted. Filtered here rather than in the data so a regenerated
    plan cannot bring it back. */
 const HIDE_WEEKS = ['weekend', 'weekend-top-up'];
+/* A plan stored before a feature existed must not delete that feature. The
+   server held a block with no days[] and no training[], so adopting it wholesale
+   emptied the month view and hid the Days tab entirely. Take the server's copy
+   as authoritative, but keep any section it simply does not carry. */
+function mergePlan(incoming, current){
+  const out = incoming;
+  if (!current) return out;
+  ['days', 'training', 'fuel'].forEach(k => {
+    if (!Array.isArray(out[k]) || !out[k].length) {
+      if (Array.isArray(current[k]) && current[k].length) out[k] = current[k];
+    }
+  });
+  /* weeks[].days drives the Days filter; backfill per week by id. */
+  const byId = {};
+  (current.weeks || []).forEach(w => { byId[w.id] = w; });
+  (out.weeks || []).forEach(w => {
+    const old = byId[w.id];
+    if (old && Array.isArray(old.days) && old.days.length &&
+        (!Array.isArray(w.days) || !w.days.length)) w.days = old.days;
+  });
+  return out;
+}
+
 function weeks(){ return ((plan && plan.weeks) || []).filter(w => HIDE_WEEKS.indexOf(w.id) < 0); }
 const weekLabel = w => (w && (w.dates || w.label)) || '';
 function curWeek(){ const w = weeks(); return w[Math.min(wi, w.length-1)] || w[0]; }
@@ -886,7 +909,7 @@ async function sync(push){
     pantryState = s.pantry || pantryState;
     /* A plan with no weeks blanks the whole app — no current week, nothing to
        render. Never adopt one; keep whatever is already loaded. */
-    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = s.plan; jset('v2.plan', plan); }
+    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = mergePlan(s.plan, plan); jset('v2.plan', plan); }
     lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
     dirty = false;
     lastSync = new Date().toISOString();
