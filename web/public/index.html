@@ -749,7 +749,10 @@ async function sync(push){
     ticks  = s.ticks  || {};
     extras = s.extras || {};
     pantryState = s.pantry || pantryState;
-    if (s.plan && Array.isArray(s.plan.weeks)) { plan = s.plan; jset('v2.plan', plan); }
+    /* A plan with no weeks blanks the whole app — no current week, nothing to
+       render. Never adopt one; keep whatever is already loaded. */
+    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = s.plan; jset('v2.plan', plan); }
+    lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
     dirty = false;
     lastSync = new Date().toISOString();
     LS.set('v2.lastSync', lastSync);
@@ -762,6 +765,39 @@ async function sync(push){
     syncing = false; setDot();
   }
 }
+
+/* Live updates. The app used to pull only when it was foregrounded, so a phone
+   sitting open never noticed the other one adding something. Poll the tiny /rev
+   endpoint while the screen is on, and pull the full list only when the number
+   moves. Polling rather than a socket on purpose: this gets used in a shop on
+   patchy signal, where a WebSocket spends its life reconnecting. */
+const POLL_MS = 4000;
+let lastRev = Number(LS.get('v2.rev') || 0);
+let pollTimer = null;
+let pollFails = 0;
+
+async function pollRev(){
+  if (!cfg.url || !cfg.key || syncing || document.hidden) return;
+  try {
+    const base = cfg.url.replace(/\/+$/,'');
+    const h = {'X-List-Key': cfg.key};
+    const r = await fetch(base + '/rev', {headers: h});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const { rev } = await r.json();
+    pollFails = 0;
+    if (Number(rev) > lastRev) await sync(false);   // someone else changed it
+  } catch(e) {
+    pollFails++;
+  }
+}
+
+function startPolling(){
+  stopPolling();
+  /* Back off after repeated failures so a dead network is not hammered. */
+  const every = POLL_MS * Math.min(8, Math.pow(2, Math.min(pollFails, 3)));
+  pollTimer = setInterval(pollRev, every);
+}
+function stopPolling(){ if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
 const queue = () => {
   dirty = true; persist(); setDot();
@@ -1437,7 +1473,7 @@ document.addEventListener('click', e => {
 
   if (e.target.closest('#s_go')){
     cfg = {url: $('#s_url').value.trim(), key: $('#s_key').value.trim()};
-    needCode = false;
+    needCode = false; pollFails = 0; startPolling();
     jset('v2.cfg', cfg);
     document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
     sync(false);
@@ -1529,9 +1565,9 @@ document.addEventListener('click', e => {
 
 /* Re-sync when returning to app foreground */
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) sync(dirty);
+  if (!document.hidden) { sync(dirty); startPolling(); } else { stopPolling(); }
 });
-window.addEventListener('online', () => sync(dirty));
+window.addEventListener('online', () => { pollFails = 0; sync(dirty); startPolling(); });
 
 /* Init */
 chips();
@@ -1539,7 +1575,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (cfg.url && !cfg.key) openSettings(); else if (cfg.url) sync(dirty);
+if (cfg.url && !cfg.key) openSettings(); else if (cfg.url) { sync(dirty); startPolling(); }
 </script>
 </body>
 </html>

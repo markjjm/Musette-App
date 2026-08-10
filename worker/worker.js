@@ -21,6 +21,10 @@ function allowedOrigin(origin) {
   try {
     const u = new URL(origin);
     if (u.protocol === 'https:' && u.hostname.endsWith(ORIGIN_SUFFIX)) return origin;
+    /* Local development. Without this `npm run dev:web` cannot talk to the
+       deployed Worker at all. The access code is still required, so this only
+       widens who may READ a response they were already entitled to. */
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return origin;
   } catch {
     return null;
   }
@@ -159,6 +163,14 @@ export class ListDO extends DurableObject {
 
   async read() {
     return await this.load();
+  }
+
+  /* Just the revision number. Phones poll this every few seconds while the app
+     is on screen; it is a handful of bytes, versus ~100 KB for the full state,
+     so the list only gets pulled when it has actually changed. */
+  async rev() {
+    const s = await this.ctx.storage.get('state');
+    return { rev: (s && s.rev) || 0, updated: (s && s.updated) || null };
   }
 
   async merge(body) {
@@ -300,6 +312,10 @@ export default {
       }
     }
 
+    if (path === '/rev' && request.method === 'GET') {
+      return json(await listStub(env).rev(), 200, origin);
+    }
+
     if (path === '/state' && request.method === 'GET') {
       return json(await listStub(env).read(), 200, origin);
     }
@@ -325,8 +341,10 @@ export default {
       const r = await readJson(request);
       if (r.tooLarge) return json({ error: 'payload too large' }, 413, origin);
       if (r.bad) return json({ error: 'bad json' }, 400, origin);
-      if (!r.body.plan || !Array.isArray(r.body.plan.weeks))
-        return json({ error: 'expected { plan: { weeks: [...] } }' }, 400, origin);
+      /* Reject a weekless plan at the source too: storing one would blank every
+         phone that synced it, and the only way back would be /undo. */
+      if (!r.body.plan || !Array.isArray(r.body.plan.weeks) || !r.body.plan.weeks.length)
+        return json({ error: 'expected { plan: { weeks: [ ...at least one ] } }' }, 400, origin);
       return json(await listStub(env).setPlan(r.body.plan, r.body.resetTicks), 200, origin);
     }
 
