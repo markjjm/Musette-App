@@ -661,7 +661,6 @@ footer {
   <div class="seg-bar">
     <div class="seg" id="tabs">
       <button data-t="A" class="on">List</button>
-      <button data-t="P">Days</button>
       <button data-t="D">Dinners</button>
       <button data-t="F">Fuel</button>
     </div>
@@ -725,7 +724,7 @@ const jget = (k,d) => { try { return JSON.parse(LS.get(k)) ?? d; } catch(e){ ret
 const jset = (k,v) => LS.set(k, JSON.stringify(v));
 
 /* App State */
-let plan   = jget('v2.plan', null) || BUNDLED;
+let plan   = fillPlan(jget('v2.plan', null));
 let ticks  = migrateTicks(jget('v2.ticks', {}));
 
 /* Old keys were weekId|store|section␟name|qty. Sections and quantities now
@@ -794,15 +793,16 @@ const pantryOf = n => (pantryState[n] && pantryState[n].s) || 'ok';
    memory keeps working; only four items a month were Meijer-only, and those
    are marked with a tag on the row instead of a whole separate list. */
 const SHOP_TABS = ['A'];
-const TAB_NAME  = {A:'Shopping list', P:'Days', D:'Dinners', F:'Fuel'};
+const RETIRED_TABS = ['P'];   // Days folded into Fuel
+const TAB_NAME  = {A:'Shopping list', P:'Fuel', D:'Dinners', F:'Fuel'};
 const modeOf = t => SHOP_TABS.indexOf(t) >= 0 ? 'shop' : 'plan';
-let lastTab = jget('v2.lastTab', {shop:'A', plan:'P'});
+let lastTab = jget('v2.lastTab', {shop:'A', plan:'F'});
 /* 'M' was a tab until the two stores merged. Anything unknown falls back. */
 if (!TAB_NAME[tab]) tab = 'A';
-if (tab === 'P' && !(plan.days && plan.days.length)) tab = 'D';
+if (RETIRED_TABS.indexOf(tab) >= 0) tab = 'F';
 if (!TAB_NAME[lastTab.shop]) lastTab.shop = 'A';
 if (!TAB_NAME[lastTab.plan]) lastTab.plan = 'P';
-if (lastTab.plan === 'P' && !(plan.days && plan.days.length)) lastTab.plan = 'D';
+if (RETIRED_TABS.indexOf(lastTab.plan) >= 0) lastTab.plan = 'F';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -814,27 +814,27 @@ const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('
    longer wanted. Filtered here rather than in the data so a regenerated
    plan cannot bring it back. */
 const HIDE_WEEKS = ['weekend', 'weekend-top-up'];
-/* A plan stored before a feature existed must not delete that feature. The
-   server held a block with no days[] and no training[], so adopting it wholesale
-   emptied the month view and hid the Days tab entirely. Take the server's copy
-   as authoritative, but keep any section it simply does not carry. */
-function mergePlan(incoming, current){
-  const out = incoming;
-  if (!current) return out;
+/* A plan saved before a feature existed must not delete that feature. The server
+   held a block with no days[] and no training[], and localStorage had cached
+   that same copy — so filling gaps from "whatever is loaded" restored nothing.
+   Always fall back to BUNDLED, which ships with the app and is by definition
+   the newest shape. */
+function fillPlan(p){
+  if (!p || !Array.isArray(p.weeks) || !p.weeks.length) return BUNDLED;
   ['days', 'training', 'fuel'].forEach(k => {
-    if (!Array.isArray(out[k]) || !out[k].length) {
-      if (Array.isArray(current[k]) && current[k].length) out[k] = current[k];
+    if ((!Array.isArray(p[k]) || !p[k].length) && Array.isArray(BUNDLED[k]) && BUNDLED[k].length) {
+      p[k] = BUNDLED[k];
     }
   });
-  /* weeks[].days drives the Days filter; backfill per week by id. */
   const byId = {};
-  (current.weeks || []).forEach(w => { byId[w.id] = w; });
-  (out.weeks || []).forEach(w => {
-    const old = byId[w.id];
-    if (old && Array.isArray(old.days) && old.days.length &&
-        (!Array.isArray(w.days) || !w.days.length)) w.days = old.days;
+  (BUNDLED.weeks || []).forEach(w => { byId[w.id] = w; });
+  (p.weeks || []).forEach(w => {
+    const b = byId[w.id];
+    if (b && Array.isArray(b.days) && b.days.length && (!Array.isArray(w.days) || !w.days.length)) {
+      w.days = b.days;
+    }
   });
-  return out;
+  return p;
 }
 
 function weeks(){ return ((plan && plan.weeks) || []).filter(w => HIDE_WEEKS.indexOf(w.id) < 0); }
@@ -909,7 +909,7 @@ async function sync(push){
     pantryState = s.pantry || pantryState;
     /* A plan with no weeks blanks the whole app — no current week, nothing to
        render. Never adopt one; keep whatever is already loaded. */
-    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = mergePlan(s.plan, plan); jset('v2.plan', plan); }
+    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = fillPlan(s.plan); jset('v2.plan', plan); }
     lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
     dirty = false;
     lastSync = new Date().toISOString();
@@ -1357,6 +1357,25 @@ const stepOf = k => KIND_STEP[String(k || '').toLowerCase()] || 0;
 
 /* Month grid: height = volume (hours), colour = intensity, and every cell
    carries its own number so neither channel is load-bearing on its own. */
+/* The day-by-day eating plan: every meal, its time, what is in it, what it adds
+   up to. Rendered in the Fuel tab beside the training it is fuelling. */
+function dayBlocks(w){
+  const days = (plan.days || []).filter(d => !w.days || !w.days.length || w.days.indexOf(d.d) >= 0);
+  if (!days.length) return '<div class="empty">No day plan for this week.</div>';
+  return days.map(d => `<div class="dayblk">
+          <div class="dayhd${d.cook?' cook':''}">
+            <span class="dwd">${esc(d.wd)}</span><span class="ddn">${Number(d.d)||0}</span>
+            <span class="dkind">${esc(d.kind)}${d.h ? ' · ' + (Number(d.h)||0) + ' h' : ''}</span>
+            <span class="dkc">${Number(d.kc)||0}<i>kcal</i></span><span class="dcb">${Number(d.cb)||0}<i>g C</i></span>
+          </div>
+          ${(d.meals||[]).map(ml => `<div class="pmeal${/on the bike/i.test(ml.l||'')?' onbike':''}">
+            <div class="pt">${esc(ml.t)}</div>
+            <div class="px"><b>${esc(ml.l)}</b>${(ml.i||[]).map(it =>
+              `<span class="pi"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')}<span class="pm">${Number(ml.kc)||0} kcal · ${Number(ml.cb)||0} g carb</span></div>
+          </div>`).join('')}
+        </div>`).join('');
+}
+
 function monthGrid(){
   const t = plan.training || [];
   if (!t.length) return '';
@@ -1430,22 +1449,7 @@ function render(){
   const m = $('#main');
 
   if (tab === 'P'){
-    // A week lists the calendar days it covers. Pantry has none, so it shows the whole block.
-    const days = (plan.days||[]).filter(d => !w.days || !w.days.length || w.days.includes(d.d));
-    m.innerHTML = days.length
-      ? days.map(d => `<div class="dayblk">
-          <div class="dayhd${d.cook?' cook':''}">
-            <span class="dwd">${esc(d.wd)}</span><span class="ddn">${Number(d.d)||0}</span>
-            <span class="dkind">${esc(d.kind)}${d.h ? ' · ' + (Number(d.h)||0) + ' h' : ''}</span>
-            <span class="dkc">${Number(d.kc)||0}<i>kcal</i></span><span class="dcb">${Number(d.cb)||0}<i>g C</i></span>
-          </div>
-          ${(d.meals||[]).map(ml => `<div class="pmeal${/on the bike/i.test(ml.l||'')?' onbike':''}">
-            <div class="pt">${esc(ml.t)}</div>
-            <div class="px"><b>${esc(ml.l)}</b>${(ml.i||[]).map(it =>
-              `<span class="pi"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')}<span class="pm">${Number(ml.kc)||0} kcal · ${Number(ml.cb)||0} g carb</span></div>
-          </div>`).join('')}
-        </div>`).join('')
-      : '<div class="empty">No day plan for this week.</div>';
+    m.innerHTML = dayBlocks(w);
     totals(); updateHeaderHeight(); return;
   }
 
@@ -1514,7 +1518,9 @@ function render(){
             : `<span>${riding ? 'no on-bike fuel needed' : 'rest'}</span>`}</div>
         </div>`;
       }).join('')}
-      <div class="sech">How to make it</div>` : '')
+      <div class="sech">Every day, meal by meal</div>` : '')
+      + dayBlocks(w)
+      + `<div class="sech">How to make the fuel</div>`
       + (plan.fuel || []).map(([hh, pp]) =>
         `<div class="card"><h3>${esc(hh)}</h3><p>${esc(pp)}</p></div>`).join('')
       + `<div class="hint">Ingredients can appear under two cook nights &mdash; that is deliberate and the totals add up.</div>`;
