@@ -36,15 +36,25 @@ def main():
     print(f"{path}: {len(weeks)} weeks, {items} items, ${total:.2f}")
 
     body = json.dumps({"plan": plan, "resetTicks": not keep}).encode()
+    # Cloudflare's browser-integrity check answers urllib's default
+    # "Python-urllib/3.x" with 403 error 1010 before the request ever reaches the
+    # Worker, so send a normal browser User-Agent. This is not evasion: the
+    # endpoint is ours and the admin key still authorises the write.
     req = urllib.request.Request(url + "/plan", data=body, method="PUT", headers={
-        "Content-Type": "application/json", "X-List-Key": lk, "X-Admin-Key": ak})
+        "Content-Type": "application/json", "X-List-Key": lk, "X-Admin-Key": ak,
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0 Safari/537.36"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             out = json.load(r)
         print(f"published \u2192 rev {out.get('rev')} at {out.get('updated')}")
         print("ticks " + ("kept" if keep else "cleared"))
     except urllib.error.HTTPError as e:
-        sys.exit(f"HTTP {e.code}: {e.read().decode()[:300]}")
+        detail = e.read().decode("utf-8", "replace")[:300]
+        if e.code == 403 and "1010" in detail:
+            detail += "\n  (Cloudflare blocked the client signature, not your keys —"
+            detail += " check the User-Agent header above.)"
+        sys.exit(f"HTTP {e.code}: {detail}")
     except urllib.error.URLError as e:
         sys.exit(f"could not reach {url}: {e.reason}")
 
