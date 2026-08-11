@@ -67,8 +67,10 @@
   "onbike",
   "perHr",
   "perHr ? `<span class=\"pm\">about ${perHr} g carb an hour</span>` : ''",
+  "r && r.pantry && r.pantry.length ? `<div class=\"rsec\">From the cupboard</div> <ul class=\"ring pantryring\">${r.pantry.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''",
   "r ? `<div class=\"rsec\">Method</div> <ol class=\"rsteps\">${r.method.map(s => `<li>${esc(s)}</li>`).join('')}</ol> <p class=\"rtip\">${esc(r.serves)}</p>` : `<p class=\"rtip\">No method written for this one yet.</p>`",
   "r.method.map(s => `<li>${esc(s)}</li>`).join('')",
+  "r.pantry.map(x => `<li>${esc(x)}</li>`).join('')",
   "ride",
   "rides",
   "s"

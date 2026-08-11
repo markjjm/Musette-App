@@ -655,6 +655,10 @@ footer {
 .pmeal.rideline.rest .pt { color: var(--gravel); }
 .pmeal.rideline.rest .px b { color: var(--ink-soft); }
 .pmeal.rideline.rest .pm { color: var(--gravel); }
+
+.pantryring li { display: list-item; margin-left: 18px; font-size: 14.5px; color: var(--ink-soft); }
+.pantryring { list-style: disc; padding-left: 4px; }
+.pantryring li::marker { color: var(--gravel); }
 </style>
 </head>
 <body>
@@ -1124,199 +1128,199 @@ function shopList(w){
 }
 
 /* ---- Recipes -----------------------------------------------------------
-   The plan says what to buy and what night to cook it, but never how. These
-   live in the app rather than in plan.json so a regenerated block does not
-   wipe them; they are keyed on the dish name, which is stable across blocks.
-   Amounts come from the plan itself and are already scaled for a double
-   batch where the plan calls for one, so the method just uses what is listed.
-   A dish with no entry here still shows its ingredients. */
+   Written to be cooked from, not skimmed. Each one carries:
+     pantry - the small things the method needs that are NOT on the shopping
+              list, because you already keep them. Listed so nobody discovers
+              mid-cook that the recipe wanted tomato paste.
+     method - the actual steps, with temperatures and times.
+   Quantities in the method match the double batches the plan shops for.
+   Keyed on dish name, which is stable across blocks. */
 const RECIPES = {
-  'Roast chicken, potatoes, green beans': {
-    serves: 'Cook tonight. A 4 lb bird feeds two with leftovers for lunch.',
+  'Turkey chili + cornbread': {
+    serves: 'Double batch: tonight, plus two reheats later in the week.',
+    pantry: ['2 tbsp oil', '2 cups beef or chicken stock', '2 tbsp tomato paste',
+             'chili powder, cumin, smoked paprika, oregano', 'bay leaf', 'salt and pepper',
+             'egg + milk for the cornbread (check the box)'],
     method: [
-      'Oven to 425°F. Pat the chicken dry — dry skin is the whole trick — and salt it well, breast and legs.',
-      'Potatoes in wedges around the bird so they cook in the fat.',
-      'Roast 20 minutes at 425°F, then down to 375°F for about 50 minutes more, until the thigh reads 175°F.',
-      'Rest 15 minutes before carving. Green beans in the last 12 minutes.'
-    ]
-  },
-  'Teriyaki chicken rice bowls': {
-    serves: 'Cook tonight.',
-    method: [
-      'Rice on first. Slice the chicken breast thin, across the grain.',
-      'Mix the soy, honey, grated ginger and garlic.',
-      'Sear the chicken hard in batches — crowd the pan and it steams instead of browning. Sauce in at the end and let it glaze.',
-      'Broccoli and carrots steamed 5 minutes. Build the bowls rice first.'
-    ]
-  },
-  'Chicken and rice bowls': {
-    serves: 'Cook tonight.',
-    method: [
-      'Rice on. Cut the chicken into bite-sized pieces and season.',
-      'Brown it hard in a wide pan and leave it alone long enough to colour.',
-      'Green beans and carrots steamed 6 minutes.',
-      'Sauce and seasoning through the chicken, then over the bowls.'
-    ]
-  },
-  'Chicken, rice and vegetable bake': {
-    serves: 'Double batch: assemble both dishes, bake one.',
-    method: [
-      'Cut the chicken into chunks, season, and brown it — colour here is most of the flavour.',
-      'Rice, vegetables, stock and chicken into a deep dish. Cover tightly; the rice cooks in the steam.',
-      '375°F for 40 minutes, until the rice has drunk the stock.',
-      'Cheese over the top and back in uncovered for 10 minutes.'
-    ]
-  },
-  'Grilled chicken, corn, potatoes': {
-    serves: 'Cook tonight.',
-    method: [
-      'Potatoes into wedges, 425°F, 35 minutes, turning once.',
-      'Chicken breast seasoned and grilled 5–6 minutes a side to 165°F. Rest 5 minutes.',
-      'Corn on the grill for the last 10 minutes, turning.',
-      'Slaw from the cabbage with vinegar, oil and salt.'
+      'Soak the beans overnight in plenty of cold water. If you forget: cover with water, boil 10 minutes, then simmer 60-75 minutes until tender. Drain.',
+      'Oil in a heavy pot over medium-high. Brown the turkey in two batches so it colours instead of steaming, breaking it up as it goes. Set aside.',
+      'Same pot, medium. Onion and peppers with a big pinch of salt, 6-8 minutes until soft.',
+      'Make room in the middle, add the tomato paste and the spices, and stir them in the hot oil for a full minute — this is where most of the flavour comes from. About 3 tbsp chili powder, 1 tbsp cumin, 2 tsp smoked paprika, 1 tsp oregano for a double batch.',
+      'Turkey back in with the tomatoes, beans, stock and a bay leaf. Bring up, then simmer uncovered 45-60 minutes, stirring now and then, until it holds its shape on a spoon.',
+      'Taste for salt — chili almost always needs more than feels right. Cornbread per the box in the last 25 minutes, rice on in the last 20.',
+      'Cheese grated at the table rather than stirred through; it keeps and reheats better without it.'
     ]
   },
   'Pasta with meat sauce': {
     serves: 'Double batch: half tonight, half in the fridge for the reheat.',
+    pantry: ['2 tbsp olive oil', '2 tbsp tomato paste', '3-4 cloves garlic',
+             '1 onion', 'dried oregano and basil', 'chilli flakes', 'salt and pepper',
+             'a splash of milk or cream (optional)'],
     method: [
-      'Brown the turkey hard and break it fine. Marinara in, simmer 20 minutes.',
-      'Pasta to just under done. Save a mug of the cooking water before draining.',
-      'Toss pasta through the sauce with a splash of that water so it clings.',
+      'Big pot of water on, salted like the sea.',
+      'Oil in a wide pan, medium-high. Brown the turkey hard in two batches, breaking it fine. Do not stir it constantly — let it catch colour.',
+      'Turn down to medium. Onion 5 minutes, then garlic and a pinch of chilli flakes for 30 seconds.',
+      'Tomato paste in, stir for a minute until it darkens. Marinara in, plus a jar of water swilled out of the jars, oregano and basil.',
+      'Simmer 25-30 minutes. A splash of milk at the end softens the acidity if it needs it.',
+      'Pasta to one minute under the packet time. Save a mug of the water before draining.',
+      'Toss the pasta through the sauce in the pan for a minute with a good splash of that water — it emulsifies and makes the sauce cling instead of sliding off.',
       'Garlic bread in the oven for the last 10 minutes. Parmesan and salad at the table.'
-    ]
-  },
-  'Shepherd’s pie': {
-    serves: 'Double batch: two dishes, one straight to the fridge.',
-    method: [
-      'Boil the potatoes, then mash with the butter and parmesan. Keep it stiff, not loose.',
-      'Brown the beef, vegetables in, season well, and let it thicken — a wet filling will bleed through the mash.',
-      'Spread the filling, top with mash, and drag a fork over the surface.',
-      '400°F for 25 minutes until the peaks catch.'
     ]
   },
   'Taco night': {
     serves: 'Double batch: the seasoned turkey keeps three days.',
+    pantry: ['1 tbsp oil', '1 onion', '2 cloves garlic', '1/2 cup stock or water',
+             'chili powder, cumin, smoked paprika, garlic powder, oregano',
+             'salt and pepper', 'lime'],
     method: [
-      'Beans on to simmer. Rice alongside.',
-      'Brown the turkey with the spices, then a third of the salsa in and reduce until it stops running.',
-      'Warm the tortillas dry in a hot pan, 20 seconds a side, and keep them in a folded towel.',
-      'Everything in bowls in the middle of the table and let people build their own.'
-    ]
-  },
-  'Turkey chili + cornbread': {
-    serves: 'Double batch: tonight, plus two reheats later in the week.',
-    method: [
-      'Soak the beans overnight, or cover with water and simmer 60 minutes until tender.',
-      'Brown the turkey in a heavy pot, breaking it up. Onion and peppers in, 5 minutes, then the chili spices for one more.',
-      'Tomatoes and drained beans in. Simmer uncovered 40 minutes; it should thicken enough to sit on a spoon.',
-      'Cornbread per the box while it simmers. Rice on in the last 20 minutes.',
-      'Cheese grated at the table, not stirred through — it keeps better without it.'
-    ]
-  },
-  'Pasta with turkey meat sauce': {
-    serves: 'Double batch: half tonight, half in the fridge for the reheat.',
-    method: [
-      'Brown the turkey hard and break it fine. Marinara in, simmer 20 minutes.',
-      'Pasta to just under done. Save a mug of the cooking water before draining.',
-      'Toss pasta through the sauce with a splash of that water so it clings.',
-      'Garlic bread in the oven for the last 10 minutes. Parmesan and salad at the table.'
-    ]
-  },
-  'Taco night · ground turkey': {
-    serves: 'Double batch: the seasoned turkey keeps three days.',
-    method: [
-      'Beans on to simmer. Rice alongside.',
-      'Brown the turkey with the spices, then a third of the salsa in and reduce until it stops running.',
-      'Warm the tortillas dry in a hot pan, 20 seconds a side, and keep them in a folded towel.',
-      'Everything in bowls in the middle of the table and let people build their own.'
+      'Beans on to simmer if using dry, 60 minutes. Rice on 20 minutes before you eat.',
+      'Oil in a wide pan over medium-high, onion 5 minutes, garlic 30 seconds.',
+      'Turkey in, break it up, brown properly — 8-10 minutes.',
+      'Spices in and stir for a minute: about 2 tbsp chili powder, 2 tsp cumin, 1 tsp paprika, 1 tsp oregano for a double batch.',
+      'Stock and a third of the salsa in. Simmer 8-10 minutes until it stops running and starts to glaze.',
+      'Warm the tortillas dry in a hot pan, 20 seconds a side, and stack them in a folded towel so they steam soft.',
+      'Everything in bowls in the middle of the table with a lime cut into wedges, and let people build their own.'
     ]
   },
   'Baked ziti with turkey': {
     serves: 'Double batch: bake one tray now, the second goes in the fridge unbaked.',
+    pantry: ['2 tbsp olive oil', '1 onion', '3 cloves garlic', '2 tbsp tomato paste',
+             'dried oregano', 'chilli flakes', 'salt and pepper',
+             '1 egg + 1 cup ricotta or cottage cheese (optional, for a creamier layer)'],
     method: [
-      'Boil the ziti two minutes short of the packet — it finishes in the oven.',
-      'Brown the turkey, marinara in, simmer 15 minutes.',
-      'Fold the pasta through the sauce, then layer into trays with the mozzarella.',
-      '375°F for 25 minutes, the last 5 uncovered so the top blisters.'
+      'Oven to 375°F. Big pot of salted water on.',
+      'Brown the turkey in oil over medium-high, breaking it fine. Onion in for 5 minutes, then garlic 30 seconds.',
+      'Tomato paste for a minute, then the marinara plus half a jar of water, oregano, a pinch of chilli. Simmer 20 minutes.',
+      'Ziti two minutes UNDER the packet time — it finishes in the oven and will go to mush otherwise.',
+      'Fold the pasta through the sauce so every piece is coated.',
+      'Layer into the trays: half the pasta, half the mozzarella, the rest of the pasta, then the remaining mozzarella and the parmesan.',
+      'Cover with foil, 20 minutes. Uncover and give it 8-10 more until the top blisters and browns at the edges.',
+      'Rest 10 minutes before cutting or it will not hold together.'
     ]
   },
-  'Shepherd’s pie · beef': {
-    serves: 'Double batch: two dishes, one straight to the fridge.',
+  'Shepherd’s pie': {
+    serves: 'Double batch: two dishes, one straight to the fridge. Generous — a batch this size feeds well beyond one dinner.',
+    pantry: ['2 tbsp oil', '2 onions', '3 cloves garlic', '2 tbsp tomato paste',
+             '2 cups beef stock', '2 tbsp Worcestershire sauce', '2 tbsp flour',
+             'dried thyme and a bay leaf', 'salt and pepper',
+             'butter and a splash of milk for the mash'],
     method: [
-      'Boil the potatoes, then mash with the butter and parmesan. Keep it stiff, not loose.',
-      'Brown the beef, vegetables in, season well, and let it thicken — a wet filling will bleed through the mash.',
-      'Spread the filling, top with mash, and drag a fork over the surface.',
-      '400°F for 25 minutes until the peaks catch.'
+      'Potatoes peeled, cut even, into cold salted water. Bring up and boil 15-20 minutes until a knife slides in with no resistance.',
+      'Meanwhile brown the beef in oil over medium-high in two batches. Drain off most of the fat but leave a spoonful.',
+      'Onion 6-8 minutes until soft, then garlic and thyme for 30 seconds.',
+      'Tomato paste in, stir a full minute until it darkens. Flour over the top, stir another minute — this is what stops a watery pie.',
+      'Stock and Worcestershire in slowly, scraping the base. Beef and vegetables back in with a bay leaf. Simmer 15-20 minutes until it is thick enough to hold a spoon upright-ish. A loose filling will bleed through the mash.',
+      'Drain the potatoes, let them steam dry a minute, then mash with butter, a splash of milk and the parmesan. Keep it stiff. Season well.',
+      'Oven to 400°F. Filling into the dishes, mash spread over the top, then drag a fork across the surface — the ridges are what catch and brown.',
+      '25-30 minutes until the peaks are golden and it bubbles at the edges. Rest 10 minutes before serving.'
     ]
   },
-  'Beef, rice and vegetable bake': {
+  'Chicken, rice and vegetable bake': {
     serves: 'Double batch: assemble both dishes, bake one.',
+    pantry: ['2 tbsp oil', '1 onion', '2 cloves garlic', '5 cups chicken stock',
+             'paprika, dried thyme, garlic powder', 'salt and pepper'],
     method: [
-      'Brown the beef and season it.',
-      'Rice, vegetables, stock and beef into a deep dish. Cover tightly — the rice cooks in the steam.',
-      '375°F for 40 minutes, until the rice has drunk the stock.',
-      'Cheese over the top and back in uncovered for 10 minutes.'
+      'Oven to 375°F.',
+      'Cut the chicken into chunks, season well, and brown it hard in oil — colour here is most of the flavour. It does not need to cook through.',
+      'Onion in the same pan 5 minutes, garlic 30 seconds.',
+      'Rice, vegetables, onion, chicken and the seasonings into a deep dish. Pour over the hot stock — roughly 1.5 cups stock to every cup of dry rice.',
+      'Cover TIGHTLY with foil. The rice cooks in trapped steam, and a loose cover is the usual reason it comes out crunchy.',
+      '40-45 minutes, until the rice has drunk the stock and is tender.',
+      'Cheese over the top, uncovered, 10 minutes more.',
+      'Rest 5 minutes. Fork it through before serving.'
     ]
   },
   'Burgers on the grill': {
     serves: 'Cook tonight. Four burgers.',
+    pantry: ['salt and pepper', 'oil for the grates', 'butter for the buns',
+             'mayo, mustard, ketchup', 'cider vinegar and oil for the slaw'],
     method: [
-      'Divide the beef into four, press a dimple into the centre of each so they stay flat, and salt the outside only.',
-      'Grill 4 minutes a side, cheese on for the last minute with the lid down.',
-      'Corn straight on the grill about 10 minutes, turning.',
-      'Shred the cabbage with oil, vinegar and salt for slaw. Toast the buns cut-side down.'
+      'Divide the beef into four without working it — handling makes them tough. Press a dimple into the centre of each so they stay flat instead of doming.',
+      'Salt the outside only, and only just before they go on.',
+      'Grill hot and clean, oiled grates. 4 minutes, flip once, 3-4 minutes more. Cheese on for the last minute with the lid down.',
+      'Corn straight on the grill about 10 minutes, turning, until it chars in places.',
+      'Slaw: shred the cabbage fine, toss with 2 tbsp vinegar, 2 tbsp oil, a good pinch of salt and sugar. It wants 15 minutes to soften.',
+      'Buns buttered and toasted cut-side down for the last minute.',
+      'Rest the patties 3 minutes before building.'
     ]
   },
-  'Grilled pork chops, corn, potatoes': {
+  'Grilled chicken, corn, potatoes': {
     serves: 'Cook tonight.',
+    pantry: ['olive oil', 'paprika, garlic powder, dried oregano', 'salt and pepper',
+             'cider vinegar for the slaw', 'butter'],
     method: [
-      'Potatoes into wedges, 425°F, 35 minutes, turning once.',
-      'Chops seasoned and grilled 4–5 minutes a side to 145°F. Rest 5 minutes — this is the difference between juicy and dry.',
-      'Corn on the grill for the last 10 minutes.',
-      'Slaw from the cabbage with vinegar, oil and salt.'
+      'Oven to 425°F. Potatoes into wedges, tossed with oil, salt and paprika, 35-40 minutes, turning once.',
+      'Butterfly the thicker chicken breasts so they cook evenly. Oil, salt, pepper, garlic powder and oregano.',
+      'Grill 5-6 minutes a side to 165°F at the thickest point. Rest 5 minutes — this is the difference between juicy and dry.',
+      'Corn on the grill the last 10 minutes, turning.',
+      'Slaw from the cabbage with vinegar, oil, salt and a pinch of sugar.'
     ]
   },
-  'Pork loin roast, potatoes, green beans': {
-    serves: 'Cook tonight.',
+  'Roast chicken, potatoes, green beans': {
+    serves: 'Cook tonight. A 4 lb bird feeds two with leftovers for lunch.',
+    pantry: ['olive oil or butter', 'salt and pepper', 'a lemon', '3-4 cloves garlic',
+             'dried thyme or rosemary'],
     method: [
-      'Oven to 400°F. Season the loin and sear it on all sides in a hot pan first.',
-      'Roast 25–35 minutes to 145°F at the thickest point. Rest 10 minutes before slicing.',
-      'Potatoes in wedges alongside from the start.',
-      'Green beans in for the last 12 minutes.'
+      'Take the bird out of the fridge 30 minutes ahead. Oven to 425°F.',
+      'Pat it properly dry inside and out — dry skin is the whole trick. Salt it heavily all over, including under the skin on the breast if you can.',
+      'Half a lemon and a few crushed garlic cloves in the cavity. Rub the skin with oil or soft butter.',
+      'Potatoes in wedges around the bird so they cook in the fat.',
+      '20 minutes at 425°F, then down to 375°F for 50-60 minutes more, until the thigh reads 175°F and the juices run clear.',
+      'Rest 15 minutes before carving, loosely tented. Green beans go in for the last 12 minutes.',
+      'Tip the resting juices over the carved meat.'
     ]
   },
-  'Teriyaki pork rice bowls': {
+  'Teriyaki chicken rice bowls': {
     serves: 'Cook tonight.',
+    pantry: ['1/3 cup soy sauce', '3 tbsp honey', '1 tbsp grated ginger',
+             '3 cloves garlic', '1 tbsp cornflour', '1 tbsp oil',
+             'rice vinegar or lime', 'sesame seeds'],
     method: [
-      'Rice on first. Slice the pork thin, across the grain.',
-      'Mix the soy, honey, grated ginger and garlic.',
-      'Sear the pork hard in batches — crowd the pan and it steams. Sauce in at the end and let it glaze.',
-      'Broccoli and carrots steamed 5 minutes. Build the bowls rice first.'
+      'Rice on first — it wants 20 minutes plus 10 standing.',
+      'Sauce: soy, honey, ginger, garlic and 2 tbsp water in a jar. Mix the cornflour with a splash of cold water separately.',
+      'Slice the chicken thin, across the grain.',
+      'Very hot pan, a little oil, chicken in a single layer in two batches. Crowd it and it steams instead of searing.',
+      'All the chicken back in, sauce over, bubble 1 minute, then the cornflour slurry. It thickens and turns glossy in under a minute — take it off there.',
+      'Broccoli and carrots steamed 5 minutes, still with bite.',
+      'Bowls rice first, then vegetables, chicken and sauce over the top. Sesame seeds and a squeeze of lime.'
     ]
   },
-  'Ground turkey rice bowls': {
+  'Chicken and rice bowls': {
     serves: 'Cook tonight.',
+    pantry: ['1 tbsp oil', 'soy sauce', 'garlic powder, paprika', 'salt and pepper',
+             'lemon', 'a spoon of yoghurt or hot sauce to finish'],
     method: [
-      'Rice on. Brown the turkey hard and leave it alone long enough to crisp at the edges.',
+      'Rice on.',
+      'Chicken into bite-sized pieces, seasoned with salt, pepper, paprika and garlic powder.',
+      'Hot wide pan, oil, chicken in one layer. Leave it alone 3-4 minutes so it browns, then turn and finish — 8 minutes total.',
       'Green beans and carrots steamed 6 minutes.',
-      'Sauce and seasoning through the turkey, then over the bowls.'
+      'Deglaze the pan with a splash of water and soy, and pour that over the bowls.',
+      'Lemon over the top; yoghurt or hot sauce if you want it.'
     ]
   },
   'Baked salmon + quinoa': {
     serves: 'Cook tonight.',
+    pantry: ['olive oil', 'salt and pepper', 'a lemon', '2 cloves garlic',
+             '2 cups stock or water for the quinoa'],
     method: [
-      'Thaw the fillets in a bowl of cold water, about 20 minutes. Oven to 400°F.',
-      'Quinoa on — 15 minutes, then let it sit covered off the heat.',
-      'Salmon skin-side down on a tray with the sprouts halved around it, 12–14 minutes.',
-      'Asparagus in for the last 8 minutes. The salmon is done when it flakes but still looks slightly translucent.'
+      'Thaw the fillets in a bowl of cold water, about 20 minutes. Pat very dry.',
+      'Oven to 400°F. Rinse the quinoa, then simmer in stock 15 minutes and let it sit covered off the heat 5 more.',
+      'Sprouts halved, tossed with oil and salt, cut-side down on a hot tray, 20 minutes.',
+      'Salmon on the tray skin-side down, oiled and salted, for the last 12-14 minutes.',
+      'Asparagus alongside for the last 8 minutes.',
+      'Salmon is done when it flakes at the thickest point but the centre still looks slightly translucent — it carries on cooking off the heat. Lemon over everything.'
     ]
   },
   'Baked tilapia + quinoa': {
     serves: 'Cook tonight.',
+    pantry: ['olive oil', 'salt and pepper', 'a lemon', 'paprika and garlic powder',
+             '2 cups stock or water for the quinoa'],
     method: [
-      'Thaw the fillets in cold water. Oven to 400°F. Quinoa on.',
-      'Fish on an oiled tray, salt and lemon, 10–12 minutes until it flakes.',
-      'Mixed vegetables and asparagus roasted alongside, 20 minutes.'
+      'Thaw the fillets in cold water and pat dry. Oven to 400°F.',
+      'Quinoa rinsed and simmered in stock 15 minutes, then covered off the heat.',
+      'Mixed vegetables tossed in oil and salt, on a tray, 20 minutes.',
+      'Tilapia on an oiled tray, seasoned with salt, pepper, paprika and garlic powder, 10-12 minutes. It is thin and goes from done to dry quickly.',
+      'Asparagus in for the last 8 minutes. Lemon over the fish.'
     ]
   }
 };
@@ -1555,6 +1559,8 @@ function render(){
             ${ings.length ? `<div class="rsec">What you need</div>
               <ul class="ring">${ings.map(it =>
                 `<li><i>${esc(it.q || '')}</i>${esc(it.n)}${it.store === 'M' ? '<b>Meijer</b>' : ''}</li>`).join('')}</ul>` : ''}
+            ${r && r.pantry && r.pantry.length ? `<div class="rsec">From the cupboard</div>
+              <ul class="ring pantryring">${r.pantry.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
             ${r ? `<div class="rsec">Method</div>
               <ol class="rsteps">${r.method.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
               <p class="rtip">${esc(r.serves)}</p>` :
