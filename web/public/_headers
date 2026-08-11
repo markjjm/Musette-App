@@ -2,7 +2,7 @@
 # Re-run `npm run build` after changing index.html, or the script hash goes stale
 # and the browser will refuse to execute the app.
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-0ullNgCZPytjEvPqeNnHNgN1r/LGPuZlGmCbfQYZOVc='; style-src 'sha256-LQce0IA6FXJlc4J95JZPSXEBncFCEghlUKhGhBiGG8Y='; img-src data:; connect-src https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-6QndrqsIz/esOn8fBMRbhA24mSJlcQY5uSG7MZNwSS8='; style-src 'sha256-LQce0IA6FXJlc4J95JZPSXEBncFCEghlUKhGhBiGG8Y='; img-src data:; connect-src https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY

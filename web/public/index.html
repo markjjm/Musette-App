@@ -1382,6 +1382,36 @@ const shortKind = k => KIND_SHORT[String(k || '').toLowerCase()] || String(k || 
    carries its own number so neither channel is load-bearing on its own. */
 /* The day-by-day eating plan: every meal, its time, what is in it, what it adds
    up to. Rendered in the Fuel tab beside the training it is fuelling. */
+/* The plan lists a repeated food as two identical lines — "1 cup RICE" twice
+   rather than "2 cups RICE" once — on 17 meals in this block. The totals already
+   count both, so the food is right and only the reading is confusing. Combine
+   them for display; the underlying plan is untouched. */
+const UNIT_PLURAL = { cup:'cups', tablespoon:'tablespoons', teaspoon:'teaspoons',
+  slice:'slices', bottle:'bottles', bar:'bars', package:'packages', pack:'packs',
+  ear:'ears', scoop:'scoops', egg:'eggs', each:'each' };
+
+function combineMealItems(items){
+  const order = [];
+  const by = new Map();
+  (items || []).forEach(it => {
+    const key = String(it.n || '');
+    if (!by.has(key)) { by.set(key, { n: key, c: 0, k: 0 }); order.push(key); }
+    const e = by.get(key);
+    e.c += Number(it.c) || 0;
+    e.k += 1;
+  });
+  return order.map(key => {
+    const e = by.get(key);
+    if (e.k < 2) return { n: e.n, c: e.c };
+    /* Multiply the leading count: "1 cup RICE" x2 -> "2 cups RICE". */
+    const m = e.n.match(/^(\d+(?:\.\d+)?)\s+(\S+)\s+([\s\S]+)$/);
+    if (!m) return { n: e.k + ' x ' + e.n, c: e.c };
+    const qty = Number(m[1]) * e.k;
+    const unit = qty > 1 ? (UNIT_PLURAL[m[2].toLowerCase()] || m[2]) : m[2];
+    return { n: qty + ' ' + unit + ' ' + m[3], c: e.c };
+  });
+}
+
 function dayBlocks(w){
   const days = (plan.days || []).filter(d => !w.days || !w.days.length || w.days.indexOf(d.d) >= 0);
   if (!days.length) return '<div class="empty">No day plan for this week.</div>';
@@ -1415,7 +1445,7 @@ function dayBlocks(w){
           ${ride}
           ${(d.meals||[]).map(ml => `<div class="pmeal${/on the bike/i.test(ml.l||'')?' onbike':''}">
             <div class="pt">${esc(ml.t)}</div>
-            <div class="px"><b>${esc(ml.l)}</b>${(ml.i||[]).map(it =>
+            <div class="px"><b>${esc(ml.l)}</b>${combineMealItems(ml.i).map(it =>
               `<span class="pi"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')}<span class="pm">${Number(ml.kc)||0} kcal · ${Number(ml.cb)||0} g carb</span></div>
           </div>`).join('')}
         </div>`;

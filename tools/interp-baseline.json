@@ -1,7 +1,6 @@
 [
   "(Math.round(hrs * 100) / 100)",
-  "(d.meals||[]).map(ml => `<div class=\"pmeal${/on the bike/i.test(ml.l||'')?' onbike':''}\"> <div class=\"pt\">${esc(ml.t)}</div> <div class=\"px\"><b>${esc(ml.l)}</b>${(ml.i||[]).map(it => `<span class=\"pi\"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')}<span class=\"pm\">${Number(ml.kc)||0} kcal · ${Number(ml.cb)||0} g carb</span></div> </div>`).join('')",
-  "(ml.i||[]).map(it => `<span class=\"pi\"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')",
+  "(d.meals||[]).map(ml => `<div class=\"pmeal${/on the bike/i.test(ml.l||'')?' onbike':''}\"> <div class=\"pt\">${esc(ml.t)}</div> <div class=\"px\"><b>${esc(ml.l)}</b>${combineMealItems(ml.i).map(it => `<span class=\"pi\"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')}<span class=\"pm\">${Number(ml.kc)||0} kcal · ${Number(ml.cb)||0} g carb</span></div> </div>`).join('')",
   "/on the bike/i.test(ml.l||'')?' onbike':''",
   "Number(bk.cb) || 0",
   "Number(bk.kc) || 0",
@@ -16,6 +15,7 @@
   "WD.map(d => `<div class=\"mhead\">${esc(d)}</div>`).join('')",
   "bk ? `<span class=\"pi\"><i>${Number(bk.cb) || 0}g</i>carb on the bike &middot; ${Number(bk.kc) || 0} kcal</span>` : ''",
   "cells.join('')",
+  "combineMealItems(ml.i).map(it => `<span class=\"pi\"><i>${Number(it.c)||0}</i>${esc(it.n)}</span>`).join('')",
   "cook?' cook':''",
   "d.cook?' cook':''",
   "d.h ? ' · ' + (Number(d.h)||0) + ' h' : ''",
