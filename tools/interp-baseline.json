@@ -54,6 +54,8 @@
   "i===wi?' on':''",
   "ings.length ? `<div class=\"rsec\">What you need</div> <ul class=\"ring\">${ings.map(it => `<li><i>${esc(it.q || '')}</i>${esc(it.n)}${it.store === 'M' ? '<b>Meijer</b>' : ''}</li>`).join('')}</ul>` : ''",
   "ings.map(it => `<li><i>${esc(it.q || '')}</i>${esc(it.n)}${it.store === 'M' ? '<b>Meijer</b>' : ''}</li>`).join('')",
+  "isToday ? ' istoday' : ''",
+  "isToday ? '<div class=\"todaytag\">Today</div>' : ''",
   "it.c > 0 ? it.c.toFixed(2) : ''",
   "it.extraId ? `<button class=\"del\" data-del=\"${esc(it.extraId)}\" aria-label=\"Remove ${esc(it.n)}\">\\u00d7</button>` : ''",
   "it.note ? `<span class=\"note\">${esc(it.note)}</span>`:''",
