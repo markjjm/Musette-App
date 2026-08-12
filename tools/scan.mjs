@@ -141,6 +141,16 @@ try {
   err(`CSP: ${String(e.stdout || e.stderr || e.message).trim().split('\n').join(' ')}`);
 }
 
+/* Every sheet is shown by `.sheet.open`. A handler that adds any other class
+   leaves the panel at display:none, so the button does nothing and says nothing.
+   That shipped once, on the helper. */
+{
+  const opens = [...html.matchAll(/\$\('#([\w-]*sheet)'\)\.classList\.add\('([\w-]+)'\)/g)];
+  for (const [, id, cls] of opens) {
+    if (cls !== 'open') err(`#${id} is opened with .${cls}, but only .sheet.open has a rule — the panel will stay hidden`);
+  }
+}
+
 /* ---- Report ---------------------------------------------------------- */
 for (const w of warnings) console.log(`\x1b[33mWARN\x1b[0m  ${w}`);
 if (fail.length) {

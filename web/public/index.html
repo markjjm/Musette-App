@@ -2811,10 +2811,10 @@ function render(){
 
   /* The + adds a shopping item, so it only belongs on Shop. Everywhere else the
      bottom-right corner is the helper. */
-  $('#badd').style.display = (tab === 'A' && shopView === 'list') ? 'flex' : 'none';
+  $('#badd').style.display = (tab === 'A' && shopView === 'list') ? 'block' : 'none';
   $('#bfilter').style.display = (tab === 'A' && shopView === 'list') ? 'flex' : 'none';
   const helpBtn = $('#bask');
-  if (helpBtn) helpBtn.style.display = (tab === 'A') ? 'none' : 'flex';
+  if (helpBtn) helpBtn.style.display = (tab === 'A') ? 'none' : 'block';
   
   // Filter button state
   const btnF = $('#bfilter');
@@ -3158,7 +3158,7 @@ document.addEventListener('click', e => {
     build = null; fq = ''; dirty = true; persist(); queue(); triggerHaptic(); render(); return;
   }
 
-  if (e.target.closest('#bask')){ $('#asksheet').classList.add('on'); paintAsk();
+  if (e.target.closest('#bask')){ $('#asksheet').classList.add('open'); paintAsk();
     setTimeout(() => { try { $('#ask_q').focus(); } catch(_){} }, 150); return; }
   if (e.target.closest('#ask_go')){ runAsk(); return; }
 

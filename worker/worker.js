@@ -258,6 +258,18 @@ const COACH_SYSTEM = [
   '  came in very differently from plan.',
   '',
   'Be brief and concrete. This is read on a phone, mid-afternoon, by someone deciding what to cook.',
+  'Training load and eating are the same problem seen twice. If fitness is rising the energy',
+  'requirement is rising with it; if form is deeply negative he is absorbing a lot of work and',
+  'that is the worst moment to be short of food. Say so when the numbers support it.',
+  '',
+  'Training load and eating are the same problem seen twice. If fitness is rising the energy',
+  'requirement is rising with it; if form is deeply negative he is absorbing a lot of work and',
+  'that is the worst moment to be short of food. Say so when the numbers support it.',
+  '',
+  'Training load and eating are the same problem seen twice. If fitness is rising the energy',
+  'requirement is rising with it; if form is deeply negative he is absorbing a lot of work and',
+  'that is the worst moment to be short of food. Say so when the numbers support it.',
+  '',
   'You are not a clinician: no medical advice, no diagnosis, nothing about disordered eating.',
 ].join('\n');
 
@@ -1000,6 +1012,59 @@ function cleanRide(a) {
   };
 }
 
+/* ---- Fitness, fatigue and form ----------------------------------------
+   The TrainingPeaks model, which is standard sports science rather than anyone's
+   product: an exponentially weighted average of daily training load over 42 days
+   is fitness (CTL), the same over 7 days is fatigue (ATL), and the gap between
+   them is form (TSB). icu_training_load is TSS-equivalent, so this is computable
+   exactly rather than estimated.
+
+   It belongs here, in code, for the same reason every other number does: it is
+   arithmetic. What the model is asked is what it MEANS, and specifically how it
+   bears on eating — which is the whole point of putting the two together. A
+   rising CTL is a rising energy requirement. A deeply negative TSB is the worst
+   possible time to be under-fuelling, because that is when the body is trying to
+   absorb the work. */
+const CTL_K = 1 - Math.exp(-1 / 42);
+const ATL_K = 1 - Math.exp(-1 / 7);
+
+function trainingForm(rides, todayISO) {
+  const load = {};
+  for (const r of rides) if (r.date) load[r.date] = (load[r.date] || 0) + (r.load || 0);
+
+  const days = Object.keys(load).sort();
+  if (!days.length) return null;
+  const start = new Date(days[0] + 'T12:00:00Z');
+  const end = new Date(todayISO + 'T12:00:00Z');
+
+  let ctl = 0, atl = 0;
+  const series = [];
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const iso = d.toISOString().slice(0, 10);
+    const tss = load[iso] || 0;
+    /* Form is measured BEFORE today's ride is absorbed — it is how fresh you
+       were when you started, not how you feel afterwards. */
+    series.push({ d: iso, tss, ctl: +ctl.toFixed(1), atl: +atl.toFixed(1), tsb: +(ctl - atl).toFixed(1) });
+    ctl += (tss - ctl) * CTL_K;
+    atl += (tss - atl) * ATL_K;
+  }
+
+  const last = series[series.length - 1] || null;
+  const wkAgo = series[series.length - 8] || series[0];
+  const ramp = last && wkAgo ? +(last.ctl - wkAgo.ctl).toFixed(1) : 0;
+
+  return {
+    fitness_ctl: last ? last.ctl : 0,
+    fatigue_atl: last ? last.atl : 0,
+    form_tsb: last ? last.tsb : 0,
+    ctl_change_this_week: ramp,
+    what_the_numbers_mean: 'fitness is a 42-day average of training load, fatigue a 7-day one, form the gap. Positive form is fresh, deeply negative is buried.',
+    ramp_guidance: 'a rise of more than about 5 to 7 a week is where injury and illness risk climbs; near zero means holding fitness rather than building it',
+    days_counted: series.length,
+    recent: series.slice(-21),
+  };
+}
+
 /* Weekly shape of the last N weeks. Every figure here is arithmetic; the model
    is handed the finished table and asked what it means. */
 function trainingStats(rides, plan, todayISO) {
@@ -1057,6 +1122,7 @@ function trainingStats(rides, plan, todayISO) {
   const realDays = new Set(inBlock.map((r) => r.date)).size;
 
   return {
+    form: trainingForm(rides, todayISO),
     weeks,
     weeks_counted: weeks.length,
     current_week_partial: true,
@@ -1217,6 +1283,7 @@ export default {
       const facts = {
         the_question: q,
         today: today,
+        fitness_and_form: trainingForm(rides, date),
         recent_riding: trainingStats(rides, state.plan, date),
         /* Named plainly and flattened, because nested container names get cited
            back at the reader as though they were sources. */
@@ -1254,6 +1321,13 @@ export default {
       const state = await listStub(env).read();
       const rideRes = await fetchRides(env, date, date);
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], Number(date.slice(8, 10)), nowMins);
+      /* Six weeks of load, so advice about today knows whether he is buried or
+         fresh. Under-fuelling a deeply negative form is the expensive mistake. */
+      if (facts) {
+        const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - 90);
+        const hist = await fetchRides(env, back.toISOString().slice(0, 10), date);
+        if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date);
+      }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
 
       const out = await askModel(env, COACH_SYSTEM, COACH_SCHEMA, 'advice', facts);
