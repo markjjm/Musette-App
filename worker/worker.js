@@ -135,6 +135,182 @@ function prune(state) {
   return state;
 }
 
+/* ---- The coach ----------------------------------------------------------
+   Everything numeric is computed here, in code, and handed to the model as
+   settled fact. The model is asked for judgement only: given that the day is
+   370 kcal short, what should change about dinner?
+
+   This is not fastidiousness. Asked to work out that same 370 from its parts,
+   gpt-5-mini at minimal effort answered -88 — confidently, in valid JSON,
+   against a schema that had no way to notice. Arithmetic a pocket calculator
+   cannot get wrong has no business going to a language model, and a wrong
+   number here would be indistinguishable from a right one. */
+const COACH_MODEL = 'gpt-5-mini';
+const COACH_EFFORT = 'low';   // minimal cannot do the sums; medium buys nothing here
+const COACH_MAX_DAY = 40;     // hard ceiling on calls per UTC day
+
+const COACH_SYSTEM = [
+  'You advise one cyclist: 67.1 kg, riding to hold weight steady — neither gaining nor losing.',
+  '',
+  'Every number in the payload has already been computed and verified. Treat each as settled fact.',
+  'Never recalculate one, never contradict one, and never introduce a number that is not derivable',
+  'from those given. If something needed is missing, say so in `detail` rather than estimating it.',
+  '',
+  'Your job is judgement, not arithmetic: given these facts, what should change about the meals',
+  'still to come today? Rules:',
+  '- `changes` must be a set of edits applied TOGETHER, never alternatives. Their kcal_delta must',
+  '  sum to about `gap_kcal`. If you would rather offer a choice, pick one and say why in `detail`.',
+  '- Return an empty `changes` array when the day is close enough. That is a good answer, not a',
+  '  failure — a gap under about 150 kcal is noise against any estimate of what someone burned.',
+  '- Prefer changing food already planned over adding new food. Respect anything listed as low in',
+  '  the pantry: do not build a suggestion around it.',
+  '- Ride fuel is deliberate. Leave pre-ride, on-the-bike and recovery alone unless the ride itself',
+  '  came in very differently from plan.',
+  '',
+  'Be brief and concrete. This is read on a phone, mid-afternoon, by someone deciding what to cook.',
+  'You are not a clinician: no medical advice, no diagnosis, nothing about disordered eating.',
+].join('\n');
+
+const COACH_SCHEMA = {
+  type: 'object',
+  properties: {
+    headline: { type: 'string', description: 'One sentence, the whole answer if they read nothing else.' },
+    detail: { type: 'string', description: 'Two or three sentences of reasoning. Plain language.' },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+    changes: {
+      type: 'array',
+      description: 'Edits to apply together. Empty means no change needed.',
+      items: {
+        type: 'object',
+        properties: {
+          meal: { type: 'string', description: 'Which meal, named exactly as given in remaining_meals.' },
+          change: { type: 'string', description: 'What to do, concretely enough to act on.' },
+          kcal_delta: { type: 'integer', description: 'Signed change in calories for this meal.' },
+        },
+        required: ['meal', 'change', 'kcal_delta'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['headline', 'detail', 'confidence', 'changes'],
+  additionalProperties: false,
+};
+
+/* '6:15 am' -> 375. Meal times are authored, not user input, but a plan that
+   ever carried a malformed one should push the meal to the end of the day
+   rather than to the start of it. */
+function minsOf(t) {
+  const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(String(t || '').trim());
+  if (!m) return 24 * 60;
+  let h = Number(m[1]) % 12;
+  if (/pm/i.test(m[3])) h += 12;
+  return h * 60 + Number(m[2]);
+}
+
+/* Assemble what the model is allowed to know. Every figure below is arithmetic
+   done here; none of it is left for the model to work out. */
+function coachFacts(state, rides, dayNum, nowMins) {
+  const plan = state.plan || {};
+  const day = (plan.days || []).find((d) => d.d === dayNum);
+  const train = (plan.training || []).find((t) => t.d === dayNum);
+  if (!day) return null;
+
+  const ridden = rides.reduce((a, r) => a + (r.secs || 0), 0) / 3600;
+  const burned = rides.reduce((a, r) => a + (r.kcal || 0), 0);
+  const measured = rides.length > 0 && rides.every((r) => r.trust === 'measured');
+
+  const done = day.meals.filter((m) => minsOf(m.t) <= nowMins);
+  const left = day.meals.filter((m) => minsOf(m.t) > nowMins);
+  const onBike = (train && train.bk && train.bk.kc) || 0;
+
+  /* What the plan already budgeted for riding, against what the ride cost.
+     Both are whole-ride figures, so they are comparable; on-bike intake is
+     reported separately and is deliberately not subtracted from either. */
+  const plannedBurn = Math.round((train && train.h ? train.h : 0) * 600);
+  const gap = rides.length ? Math.round(burned - plannedBurn) : 0;
+
+  return {
+    date: `2026-08-${String(dayNum).padStart(2, '0')}`,
+    weekday: day.wd,
+    day_type: day.kind,
+    rider_kg: 67.1,
+    goal: 'hold weight steady',
+
+    planned_ride_h: train ? train.h : 0,
+    actual_ride_h: Math.round(ridden * 100) / 100,
+    planned_burn_kcal: plannedBurn,
+    actual_burn_kcal: Math.round(burned),
+    gap_kcal: gap,
+    burn_is_measured: measured,
+    planned_onbike_intake_kcal: onBike,
+
+    day_target_kcal: day.kc,
+    day_target_carb_g: day.cb,
+    eaten_so_far_kcal: done.reduce((a, m) => a + m.kc, 0),
+    remaining_planned_kcal: left.reduce((a, m) => a + m.kc, 0),
+    remaining_meals: left.map((m) => `${m.t} ${m.l} — ${m.kc} kcal`),
+    already_eaten: done.map((m) => m.l),
+
+    pantry_low: Object.entries(state.pantry || {})
+      .filter(([, v]) => v && (v.s === 'low' || v.s === 'out'))
+      .map(([k]) => k)
+      .slice(0, 20),
+  };
+}
+
+/* Never throws. A coach that is down must not take the meal plan with it. */
+async function askCoach(env, facts) {
+  if (!env.OPENAI_KEY) return { ok: false, why: 'not configured' };
+  try {
+    const r = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.OPENAI_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: COACH_MODEL,
+        reasoning: { effort: COACH_EFFORT },
+        input: [
+          { role: 'system', content: COACH_SYSTEM },
+          { role: 'user', content: JSON.stringify(facts) },
+        ],
+        text: { format: { type: 'json_schema', name: 'advice', schema: COACH_SCHEMA, strict: true } },
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (r.status === 429) return { ok: false, why: 'rate limited' };
+    if (r.status === 401) return { ok: false, why: 'key rejected' };
+    if (!r.ok) return { ok: false, why: `upstream ${r.status}` };
+    const d = await r.json();
+    if (d.error) return { ok: false, why: 'upstream error' };
+    /* A truncated answer is still valid JSON against the schema, so status has
+       to be checked rather than inferred from the body parsing cleanly. */
+    if (d.status === 'incomplete')
+      return { ok: false, why: (d.incomplete_details && d.incomplete_details.reason) || 'incomplete' };
+
+    let text = null;
+    for (const item of d.output || []) {
+      if (item.type !== 'message') continue;           // the first item is reasoning, and is empty
+      for (const c of item.content || []) {
+        if (c.type === 'refusal') return { ok: false, why: 'declined' };
+        if (c.type === 'output_text') text = c.text;
+      }
+    }
+    if (!text) return { ok: false, why: 'empty response' };
+    const advice = JSON.parse(text);
+    const u = d.usage || {};
+    return {
+      ok: true,
+      advice,
+      cost: Math.round(((u.input_tokens || 0) * 0.25 + (u.output_tokens || 0) * 2.0) / 10) / 100000,
+      model: d.model || COACH_MODEL,
+    };
+  } catch {
+    return { ok: false, why: 'unreachable' };
+  }
+}
+
 /* ---- The list itself ----------------------------------------------------
    One Durable Object owns the whole list. Cloudflare runs at most one
    request at a time against a given object, and blockConcurrencyWhile makes
@@ -188,6 +364,24 @@ export class ListDO extends DurableObject {
       state.updated = new Date().toISOString();
       await this.ctx.storage.put('state', state);
       return state;
+    });
+  }
+
+  /* The coach is the first endpoint here that spends real money, which makes it
+     the first one where an attacker's goal could be the bill rather than the
+     list. The access code is four digits; that is a deliberate, documented
+     trade for a grocery list, but it is not a budget control. So the budget is
+     enforced separately, and counted in the object that already serialises
+     every request. Stored under its own key — `read()` returns `state`
+     wholesale, so nothing private may live there. */
+  async spend(day) {
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      const s = (await this.ctx.storage.get('spend')) || {};
+      if (s.day !== day) { s.day = day; s.n = 0; }
+      if (s.n >= COACH_MAX_DAY) return { ok: false, n: s.n };
+      s.n += 1;
+      await this.ctx.storage.put('spend', s);
+      return { ok: true, n: s.n };
     });
   }
 
@@ -445,6 +639,30 @@ export default {
 
     if (path === '/state' && request.method === 'GET') {
       return json(await listStub(env).read(), 200, origin);
+    }
+
+    /* Today's plan, today's actual riding, and one piece of judgement about
+       what to do with the difference. The arithmetic is all done above; the
+       model only ever sees finished numbers. */
+    if (path === '/coach' && request.method === 'GET') {
+      const date = url.searchParams.get('date') || '';
+      const hhmm = url.searchParams.get('now') || '';
+      if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
+      const t = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+      if (!t) return json({ ok: false, why: 'expected now=HH:MM local' }, 400, origin);
+      const nowMins = Number(t[1]) * 60 + Number(t[2]);
+      if (!(nowMins >= 0 && nowMins < 1440)) return json({ ok: false, why: 'bad now' }, 400, origin);
+
+      const budget = await listStub(env).spend(date);
+      if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
+
+      const state = await listStub(env).read();
+      const rideRes = await fetchRides(env, date, date);
+      const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], Number(date.slice(8, 10)), nowMins);
+      if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
+
+      const out = await askCoach(env, facts);
+      return json({ ...out, facts, rides_ok: rideRes.ok, calls_today: budget.n }, 200, origin);
     }
 
     if (path === '/state' && request.method === 'PUT') {
