@@ -34,7 +34,7 @@
   "WD.map(d => `<div class=\"cghead\">${esc(d)}</div>`).join('')",
   "act",
   "act && !act.meas ? ' est' : ''",
-  "act ? ' s' + rideStep(kph) : ''",
+  "act ? ' ' + dayZone(day, act).k : ''",
   "aiFood.busy ? ' disabled' : ''",
   "aiFood.food.unit.g",
   "at >= 0 ? clock(at + 1) : '&mdash;'",

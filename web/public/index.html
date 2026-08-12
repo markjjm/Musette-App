@@ -77,9 +77,15 @@
      COUNT is the encoding; hue only reinforces it, so it survives greyscale. */
   /* The day's carbohydrate code. Edge is the signal, surface is the tint —
      the pair keeps text contrast while the card still reads as coloured. */
-  --code-hi:  #2F8F6B;  --code-hi-bg:  #E7F3ED;  --code-hi-ink:  #1C5C44;
-  --code-mid: #C87A2B;  --code-mid-bg: #FBF0E2;  --code-mid-ink: #8A5015;
-  --code-lo:  #B4531F;  --code-lo-bg:  #FAEBE4;  --code-lo-ink:  #7C3813;
+  /* Training zones, easy to hard. Green is easy and red is hard, which is the
+     way round everyone already reads a chart. Each has a surface and an ink so
+     text keeps its contrast while the card still carries the colour. */
+  --z0: #8A8578;  --z0-bg: #EFEDE6;  --z0-ink: #55514A;   /* rest      */
+  --z1: #3F9E6A;  --z1-bg: #E6F4EC;  --z1-ink: #1E5F3D;   /* recovery  */
+  --z2: #63A83F;  --z2-bg: #ECF4E3;  --z2-ink: #3C6624;   /* endurance */
+  --z3: #C9992B;  --z3-bg: #FAF2DF;  --z3-ink: #7E5F14;   /* tempo     */
+  --z4: #D0742A;  --z4-bg: #FBEEE2;  --z4-ink: #83430F;   /* threshold */
+  --z5: #C43B2E;  --z5-bg: #FAE8E6;  --z5-ink: #7E2118;   /* VO2       */
 
   /* Carb grid. Two CATEGORIES, not a ramp: where the carbohydrate came from.
      Chosen for a wide L* gap (green ~52, navy ~21) so the stack still reads
@@ -124,9 +130,12 @@
 
     --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
     --i1: #4A6C99; --i2: #6B95CC; --i3: #93B8E6; --i4: #C6DAF5; --i0: #3A3527;
-    --code-hi:  #4FB07E; --code-hi-bg:  #143128; --code-hi-ink:  #9BD9BB;
-    --code-mid: #E0A050; --code-mid-bg: #33240F; --code-mid-ink: #F0C489;
-    --code-lo:  #E08050; --code-lo-bg:  #33190F; --code-lo-ink:  #F0AE89;
+    --z0: #9A958A; --z0-bg: #26241E; --z0-ink: #C4BFB4;
+    --z1: #5CBE86; --z1-bg: #102A1E; --z1-ink: #9FDCBA;
+    --z2: #86C75B; --z2-bg: #1B2A12; --z2-ink: #BEE09B;
+    --z3: #E3B44A; --z3-bg: #2E2410; --z3-ink: #F2D492;
+    --z4: #E8904A; --z4-bg: #2E1C0F; --z4-ink: #F5BC8C;
+    --z5: #E05B4C; --z5-bg: #2E1512; --z5-ink: #F3A197;
     --tbl: #3F9E72; --btl: #B4CFF2; --btl-hatch: #7FA3D2;
     --cg-line: #4A4331; --cg-track: #2A2519; --cg-fill: #A69E8A; --cg-todo: #7F8798;
   }
@@ -140,9 +149,12 @@
   --ok:#4FB07E; --ok-soft:#16301F; --bad:#E0785A; --bad-soft:#3A1E16;
   --shadow:0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
   --i1:#4A6C99; --i2:#6B95CC; --i3:#93B8E6; --i4:#C6DAF5; --i0:#3A3527;
-  --code-hi:#4FB07E; --code-hi-bg:#143128; --code-hi-ink:#9BD9BB;
-  --code-mid:#E0A050; --code-mid-bg:#33240F; --code-mid-ink:#F0C489;
-  --code-lo:#E08050; --code-lo-bg:#33190F; --code-lo-ink:#F0AE89;
+  --z0:#9A958A; --z0-bg:#26241E; --z0-ink:#C4BFB4;
+  --z1:#5CBE86; --z1-bg:#102A1E; --z1-ink:#9FDCBA;
+  --z2:#86C75B; --z2-bg:#1B2A12; --z2-ink:#BEE09B;
+  --z3:#E3B44A; --z3-bg:#2E2410; --z3-ink:#F2D492;
+  --z4:#E8904A; --z4-bg:#2E1C0F; --z4-ink:#F5BC8C;
+  --z5:#E05B4C; --z5-bg:#2E1512; --z5-ink:#F3A197;
   --tbl:#3F9E72; --btl:#B4CFF2; --btl-hatch:#7FA3D2;
   --cg-line:#4A4331; --cg-track:#2A2519; --cg-fill:#A69E8A; --cg-todo:#7F8798;
 }
@@ -661,11 +673,14 @@ footer {
   position: relative; border-radius: 11px; overflow: hidden;
   padding: 10px 12px 10px 14px;
   background: var(--code-bg); box-shadow: inset 4px 0 0 var(--code), inset 0 0 0 1px var(--rule-soft);
-  --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink);
+  --code: var(--z2); --code-bg: var(--z2-bg); --code-ink: var(--z2-ink);
 }
-.hxc.c-hi  { --code: var(--code-hi);  --code-bg: var(--code-hi-bg);  --code-ink: var(--code-hi-ink); }
-.hxc.c-mid { --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink); }
-.hxc.c-lo  { --code: var(--code-lo);  --code-bg: var(--code-lo-bg);  --code-ink: var(--code-lo-ink); }
+.hxc.z0 { --code: var(--z0); --code-bg: var(--z0-bg); --code-ink: var(--z0-ink); }
+.hxc.z1 { --code: var(--z1); --code-bg: var(--z1-bg); --code-ink: var(--z1-ink); }
+.hxc.z2 { --code: var(--z2); --code-bg: var(--z2-bg); --code-ink: var(--z2-ink); }
+.hxc.z3 { --code: var(--z3); --code-bg: var(--z3-bg); --code-ink: var(--z3-ink); }
+.hxc.z4 { --code: var(--z4); --code-bg: var(--z4-bg); --code-ink: var(--z4-ink); }
+.hxc.z5 { --code: var(--z5); --code-bg: var(--z5-bg); --code-ink: var(--z5-ink); }
 .hxc.ate { opacity: .55; }
 
 /* The code, said in words directly under the date, so the colour is never the
@@ -675,9 +690,12 @@ footer {
   padding: 9px 12px; border-radius: 10px;
   background: var(--code-bg); box-shadow: inset 4px 0 0 var(--code);
 }
-.hxcode.c-hi  { --code: var(--code-hi);  --code-bg: var(--code-hi-bg);  --code-ink: var(--code-hi-ink); }
-.hxcode.c-mid { --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink); }
-.hxcode.c-lo  { --code: var(--code-lo);  --code-bg: var(--code-lo-bg);  --code-ink: var(--code-lo-ink); }
+.hxcode.z0 { --code: var(--z0); --code-bg: var(--z0-bg); --code-ink: var(--z0-ink); }
+.hxcode.z1 { --code: var(--z1); --code-bg: var(--z1-bg); --code-ink: var(--z1-ink); }
+.hxcode.z2 { --code: var(--z2); --code-bg: var(--z2-bg); --code-ink: var(--z2-ink); }
+.hxcode.z3 { --code: var(--z3); --code-bg: var(--z3-bg); --code-ink: var(--z3-ink); }
+.hxcode.z4 { --code: var(--z4); --code-bg: var(--z4-bg); --code-ink: var(--z4-ink); }
+.hxcode.z5 { --code: var(--z5); --code-bg: var(--z5-bg); --code-ink: var(--z5-ink); }
 .hxcode > b { font-size: 14px; font-weight: 800; color: var(--code-ink); }
 .hxcode > span { flex: 1; font-size: 12px; color: var(--ink-soft); }
 .hxcode > i { font-style: normal; font-size: 17px; font-weight: 800; color: var(--code-ink); font-variant-numeric: tabular-nums; }
@@ -960,10 +978,12 @@ footer {
 /* No ride was ever planned — no track at all, which is a different fact again. */
 .cgr.none { background: transparent; box-shadow: none; }
 .cgr.none .cgrf { display: none; }
-.cgr.s1 .cgrf { background: var(--i1); }
-.cgr.s2 .cgrf { background: var(--i2); }
-.cgr.s3 .cgrf { background: var(--i3); }
-.cgr.s4 .cgrf { background: var(--i4); }
+/* The same zone ramp as everywhere else, so one colour means one thing. */
+.cgr.z1 .cgrf { background: var(--z1); }
+.cgr.z2 .cgrf { background: var(--z2); }
+.cgr.z3 .cgrf { background: var(--z3); }
+.cgr.z4 .cgrf { background: var(--z4); }
+.cgr.z5 .cgrf { background: var(--z5); }
 /* energy inferred from heart rate rather than measured at the crank */
 .cgr.est .cgrf {
   background-image: repeating-linear-gradient(135deg,
@@ -2160,8 +2180,12 @@ async function loadBlockRides(){
     (r.rides || []).forEach(rd => {
       const k = String(rd.date || '').slice(0, 10);
       if (!k) return;
-      const e = by[k] || (by[k] = { secs: 0, kcal: 0, meas: true, n: 0 });
+      const e = by[k] || (by[k] = { secs: 0, kcal: 0, meas: true, n: 0, isum: 0, iw: 0 });
       e.n += 1; e.secs += Number(rd.secs) || 0; e.kcal += Number(rd.kcal) || 0;
+      /* Intensity weighted by duration: a five-minute commute must not drag a
+         three-hour ride's zone down with it. */
+      if (Number(rd.intensity) > 0) { e.isum += Number(rd.intensity) * (rd.secs || 0); e.iw += (rd.secs || 0); }
+      e.intensity = e.iw ? e.isum / e.iw : 0;
       if (rd.trust !== 'measured') e.meas = false;
     });
     block = { state: 'ok', by: by };
@@ -2172,7 +2196,7 @@ async function loadBlockRides(){
 /* Measured intensity in four steps, with 600 kcal/h — the rate every calorie
    target in the plan is built on — as a boundary rather than a value inside a
    band. So the two darker steps are exactly the rides that earned their food. */
-const rideStep = (kph) => kph >= 750 ? 4 : kph >= 600 ? 3 : kph >= 450 ? 2 : 1;
+
 
 function carbAdherence(iso, day){
   const meals = (day && day.meals) || [];
@@ -2268,7 +2292,7 @@ function monthGrid(){
            hairline is what was planned, the fill is what was actually ridden,
            and its shade is the measured rate. Geometry is time and colour is a
            rate, so neither restates the other. */
-        + `<span class="cgr ${rideState}${act ? ' s' + rideStep(kph) : ''}${act && !act.meas ? ' est' : ''}"`
+        + `<span class="cgr ${rideState}${act ? ' ' + dayZone(day, act).k : ''}${act && !act.meas ? ' est' : ''}"`
         + ` data-rh="${(act ? rPct : pPct).toFixed(1)}" data-rp="${pPct.toFixed(1)}">`
           + (hrs > 0 || act ? `<span class="cgrf"></span>` : '')
           + (hrs > 0 && act ? `<span class="cgrp"></span>` : '')
@@ -2559,15 +2583,39 @@ function weekStrip(){
    Cuts at 7.2 and 5.6 g/kg split this block 12 / 13 / 6, and land where you
    would want them: green takes the long days, the key days and the loading day
    that preloads them; red is only ever a rest day. */
-const CODE = {
-  hi:  { k: 'hi',  name: 'High carb',  why: 'hard session to fuel' },
-  mid: { k: 'mid', name: 'Moderate',   why: 'steady training day' },
-  lo:  { k: 'lo',  name: 'Low carb',   why: 'rest or easy session' },
+/* Training zones by intensity factor — the percentage of threshold a ride was
+   actually held at. intervals.icu supplies it per ride and it is the honest
+   signal: the plan's own labels do not predict effort at all. Across this block
+   a "Key day" came in at 523 kcal/h and a "Moderate day" at 546, and Long days
+   ranged 492 to 665. The label said one thing and the legs did another.
+
+   Cuts are the standard ones. Green is easy and red is hard, which is the way
+   round a chart is read without being told. */
+const ZONES = [
+  { k: 'z1', lo: 0,   name: 'Recovery',  why: 'spinning, nothing more' },
+  { k: 'z2', lo: 55,  name: 'Endurance', why: 'steady, all-day pace' },
+  { k: 'z3', lo: 75,  name: 'Tempo',     why: 'working, still conversational' },
+  { k: 'z4', lo: 90,  name: 'Threshold', why: 'hard, and it should feel it' },
+  { k: 'z5', lo: 105, name: 'VO2',       why: 'as hard as it gets' },
+];
+const REST = { k: 'z0', name: 'Rest', why: 'no riding today' };
+
+const zoneOf = (intensity) => {
+  let z = ZONES[0];
+  for (const x of ZONES) if (intensity >= x.lo) z = x;
+  return z;
 };
-function dayCode(day){
-  if (!day) return CODE.mid;
-  const g = day.meals.reduce((a, m) => a + (Number(m.cb) || 0), 0) / RIDER_KG;
-  return g >= 7.2 ? CODE.hi : g >= 5.6 ? CODE.mid : CODE.lo;
+
+/* A ridden day is classified by what it actually was. A day still to come has
+   only the plan's intent to go on, and the plan is polarised — most riding is
+   endurance and a few days are hard — so that is what it says. */
+const PLANNED_ZONE = { 'key day': 'z4', 'rest day': 'z0' };
+function dayZone(day, ride){
+  if (ride && Number(ride.intensity) > 0) return zoneOf(Number(ride.intensity));
+  const kind = String((day && day.kind) || '').toLowerCase();
+  if (!day || kind.indexOf('rest') >= 0) return REST;
+  const want = PLANNED_ZONE[kind];
+  return want ? (ZONES.find(z => z.k === want) || ZONES[1]) : ZONES[1];
 }
 
 function dayHead(day, tr, sum){
@@ -2615,7 +2663,7 @@ function mealRow(m, code){
       `<li><i>${Number(it.c) || 0}</i><span>${esc(it.n)}</span></li>`).join('');
   const said = f === 1 ? 'eaten' : f === 0.5 ? 'half eaten' : 'not eaten';
   return `<div class="hxr"><time>${clock(mins(m.t))}</time>`
-    + `<div class="hxc c-${code.k}${st}">`
+    + `<div class="hxc ${code.k}${st}">`
       + `<div class="hxhd"><span class="hxt">${esc(m.l)}</span>`
       + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span></div>`
       + (items ? `<ul class="hxi">${items}</ul>` : '')
@@ -2673,10 +2721,12 @@ function fuelDay(){
   }
   rows.sort((x, y) => x.at - y.at);
 
-  const code = dayCode(day);
+  const ride = (selDay === todayKey() && coach.rides && coach.rides[0]) ||
+               (block.state === 'ok' && block.by[selDay]) || null;
+  const code = dayZone(day, ride);
   return weekStrip() + dayHead(day, tr, sum)
-    + `<div class="hxcode c-${code.k}"><b>${esc(code.name)}</b><span>${esc(code.why)}</span>`
-    + `<i>${sum.cb}<u>g</u></i></div>`
+    + `<div class="hxcode ${code.k}"><b>${esc(code.name)}</b><span>${esc(code.why)}</span>`
+    + `<i>${sum.cb}<u>g carb</u></i></div>`
     + macroRow(day, sum, eaten)
     + `<div class="hxtl">`
     + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal, code)).join('')
@@ -2746,7 +2796,7 @@ function render(){
     const dd = dayOf(selDay || todayKey());
     const tt = dd ? (plan.training || []).find(z => z.d === dnum(selDay || todayKey())) : null;
     meta.textContent = dd
-      ? dd.wd + ' ' + dd.d + ' \u00b7 ' + dayCode(dd).name + (tt && tt.h ? ' \u00b7 ' + hhm(tt.h) : '')
+      ? dd.wd + ' ' + dd.d + ' \u00b7 ' + dayZone(dd, null).name + (tt && tt.h ? ' \u00b7 ' + hhm(tt.h) : '')
       : TAB_NAME[tab] || '';
   }
   $('#hmeta').textContent = [
