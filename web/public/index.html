@@ -515,6 +515,88 @@ footer {
 }
 
 /* ---------------- training week (Fuel tab) ---------------------------- */
+/* ---- Today, as a day rather than a list -------------------------------
+   A week to move through, four numbers that fill as you eat, and the day laid
+   out against the clock with the ride sitting in it at its own time. */
+.hxwk { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 10px 14px 12px; }
+.hxd {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 0 8px; border: 0; border-radius: 12px; cursor: pointer;
+  background: transparent; color: var(--ink-soft); font: inherit;
+}
+.hxd > i { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .1em; opacity: .65; }
+.hxd > b { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hxd.off { opacity: .3; }
+.hxd.now > b { text-decoration: underline; text-underline-offset: 3px; }
+.hxd.on { background: var(--pen); color: var(--pen-ink); }
+.hxd.on > i { opacity: .85; }
+
+.hxmac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 14px 12px; }
+.hxm > i { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--ink-soft); }
+.hxm > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.hxm > b > s { text-decoration: none; font-size: 11px; font-weight: 600; color: var(--gravel); }
+.hxm > em { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: var(--rule); overflow: hidden; }
+.hxm > em > u {
+  display: block; height: 100%; width: 0; border-radius: 2px;
+  background: var(--pen-text); text-decoration: none; transition: width .3s ease;
+}
+
+.hxkind {
+  margin: 0 16px 8px; font-size: 12px; font-weight: 800;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--pen-text);
+}
+
+/* The rule down the left is the clock; every row hangs off it. */
+.hxtl { margin: 0 14px; border-left: 2px solid var(--rule); padding-left: 0; }
+.hxr { display: grid; grid-template-columns: 46px 1fr; align-items: stretch; gap: 8px; margin-bottom: 6px; }
+.hxr > time {
+  font-size: 11px; font-weight: 700; color: var(--gravel);
+  font-variant-numeric: tabular-nums; padding-top: 12px; padding-left: 6px;
+}
+.hxc {
+  position: relative; display: block; width: 100%; text-align: left;
+  padding: 10px 34px 10px 12px; border: 0; border-radius: 11px;
+  font: inherit; cursor: pointer; color: var(--ink);
+  background: var(--card); box-shadow: inset 0 0 0 1px var(--rule);
+}
+.hxc > .hxt { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.hxc > .hxs { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
+/* Carbohydrate as a share of the meal's own calories — the app's whole premise,
+   so it is what colours the card. Each keeps a left bar so the code survives
+   greyscale and colour blindness. */
+.hxc.c-hi  { box-shadow: inset 4px 0 0 #2F8F6B, inset 0 0 0 1px var(--rule); }
+.hxc.c-mid { box-shadow: inset 4px 0 0 #C87A2B, inset 0 0 0 1px var(--rule); }
+.hxc.c-lo  { box-shadow: inset 4px 0 0 #7C8BA1, inset 0 0 0 1px var(--rule); }
+.hxmk {
+  position: absolute; right: 11px; top: 50%; margin-top: -9px;
+  width: 18px; height: 18px; border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--rule);
+}
+.hxc.ate  > .hxmk { background: #2F8F6B; box-shadow: none; }
+.hxc.half > .hxmk { background: linear-gradient(90deg, #2F8F6B 50%, transparent 50%); box-shadow: inset 0 0 0 2px var(--rule); }
+.hxc.ate  > .hxt, .hxc.half > .hxt { text-decoration: line-through; text-decoration-color: var(--gravel); }
+.hxc.ate { opacity: .72; }
+
+.hxride {
+  display: block; padding: 10px 12px; border-radius: 11px;
+  background: var(--pen); color: var(--pen-ink);
+}
+.hxride > .hxt { display: block; font-size: 14px; font-weight: 700; }
+.hxride > .hxs { display: block; font-size: 12px; margin-top: 2px; color: var(--pen-mute); font-variant-numeric: tabular-nums; }
+.hxride > .hxs > b { color: var(--pen-ink); }
+.wks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
+.wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--rule); }
+.wk > i { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: var(--gravel); }
+.wk > b { display: block; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wk > span { display: block; font-size: 8px; color: var(--ink-soft); line-height: 1.3; }
+.wk.part { opacity: .5; }
+.wtrend { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 4px; }
+.wtrend b.dn { color: #B4531F; } .wtrend b.up { color: #2F6B3A; }
+.asec { display: block; padding: 8px 0; border-top: 1px dashed var(--rule); }
+.asec > b { display: block; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--pen-text); margin-bottom: 3px; }
+.asec > span { display: block; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.hxnote { margin: 10px 16px 2px; font-size: 11px; color: var(--gravel); line-height: 1.45; }
+
 /* Today's card: planned above ridden, and the difference between them. */
 .card.coach { padding: 14px 16px 16px; }
 .ctype {
@@ -870,6 +952,10 @@ let hideChecked = jget('v2.hideChecked', false); // Store check-off filter mode
    somebody buys it. Synced like everything else, so noticing the peanut butter
    is nearly gone puts it on the other phone's list too. */
 let pantryState = jget('v2.pantry', {});
+
+/* What was actually eaten. '2026-08-12|6:15 am' -> {v: 0 | 0.5 | 1, t}.
+   Date-anchored, so it never collides with a tick key ('weekId|itemname'). */
+let mealLog = jget('v2.log', {});
 const PANTRY_WEEK = 'pantry';
 const PANTRY_NEXT = { ok: 'low', low: 'out', out: 'ok' };
 const PANTRY_LABEL = { ok: 'Have', low: 'Running low', out: 'Out' };
@@ -896,7 +982,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const now = () => Date.now();
 const uid = () => 'x' + now().toString(36) + Math.random().toString(36).slice(2,7);
-const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); jset('v2.pantry', pantryState); };
+const persist = () => { jset('v2.ticks',ticks); jset('v2.extras',extras); jset('v2.dirty',dirty); jset('v2.hideChecked', hideChecked); jset('v2.pantry', pantryState); jset('v2.log', mealLog); };
 
 /* 'weekend' was a two-day top-up at the start of the August block and is no
    longer wanted. Filtered here rather than in the data so a regenerated
@@ -948,7 +1034,7 @@ let planSig = '';
    the comparison is allowed to be wrong towards doing more work, never less. */
 function stateSig(){
   const m = (o) => Object.keys(o || {}).sort().map(k => k + '=' + JSON.stringify(o[k])).join('|');
-  return m(ticks) + '\n' + m(extras) + '\n' + m(pantryState);
+  return m(ticks) + '\n' + m(extras) + '\n' + m(pantryState) + '\n' + m(mealLog);
 }
 let needCode = false;   // set when the Worker rejects the access code
 function openSettings(){
@@ -993,7 +1079,7 @@ async function sync(push){
     if (cfg.key) h['X-List-Key'] = cfg.key;
     let r;
     if (push || dirty){
-      r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras, pantry: pantryState})});
+      r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras, pantry: pantryState, log: mealLog})});
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
@@ -1005,6 +1091,7 @@ async function sync(push){
     ticks  = s.ticks  || {};
     extras = s.extras || {};
     pantryState = s.pantry || pantryState;
+    mealLog = s.log || mealLog;
     let changed = stateSig() !== was;
     /* A plan with no weeks blanks the whole app — no current week, nothing to
        render. Never adopt one; keep whatever is already loaded. */
@@ -1611,6 +1698,7 @@ function monthGrid(){
    Ride data is cheap and cached at the edge, so it loads on its own. Advice
    costs money and takes a few seconds, so it only ever happens on a tap. */
 let coach = { day: '', rides: null, advice: null, facts: null, busy: false, err: '' };
+let look  = { data: null, stats: null, busy: false, err: '' };
 
 function todayKey(){
   const n = new Date();
@@ -1649,54 +1737,195 @@ async function runCoach(){
   coach.busy = false; render();
 }
 
-const hhm = (h) => { const t = Math.round(h * 60); return t >= 60 ? (t / 60 | 0) + 'h ' + (t % 60) + 'm' : t + 'm'; };
+async function runAnalyze(){
+  if (look.busy) return;
+  look.busy = true; look.err = ''; render();
+  try {
+    const r = await api('/analyze?to=' + todayKey() + '&weeks=6');
+    if (r.ok) { look.data = r.advice; look.stats = r.stats; }
+    else look.err = r.why || 'unavailable';
+  } catch (e) { look.err = e.message; }
+  look.busy = false; render();
+}
 
-function coachCard(){
-  const d = todayKey();
-  const dayNum = Number(d.slice(8, 10));
-  const day = (plan.days || []).find(x => x.d === dayNum);
-  const tr  = (plan.training || []).find(x => x.d === dayNum);
-  if (!day || d.slice(0, 7) !== '2026-08') return '';
-
-  const rides = coach.rides || [];
-  const secs  = rides.reduce((a, r) => a + (r.secs || 0), 0);
-  const burn  = rides.reduce((a, r) => a + (r.kcal || 0), 0);
-  const planH = (tr && tr.h) || 0;
-  const planK = Math.round(planH * 600);
-  const gap   = rides.length ? Math.round(burn - planK) : 0;
-  const meas  = rides.length > 0 && rides.every(r => r.trust === 'measured');
-
-  let rows = `<div class="cmp"><span>planned</span><b>${esc(hhm(planH))}</b><b>${planK} kcal</b></div>`;
-  if (coach.rides === null){
-    rows += `<div class="cmp dim"><span>actual</span><b>&hellip;</b><b></b></div>`;
-  } else if (!rides.length){
-    rows += `<div class="cmp dim"><span>actual</span><b>no ride yet</b><b></b></div>`;
-  } else {
-    rows += `<div class="cmp"><span>actual</span><b>${esc(hhm(secs / 3600))}</b><b>${burn} kcal</b></div>`
-          + `<div class="cmp gap ${gap < 0 ? 'under' : 'over'}"><span></span><b></b><b>${gap > 0 ? '+' : ''}${gap} kcal</b></div>`;
+function analysisCard(){
+  let out = `<div class="sech">How the training is going</div><div class="card coach">`;
+  const st = look.stats;
+  if (st && st.weeks && st.weeks.length){
+    out += `<div class="wks">` + st.weeks.slice(-6).map(w =>
+      `<div class="wk${w.partial ? ' part' : ''}"><i>${esc(w.week.slice(5))}</i>`
+      + `<b>${w.hours}h</b><span>${w.ride_days}d &middot; ${w.watts_per_bpm || '&mdash;'} W/bpm</span></div>`).join('')
+      + `</div>`;
+    if (st.efficiency_trend_pct !== null && st.efficiency_trend_pct !== undefined)
+      out += `<p class="wtrend">Watts per heartbeat over the last complete weeks: <b class="${st.efficiency_trend_pct < 0 ? 'dn' : 'up'}">${st.efficiency_trend_pct > 0 ? '+' : ''}${st.efficiency_trend_pct}%</b>. More power at the same heart rate is fitness; the week in progress is left out because it is not finished.</p>`;
   }
-
-  let out = `<div class="sech">Today &middot; ${esc(day.wd)} ${dayNum} August</div>
-    <div class="card coach">
-      <div class="ctype">${esc(day.kind)}${meas ? ' &middot; <span class="meas">power meter</span>' : ''}</div>
-      ${rows}
-      <button id="coach_go" class="cbtn"${coach.busy ? ' disabled' : ''}>${coach.busy ? 'Thinking&hellip;' : 'What should change?'}</button>`;
-
-  if (coach.err) out += `<p class="cerr">${esc(coach.err)}</p>`;
-
-  if (coach.advice){
-    const a = coach.advice;
-    out += `<div class="adv">
-      <p class="ahead">${esc(a.headline)}</p>
-      <p class="adet">${esc(a.detail)}</p>`;
-    out += (a.changes || []).map(c =>
-      `<div class="achg"><b>${esc(c.meal)}</b><span>${esc(c.change)}</span>
-        <i class="${c.kcal_delta < 0 ? 'dn' : 'up'}">${c.kcal_delta > 0 ? '+' : ''}${Number(c.kcal_delta) || 0}</i></div>`).join('');
-    if (!(a.changes || []).length) out += `<p class="anone">Nothing to change &mdash; today is close enough.</p>`;
-    /* Advice, not instruction. Nothing here writes to the plan. */
-    out += `<p class="afoot">A suggestion, not a change &mdash; the plan is untouched.</p></div>`;
+  out += `<button id="look_go" class="cbtn"${look.busy ? ' disabled' : ''}>${look.busy ? 'Reading the data&hellip;' : (look.data ? 'Look again' : 'Analyse my training')}</button>`;
+  if (look.err) out += `<p class="cerr">${esc(look.err)}</p>`;
+  if (look.data){
+    const a = look.data;
+    out += `<div class="adv"><p class="ahead">${esc(a.headline)}</p>`
+      + [['Fitness', a.fitness], ['Consistency', a.consistency], ['Watch', a.watch]].map(([k, v]) =>
+          `<div class="asec"><b>${k}</b><span>${esc(v)}</span></div>`).join('')
+      + `<div class="asec"><b>Do next</b><span>` + (a.do_next||[]).map(x => `&bull; ${esc(x)}`).join('<br>') + `</span></div>`
+      + `<p class="afoot">${esc(a.caveat)}</p></div>`;
   }
   return out + `</div>`;
+}
+
+const hhm = (h) => { const t = Math.round(h * 60); return t >= 60 ? (t / 60 | 0) + 'h ' + (t % 60) + 'm' : t + 'm'; };
+
+/* Which day the Fuel tab is showing. Defaults to today, moves with the strip. */
+let selDay = '';
+
+const DOW = ['S','M','T','W','T','F','S'];
+const dnum = (d) => Number(d.slice(8,10));
+const dayOf = (d) => (plan.days || []).find(x => x.d === dnum(d));
+
+/* Meal times are '6:15 am'; the timeline wants 06:15 and a sort order. */
+function mins(t){
+  const m = /^(\s*)(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(String(t||''));
+  if (!m) return 24*60;
+  let h = Number(m[2]) % 12; if (/pm/i.test(m[4])) h += 12;
+  return h*60 + Number(m[3]);
+}
+const clock = (mm) => String(mm/60|0).padStart(2,'0') + ':' + String(mm%60).padStart(2,'0');
+
+const logKey = (d, t) => d + '|' + t;
+const ateOf  = (d, t) => { const e = mealLog[logKey(d,t)]; return e ? Number(e.v) || 0 : 0; };
+
+function setAte(d, t, v){
+  mealLog[logKey(d,t)] = { v, t: Date.now() };
+  dirty = true; persist(); queue(); triggerHaptic(); render();
+}
+
+/* Carbohydrate as a share of the meal's own calories. This is the signal the
+   whole app is about, so it is what colours the card — not the meal's name. */
+function carbCode(m){
+  if (!m.kc) return 'lo';
+  const share = (4 * (m.cb || 0)) / m.kc;
+  return share >= 0.55 ? 'hi' : share >= 0.35 ? 'mid' : 'lo';
+}
+
+function weekStrip(){
+  const sel = new Date(selDay + 'T12:00:00');
+  const mon = new Date(sel); mon.setDate(sel.getDate() - ((sel.getDay() + 6) % 7));
+  let out = '';
+  for (let i = 0; i < 7; i++){
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const has = !!dayOf(key);
+    out += `<button class="hxd${key === selDay ? ' on' : ''}${key === todayKey() ? ' now' : ''}${has ? '' : ' off'}" data-day="${esc(key)}">`
+         + `<i>${DOW[d.getDay()]}</i><b>${d.getDate()}</b></button>`;
+  }
+  return `<div class="hxwk">${out}</div>`;
+}
+
+/* Consumed against target, for the four numbers the plan actually tracks.
+   Calories and carbohydrate are exact — both live on every meal. Protein and
+   fat exist only as day totals, so they are apportioned across meals by
+   calorie share and labelled as the estimates they are. */
+function macros(day, eaten){
+  const done = day.meals.reduce((a,m) => a + m.kc * ateOf(selDay, m.t), 0);
+  const share = day.kc ? done / day.kc : 0;
+  return [
+    ['kcal', Math.round(eaten.kc), day.kc, ''],
+    ['C',    Math.round(eaten.cb), day.cb, 'g'],
+    ['P',    Math.round((day.pr||0) * share), day.pr||0, 'g'],
+    ['F',    Math.round((day.ft||0) * share), day.ft||0, 'g'],
+  ];
+}
+
+function fuelToday(){
+  if (!selDay) selDay = todayKey();
+  const day = dayOf(selDay);
+  if (!day) return `<div class="hxwk-wrap">${weekStrip()}</div><div class="empty">No plan for that day.</div>`;
+  const tr = (plan.training || []).find(x => x.d === dnum(selDay));
+
+  const eaten = day.meals.reduce((a,m) => {
+    const f = ateOf(selDay, m.t);
+    return { kc: a.kc + m.kc*f, cb: a.cb + (m.cb||0)*f };
+  }, {kc:0, cb:0});
+
+  let out = weekStrip()
+    + `<div class="hxmac">` + macros(day, eaten).map(([k,v,t,u]) =>
+        `<div class="hxm"><i>${k}</i><b>${v}<s>/${t}${u}</s></b><em><u data-pct="${t ? Math.min(100, Math.round(v/t*100)) : 0}"></u></em></div>`
+      ).join('') + `</div>`
+    + `<div class="hxkind">${esc(day.kind)}${tr && tr.h ? ' &middot; ' + esc(hhm(tr.h)) + ' planned' : ''}</div>`;
+
+  /* One row per meal, in clock order, with the ride dropped in at its own time
+     rather than listed among the food. */
+  const rows = day.meals.map(m => ({ at: mins(m.t), meal: m }));
+  if (tr && tr.h){
+    const ride = day.meals.find(m => /on the bike/i.test(m.l));
+    rows.push({ at: ride ? mins(ride.t) - 1 : 18*60, ride: tr });
+  }
+  rows.sort((x,y) => x.at - y.at);
+
+  out += `<div class="hxtl">` + rows.map(r => {
+    if (r.ride){
+      const t = r.ride;
+      const gph = t.h ? Math.round(((t.bk && t.bk.cb) || 0) / t.h) : 0;
+      const act = selDay === todayKey() && coach.rides && coach.rides.length
+        ? coach.rides.reduce((a,x) => a + (x.kcal||0), 0) : null;
+      return `<div class="hxr"><time>${clock(Math.max(0,r.at+1))}</time>`
+        + `<div class="hxride"><span class="hxt">${esc(hhm(t.h))} &middot; ${esc(t.kind)}</span>`
+        + `<span class="hxs">${gph} g carb/hr on the bike`
+        + (act !== null ? ` &middot; <b>${act} kcal ridden</b>` : ` &middot; ${Math.round(t.h*600)} kcal planned`)
+        + `</span></div></div>`;
+    }
+    const m = r.meal, f = ateOf(selDay, m.t);
+    const st = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
+    return `<div class="hxr"><time>${clock(r.at)}</time>`
+      + `<button class="hxc c-${carbCode(m)}${st}" data-log="${esc(m.t)}">`
+      + `<span class="hxt">${esc(m.l)}</span>`
+      + `<span class="hxs">${m.kc} kcal &middot; C ${m.cb||0}g</span>`
+      + `<span class="hxmk"></span></button></div>`;
+  }).join('') + `</div>`;
+
+  out += `<p class="hxnote">Tap a meal once for eaten, twice for half. Protein and fat are apportioned across meals by calories &mdash; the plan only carries them as day totals.</p>`;
+  return out;
+}
+
+function coachCard(){
+  const day = dayOf(selDay || todayKey());
+  if (!day) return '';
+  const tr = (plan.training || []).find(x => x.d === dnum(selDay || todayKey()));
+  const isToday = (selDay || todayKey()) === todayKey();
+  const rides = (isToday && coach.rides) || [];
+  const secs = rides.reduce((a,r) => a + (r.secs||0), 0);
+  const burn = rides.reduce((a,r) => a + (r.kcal||0), 0);
+  const planK = Math.round(((tr && tr.h) || 0) * 600);
+  const gap = rides.length ? Math.round(burn - planK) : 0;
+  const meas = rides.length > 0 && rides.every(r => r.trust === 'measured');
+
+  let out = `<div class="card coach">`;
+  if (rides.length){
+    out += `<div class="cmp"><span>planned</span><b>${esc(hhm(((tr&&tr.h)||0)))}</b><b>${planK} kcal</b></div>`
+        + `<div class="cmp"><span>ridden</span><b>${esc(hhm(secs/3600))}</b><b>${burn} kcal</b></div>`
+        + `<div class="cmp gap ${gap < 0 ? 'under' : 'over'}"><span></span><b>${meas ? '<span class="meas">power meter</span>' : ''}</b><b>${gap > 0 ? '+' : ''}${gap} kcal</b></div>`;
+  } else if (isToday){
+    out += `<div class="cmp dim"><span>ridden</span><b>${coach.rides === null ? '&hellip;' : 'nothing yet'}</b><b></b></div>`;
+  }
+  out += `<button id="coach_go" class="cbtn"${coach.busy ? ' disabled' : ''}>${coach.busy ? 'Thinking&hellip;' : 'What should change?'}</button>`;
+  if (coach.err) out += `<p class="cerr">${esc(coach.err)}</p>`;
+  if (coach.advice){
+    const a = coach.advice;
+    out += `<div class="adv"><p class="ahead">${esc(a.headline)}</p><p class="adet">${esc(a.detail)}</p>`
+      + (a.changes||[]).map(c => `<div class="achg"><b>${esc(c.meal)}</b><span>${esc(c.change)}</span>`
+        + `<i class="${c.kcal_delta < 0 ? 'dn' : 'up'}">${c.kcal_delta > 0 ? '+' : ''}${Number(c.kcal_delta)||0}</i></div>`).join('')
+      + (!(a.changes||[]).length ? `<p class="anone">Nothing to change &mdash; today is close enough.</p>` : '')
+      + `<p class="afoot">A suggestion, not a change &mdash; the plan is untouched.</p></div>`;
+  }
+  return out + `</div>`;
+}
+
+/* Bar widths are set through the CSSOM rather than a style attribute: the CSP
+   is hash-only, so style="width:60%" in an innerHTML string is dropped on the
+   floor. Assigning .style from script is unaffected. */
+function paintBars(){
+  document.querySelectorAll('.hxm u[data-pct]').forEach(u => {
+    u.style.width = (Number(u.dataset.pct) || 0) + '%';
+  });
 }
 
 function render(){
@@ -1737,7 +1966,7 @@ function render(){
 
   if (tab === 'P'){
     m.innerHTML = dayBlocks(w);
-    totals(); updateHeaderHeight(); return;
+    totals(); paintBars(); updateHeaderHeight(); return;
   }
 
   if (tab === 'D'){
@@ -1786,7 +2015,7 @@ function render(){
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
 
     if (coach.rides === null && coach.day !== todayKey()) loadRides();
-    m.innerHTML = coachCard()
+    m.innerHTML = fuelToday() + coachCard() + analysisCard()
       + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
       + (wk.length ? `
       <div class="trainhd">
@@ -2004,7 +2233,25 @@ document.addEventListener('click', e => {
     return;
   }
 
+  const dsel = e.target.closest('.hxd');
+  if (dsel && !dsel.classList.contains('off')){
+    selDay = dsel.dataset.day;
+    /* A different day has different advice; showing yesterday's would be a lie. */
+    coach.advice = null; coach.err = '';
+    render(); return;
+  }
+
+  /* none -> ate -> half -> none. Two taps for "about half", which is as fine
+     as anyone is honestly going to be about a plate of food. */
+  const lg = e.target.closest('[data-log]');
+  if (lg){
+    const cur = ateOf(selDay, lg.dataset.log);
+    setAte(selDay, lg.dataset.log, cur === 0 ? 1 : cur === 1 ? 0.5 : 0);
+    return;
+  }
+
   if (e.target.closest('#coach_go')){ runCoach(); return; }
+  if (e.target.closest('#look_go')){ runAnalyze(); return; }
 
   if (e.target.closest('#reset')){
     const w = curWeek();

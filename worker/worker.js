@@ -72,7 +72,7 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {} });
+const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {} });
 
 const clamp = (v) => (typeof v === 'string' ? v.slice(0, MAX_STR) : '');
 
@@ -107,6 +107,19 @@ function cleanPantry(v) {
   return { s: v.s, t: v.t };
 }
 
+/* What was actually eaten, as opposed to what was planned. Keyed by date and
+   meal time — '2026-08-12|6:15 am' — so it is anchored to a real day rather
+   than to a week id, and so a key can never collide with a tick key, which is
+   'weekId|itemname'. Value is how much of the meal was eaten: 0, a half, or
+   all of it. Nothing finer, because nobody is weighing their dinner. */
+const ATE = new Set([0, 0.5, 1]);
+function cleanLog(v) {
+  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  const n = Number(v.v);
+  if (!ATE.has(n)) return null;
+  return { v: n, t: v.t };
+}
+
 /* Last-write-wins per key, using each entry's own timestamp. */
 function mergeByTime(mine, theirs, clean) {
   const out = { ...mine };
@@ -131,6 +144,11 @@ function prune(state) {
   }
   for (const [k, v] of Object.entries(state.extras)) {
     if (v.deleted && v.t < cutoff) delete state.extras[k];
+  }
+  /* One key per meal per day is roughly 210 a month, so a year of history would
+     pass MAX_ENTRIES on its own. Nothing reads a meal log from three months ago. */
+  for (const [k, v] of Object.entries(state.log || {})) {
+    if (v.t < cutoff) delete state.log[k];
   }
   return state;
 }
@@ -170,6 +188,44 @@ const COACH_SYSTEM = [
   'Be brief and concrete. This is read on a phone, mid-afternoon, by someone deciding what to cook.',
   'You are not a clinician: no medical advice, no diagnosis, nothing about disordered eating.',
 ].join('\n');
+
+const ANALYST_SYSTEM = [
+  'You read training data for one cyclist: 67.1 kg, riding to hold weight steady, on a 31-day',
+  'August block. He has a power meter, so the power figures are measured rather than estimated.',
+  '',
+  'Every number below is already computed. Never recalculate one and never invent one.',
+  '',
+  'Write the read on his training that a good coach would give — specific to him, not the generic',
+  'summary a tracking site produces. What has actually been happening, what it means, and what he',
+  'should do about it. Rules:',
+  '- Say what the data supports and no more. Two weeks is a trend to watch, not a conclusion.',
+  '  Say so plainly when the sample is thin rather than dressing it up.',
+  '- watts_per_bpm is the fitness signal worth the most: more power at the same heart rate.',
+  '  A move under about 2% is noise.',
+  '- Riding fewer hours than planned is information, not a failing. If he consistently rides less',
+  '  than the block asks, the block is wrong, not him — say that, because his food is calculated',
+  '  from planned hours and he will be over-fed by the difference.',
+  '- Be concrete: name the week, the number, the day.',
+  '- No medical advice, no diagnosis, nothing about disordered eating.',
+].join('\n');
+
+const ANALYST_SCHEMA = {
+  type: 'object',
+  properties: {
+    headline: { type: 'string', description: 'One sentence: the single most important thing in this data.' },
+    fitness: { type: 'string', description: 'Is he getting fitter, holding, or digging a hole? Cite the figure.' },
+    consistency: { type: 'string', description: 'Planned against actual, and what that means for his food.' },
+    watch: { type: 'string', description: 'The one thing to keep an eye on.' },
+    do_next: {
+      type: 'array',
+      description: 'One to three concrete actions.',
+      items: { type: 'string' },
+    },
+    caveat: { type: 'string', description: 'What this data cannot tell him. Be honest.' },
+  },
+  required: ['headline', 'fitness', 'consistency', 'watch', 'do_next', 'caveat'],
+  additionalProperties: false,
+};
 
 const COACH_SCHEMA = {
   type: 'object',
@@ -259,7 +315,7 @@ function coachFacts(state, rides, dayNum, nowMins) {
 }
 
 /* Never throws. A coach that is down must not take the meal plan with it. */
-async function askCoach(env, facts) {
+async function askModel(env, system, schema, name, facts) {
   if (!env.OPENAI_KEY) return { ok: false, why: 'not configured' };
   try {
     const r = await fetch('https://api.openai.com/v1/responses', {
@@ -272,10 +328,10 @@ async function askCoach(env, facts) {
         model: COACH_MODEL,
         reasoning: { effort: COACH_EFFORT },
         input: [
-          { role: 'system', content: COACH_SYSTEM },
+          { role: 'system', content: system },
           { role: 'user', content: JSON.stringify(facts) },
         ],
-        text: { format: { type: 'json_schema', name: 'advice', schema: COACH_SCHEMA, strict: true } },
+        text: { format: { type: 'json_schema', name, schema, strict: true } },
       }),
       signal: AbortSignal.timeout(25000),
     });
@@ -298,11 +354,11 @@ async function askCoach(env, facts) {
       }
     }
     if (!text) return { ok: false, why: 'empty response' };
-    const advice = JSON.parse(text);
+    const out = JSON.parse(text);
     const u = d.usage || {};
     return {
       ok: true,
-      advice,
+      advice: out,
       cost: Math.round(((u.input_tokens || 0) * 0.25 + (u.output_tokens || 0) * 2.0) / 10) / 100000,
       model: d.model || COACH_MODEL,
     };
@@ -356,6 +412,7 @@ export class ListDO extends DurableObject {
       state.ticks = mergeByTime(state.ticks, body.ticks, cleanTick);
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
       state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
+      state.log = mergeByTime(state.log || {}, body.log, cleanLog);
       prune(state);
       /* One-deep undo. Writes are unauthenticated, so keep the previous good
          state to roll back to rather than relying on nobody ever scribbling. */
@@ -475,7 +532,7 @@ const ICU_FIELDS = [
   'id', 'start_date_local', 'type', 'name', 'moving_time', 'elapsed_time',
   'distance', 'total_elevation_gain', 'icu_joules', 'calories', 'device_watts',
   'icu_average_watts', 'icu_weighted_avg_watts', 'average_heartrate',
-  'max_heartrate', 'icu_training_load',
+  'max_heartrate', 'icu_training_load', 'icu_power_hr', 'icu_intensity',
 ].join(',');
 
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
@@ -520,6 +577,83 @@ function cleanRide(a) {
     np: Number(a.icu_weighted_avg_watts) || null,
     hr: Number(a.average_heartrate) || null,
     load: Number(a.icu_training_load) || null,
+    /* Watts per heartbeat. Rising over weeks at the same heart rate is the
+       cleanest cheap signal that aerobic fitness is actually improving. */
+    pwhr: Number(a.icu_power_hr) || null,
+    intensity: Number(a.icu_intensity) || null,
+  };
+}
+
+/* Weekly shape of the last N weeks. Every figure here is arithmetic; the model
+   is handed the finished table and asked what it means. */
+function trainingStats(rides, plan, todayISO) {
+  const wk = new Map();
+  const key = (iso) => {
+    const d = new Date(iso + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));   // back to Monday
+    return d.toISOString().slice(0, 10);
+  };
+  for (const r of rides) {
+    if (!r.date) continue;
+    const k = key(r.date);
+    const w = wk.get(k) || { week: k, rides: 0, secs: 0, kcal: 0, load: 0, wsum: 0, hsum: 0, phsum: 0, n: 0, days: new Set() };
+    w.rides += 1; w.secs += r.secs || 0; w.kcal += r.kcal || 0; w.load += r.load || 0;
+    w.days.add(r.date);
+    if (r.watts && r.hr) { w.wsum += r.watts; w.hsum += r.hr; w.phsum += r.pwhr || (r.watts / r.hr); w.n += 1; }
+    wk.set(k, w);
+  }
+  const weeks = [...wk.values()].sort((a, b) => a.week < b.week ? -1 : 1).map((w) => ({
+    week: w.week,
+    ride_days: w.days.size,
+    rides: w.rides,
+    hours: Math.round((w.secs / 3600) * 10) / 10,
+    kcal: Math.round(w.kcal),
+    load: Math.round(w.load),
+    avg_watts: w.n ? Math.round(w.wsum / w.n) : null,
+    avg_hr: w.n ? Math.round(w.hsum / w.n) : null,
+    /* Rounded to 3dp because the interesting movement here is in the second. */
+    watts_per_bpm: w.n ? Math.round((w.phsum / w.n) * 1000) / 1000 : null,
+  }));
+
+  /* The week in progress is not comparable with finished ones: on a Wednesday
+     it holds two rides against a full week's five, which drags every average
+     down and reads as a collapse in form. Mark it, and keep it out of the
+     trend. The model caught this on its own once; it should not have to. */
+  const thisWeek = key(todayISO);
+  for (const w of weeks) if (w.week === thisWeek) w.partial = true;
+
+  const complete = weeks.filter((w) => !w.partial);
+  const recent = complete.slice(-4);
+  const eff = recent.filter((w) => w.watts_per_bpm);
+  const trend = eff.length >= 2
+    ? Math.round(((eff[eff.length - 1].watts_per_bpm - eff[0].watts_per_bpm) / eff[0].watts_per_bpm) * 1000) / 10
+    : null;
+
+  /* Adherence: planned hours in the block against hours actually ridden, for
+     days that have already happened. */
+  const today = Number(todayISO.slice(8, 10));
+  let planH = 0, planDays = 0;
+  for (const t of (plan && plan.training) || []) {
+    if (t.d < today && (t.h || 0) > 0) { planH += t.h; planDays += 1; }
+  }
+  const inBlock = rides.filter((r) => r.date >= '2026-08-01' && r.date < todayISO);
+  const realH = inBlock.reduce((a, r) => a + (r.secs || 0), 0) / 3600;
+  const realDays = new Set(inBlock.map((r) => r.date)).size;
+
+  return {
+    weeks,
+    weeks_counted: weeks.length,
+    current_week_partial: true,
+    trend_uses_complete_weeks_only: true,
+    last_4_weeks_hours: Math.round(recent.reduce((a, w) => a + w.hours, 0) * 10) / 10,
+    last_4_weeks_load: recent.reduce((a, w) => a + w.load, 0),
+    efficiency_trend_pct: trend,
+    efficiency_note: 'watts_per_bpm rising means more power at the same heart rate',
+    block_planned_hours: Math.round(planH * 10) / 10,
+    block_actual_hours: Math.round(realH * 10) / 10,
+    block_planned_ride_days: planDays,
+    block_actual_ride_days: realDays,
+    longest_ride_kcal: inBlock.reduce((a, r) => Math.max(a, r.kcal || 0), 0),
   };
 }
 
@@ -661,8 +795,30 @@ export default {
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], Number(date.slice(8, 10)), nowMins);
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
 
-      const out = await askCoach(env, facts);
+      const out = await askModel(env, COACH_SYSTEM, COACH_SCHEMA, 'advice', facts);
       return json({ ...out, facts, rides_ok: rideRes.ok, calls_today: budget.n }, 200, origin);
+    }
+
+    /* The read on his training that a tracking site will not give him, because
+       a tracking site does not know what he is eating or why. */
+    if (path === '/analyze' && request.method === 'GET') {
+      const to = url.searchParams.get('to') || '';
+      if (!isDate(to)) return json({ ok: false, why: 'expected to=YYYY-MM-DD' }, 400, origin);
+      const weeks = Math.min(12, Math.max(2, Number(url.searchParams.get('weeks')) || 6));
+      const from = new Date(to + 'T12:00:00Z');
+      from.setUTCDate(from.getUTCDate() - weeks * 7);
+
+      const budget = await listStub(env).spend(to);
+      if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
+
+      const rideRes = await fetchRides(env, from.toISOString().slice(0, 10), to);
+      if (!rideRes.ok) return json({ ok: false, why: rideRes.why }, 200, origin);
+      if (!rideRes.rides.length) return json({ ok: false, why: 'no rides in that window' }, 200, origin);
+
+      const state = await listStub(env).read();
+      const stats = trainingStats(rideRes.rides, state.plan, to);
+      const out = await askModel(env, ANALYST_SYSTEM, ANALYST_SCHEMA, 'analysis', stats);
+      return json({ ...out, stats, calls_today: budget.n }, 200, origin);
     }
 
     if (path === '/state' && request.method === 'PUT') {
