@@ -687,6 +687,11 @@ footer {
 .bx { width: 24px; height: 24px; border-radius: 6px; background: var(--card-sunk); border: 0; font-size: 15px; color: var(--gravel); cursor: pointer; }
 .bhint { font-size: 13px; color: var(--gravel); margin: 0 0 10px; }
 .bhits { list-style: none; margin: 0 0 10px; padding: 0; max-height: 220px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 9px; }
+.blook { display: block; width: 100%; padding: 10px; margin-bottom: 10px; border: 1px dashed var(--rule); border-radius: 9px; background: none; font: inherit; font-size: 13px; font-weight: 700; color: var(--pen-text); cursor: pointer; }
+.blook[disabled] { opacity: .6; }
+.bwarn { font-size: 11px; color: var(--gravel); line-height: 1.45; margin: 0 0 10px; }
+.bhits.ai { border-style: dashed; }
+.bhits em { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gravel); }
 .bhits > li > button { display: block; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-bottom: 1px solid var(--rule); background: none; font: inherit; cursor: pointer; }
 .bhits > li:last-child > button { border-bottom: 0; }
 .bhits span { display: block; font-size: 13px; font-weight: 600; }
@@ -1175,6 +1180,21 @@ let shopView = LS.get('v2.shopView') || 'list';
 let dishes = jget('v2.dishes', {});
 let build  = null;   // { name, items:[{f,u,q}] } while a dish is being built
 let fq     = '';     // the food search box
+let aiFood = { q: '', busy: false, food: null, err: '' };   // a looked-up food
+
+/* Foods the table does not have, fetched once and kept for the session. They
+   are drawn differently from curated rows: a number a model produced and a
+   number a person checked should not look identical. */
+async function lookupFood(){
+  const q = fq.trim();
+  if (!q || aiFood.busy) return;
+  aiFood = { q, busy: true, food: null, err: '' }; render();
+  try {
+    const r = await api('/food?q=' + encodeURIComponent(q));
+    if (r.ok) aiFood.food = r.food; else aiFood.err = r.why || 'not found';
+  } catch (e) { aiFood.err = e.message; }
+  aiFood.busy = false; render();
+}
 /* 'M' was a tab until the two stores merged. Anything unknown falls back. */
 if (!TAB_NAME[tab]) tab = 'A';
 if (tab === 'F') tab = 'E';
@@ -1821,10 +1841,14 @@ function foodSearch(q){
    are whatever the table says they are. */
 function dishMacros(items){
   return (items || []).reduce((a, it) => {
-    const f = foodByName(it.f); if (!f) return a;
-    const u = f.slice(2).find(x => x[0] === it.u); if (!u) return a;
     const q = Number(it.q) || 0;
-    return { kc: a.kc + u[2]*q, c: a.c + u[3]*q, p: a.p + u[4]*q, f: a.f + u[5]*q };
+    const f = foodByName(it.f);
+    const u = f && f.slice(2).find(x => x[0] === it.u);
+    /* Curated rows resolve against the table. A looked-up food carries its own
+       figures, because it is deliberately not in the table. */
+    const n = u ? { kc: u[2], c: u[3], p: u[4], f: u[5] } : it.ai;
+    if (!n) return a;
+    return { kc: a.kc + n.kc*q, c: a.c + n.c*q, p: a.p + n.p*q, f: a.f + n.f*q };
   }, { kc: 0, c: 0, p: 0, f: 0 });
 }
 
@@ -1847,6 +1871,21 @@ function builder(){
         f.slice(2).map(u => `<li><button data-badd="${esc(f[0])}" data-bu="${esc(u[0])}">`
           + `<span>${esc(f[0])}</span><i>per ${esc(u[0])} &middot; ${u[2]} kcal</i></button></li>`).join('')
       ).join('') + `</ul>` : '')
+    /* Nothing in the table: offer to look it up, but only on a tap. It costs
+       money and it is a model's answer, so it never happens by typing alone. */
+    + (!hits.length && fq.trim().length >= 2 && aiFood.q !== fq.trim()
+        ? `<button id="blook" class="blook"${aiFood.busy ? ' disabled' : ''}>`
+          + (aiFood.busy ? 'Looking it up&hellip;' : `Not in the list &mdash; look up &ldquo;${esc(fq.trim())}&rdquo;`)
+          + `</button>` : '')
+    + (aiFood.err && aiFood.q === fq.trim() ? `<p class="bwarn">${esc(aiFood.err)}</p>` : '')
+    + (aiFood.food && aiFood.q === fq.trim()
+        ? `<ul class="bhits ai"><li><button data-baiadd="1">`
+          + `<span>${esc(aiFood.food.n)} <em>looked up</em></span>`
+          + `<i>per ${esc(aiFood.food.unit.u)} (${aiFood.food.unit.g}g) &middot; `
+          + `${Math.round(aiFood.food.per100.kc * aiFood.food.unit.g / 100)} kcal</i>`
+          + `</button></li></ul>`
+          + `<p class="bwarn">These figures came from a model and were checked against the arithmetic, not against a label.</p>`
+        : '')
     + `<div class="brow"><button id="bsave" class="cbtn">Save dinner</button>`
     + `<button id="bcancel" class="bcan">Cancel</button></div>
   </div>`;
@@ -2973,6 +3012,14 @@ document.addEventListener('click', e => {
   const sv = e.target.closest('[data-sv]');
   if (sv){ shopView = sv.dataset.sv; LS.set('v2.shopView', shopView); render(); return; }
 
+  if (e.target.closest('#blook')){ lookupFood(); return; }
+  if (e.target.closest('[data-baiadd]')){
+    const f = aiFood.food, g = f.unit.g, k = (x) => Math.round(f.per100[x] * g / 100 * 10) / 10;
+    /* Added to this dish only. It is not written into the shared table — a
+       model's answer should not quietly become everyone's reference data. */
+    build.items.push({ f: f.n, u: f.unit.u, q: 1, ai: { kc: Math.round(f.per100.kc*g/100), c: k('c'), p: k('p'), f: k('f') } });
+    fq = ''; aiFood = { q:'', busy:false, food:null, err:'' }; render(); return;
+  }
   if (e.target.closest('#bnew')){ build = { name: '', items: [] }; fq = ''; render(); return; }
   if (e.target.closest('#bcancel')){ build = null; fq = ''; render(); return; }
   const badd = e.target.closest('[data-badd]');
