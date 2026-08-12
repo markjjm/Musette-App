@@ -513,6 +513,15 @@ async function askModel(env, system, schema, name, facts) {
       body: JSON.stringify({
         model: COACH_MODEL,
         reasoning: { effort: COACH_EFFORT },
+        /* Without a ceiling this is not a $0.002 call, it is a $0.256 one:
+           gpt-5-mini will emit up to 128,000 output tokens, reasoning bills as
+           output, and nothing in the request said stop. The daily cap counts
+           CALLS, so it bounds the count and not the spend — 40 unbounded calls
+           is ten dollars a day, not eight cents. Real answers here run 200 to
+           1,700 tokens; 4,000 is generous and still two orders of magnitude
+           below the ceiling. A truncated answer is caught by the
+           status === 'incomplete' check below and refused rather than shown. */
+        max_output_tokens: 4000,
         input: [
           { role: 'system', content: system },
           { role: 'user', content: JSON.stringify(facts) },
