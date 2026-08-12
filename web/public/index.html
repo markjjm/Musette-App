@@ -75,9 +75,11 @@
 
   /* Carbohydrate density of a meal, in three ordinal steps. The rail's SEGMENT
      COUNT is the encoding; hue only reinforces it, so it survives greyscale. */
-  --carb1: #7C8BA1;   /* under 35% of the meal's own calories */
-  --carb2: #C87A2B;   /* 35-55% */
-  --carb3: #2F8F6B;   /* over 55% */
+  /* The day's carbohydrate code. Edge is the signal, surface is the tint —
+     the pair keeps text contrast while the card still reads as coloured. */
+  --code-hi:  #2F8F6B;  --code-hi-bg:  #E7F3ED;  --code-hi-ink:  #1C5C44;
+  --code-mid: #C87A2B;  --code-mid-bg: #FBF0E2;  --code-mid-ink: #8A5015;
+  --code-lo:  #B4531F;  --code-lo-bg:  #FAEBE4;  --code-lo-ink:  #7C3813;
 
   /* Carb grid. Two CATEGORIES, not a ramp: where the carbohydrate came from.
      Chosen for a wide L* gap (green ~52, navy ~21) so the stack still reads
@@ -122,7 +124,9 @@
 
     --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
     --i1: #4A6C99; --i2: #6B95CC; --i3: #93B8E6; --i4: #C6DAF5; --i0: #3A3527;
-    --carb1: #94A3B8; --carb2: #E0A050; --carb3: #4FB07E;
+    --code-hi:  #4FB07E; --code-hi-bg:  #143128; --code-hi-ink:  #9BD9BB;
+    --code-mid: #E0A050; --code-mid-bg: #33240F; --code-mid-ink: #F0C489;
+    --code-lo:  #E08050; --code-lo-bg:  #33190F; --code-lo-ink:  #F0AE89;
     --tbl: #3F9E72; --btl: #B4CFF2; --btl-hatch: #7FA3D2;
     --cg-line: #4A4331; --cg-track: #2A2519; --cg-fill: #A69E8A; --cg-todo: #7F8798;
   }
@@ -136,7 +140,9 @@
   --ok:#4FB07E; --ok-soft:#16301F; --bad:#E0785A; --bad-soft:#3A1E16;
   --shadow:0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
   --i1:#4A6C99; --i2:#6B95CC; --i3:#93B8E6; --i4:#C6DAF5; --i0:#3A3527;
-  --carb1:#94A3B8; --carb2:#E0A050; --carb3:#4FB07E;
+  --code-hi:#4FB07E; --code-hi-bg:#143128; --code-hi-ink:#9BD9BB;
+  --code-mid:#E0A050; --code-mid-bg:#33240F; --code-mid-ink:#F0C489;
+  --code-lo:#E08050; --code-lo-bg:#33190F; --code-lo-ink:#F0AE89;
   --tbl:#3F9E72; --btl:#B4CFF2; --btl-hatch:#7FA3D2;
   --cg-line:#4A4331; --cg-track:#2A2519; --cg-fill:#A69E8A; --cg-todo:#7F8798;
 }
@@ -599,23 +605,34 @@ footer {
 .hxr { display: grid; grid-template-columns: 46px 1fr; align-items: start; gap: 8px; margin-bottom: 6px; }
 .hxr > time { font-size: 11px; font-weight: 700; color: var(--gravel); font-variant-numeric: tabular-nums; padding: 12px 0 0 6px; }
 
+/* Every meal on a day carries that day's code. The 4px edge is the signal and
+   survives greyscale on its own; the tint is what makes the day readable at a
+   glance from across the kitchen. */
 .hxc {
   position: relative; border-radius: 11px; overflow: hidden;
-  background: var(--card); box-shadow: inset 0 0 0 1px var(--rule);
-  padding: 10px 12px 10px 14px; --carb: var(--carb1);
+  padding: 10px 12px 10px 14px;
+  background: var(--code-bg); box-shadow: inset 4px 0 0 var(--code), inset 0 0 0 1px var(--rule-soft);
+  --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink);
 }
-.hxc.k1 { --carb: var(--carb1); }
-.hxc.k2 { --carb: var(--carb2); }
-.hxc.k3 { --carb: var(--carb3); }
-.hxc.ate { opacity: .62; }
+.hxc.c-hi  { --code: var(--code-hi);  --code-bg: var(--code-hi-bg);  --code-ink: var(--code-hi-ink); }
+.hxc.c-mid { --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink); }
+.hxc.c-lo  { --code: var(--code-lo);  --code-bg: var(--code-lo-bg);  --code-ink: var(--code-lo-ink); }
+.hxc.ate { opacity: .55; }
 
-/* Three stacked slots filled from the bottom. The COUNT is the datum, so the
-   rail still reads at 100% greyscale and under any colour-vision deficiency. */
-.hxrail { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; display: flex; flex-direction: column-reverse; gap: 2px; padding: 2px 0; }
-.hxrail > i { flex: 1; background: var(--rule-soft); border-radius: 3px; }
-.hxc.k1 > .hxrail > i:nth-child(1),
-.hxc.k2 > .hxrail > i:nth-child(-n+2),
-.hxc.k3 > .hxrail > i { background: var(--carb); }
+/* The code, said in words directly under the date, so the colour is never the
+   only thing carrying it. */
+.hxcode {
+  display: flex; align-items: baseline; gap: 8px; margin: 0 14px 10px;
+  padding: 9px 12px; border-radius: 10px;
+  background: var(--code-bg); box-shadow: inset 4px 0 0 var(--code);
+}
+.hxcode.c-hi  { --code: var(--code-hi);  --code-bg: var(--code-hi-bg);  --code-ink: var(--code-hi-ink); }
+.hxcode.c-mid { --code: var(--code-mid); --code-bg: var(--code-mid-bg); --code-ink: var(--code-mid-ink); }
+.hxcode.c-lo  { --code: var(--code-lo);  --code-bg: var(--code-lo-bg);  --code-ink: var(--code-lo-ink); }
+.hxcode > b { font-size: 14px; font-weight: 800; color: var(--code-ink); }
+.hxcode > span { flex: 1; font-size: 12px; color: var(--ink-soft); }
+.hxcode > i { font-style: normal; font-size: 17px; font-weight: 800; color: var(--code-ink); font-variant-numeric: tabular-nums; }
+.hxcode > i > u { text-decoration: none; font-size: 10px; opacity: .7; }
 
 .hxhd { padding-right: 44px; }
 .hxhd > .hxt { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--ink); }
@@ -965,19 +982,18 @@ footer {
     <span class="hmeta" id="hmeta"></span>
   </div>
   <div class="hmain">
-    <h1 id="wlab">Shopping</h1>
+    <h1 id="wlab">Musette</h1>
     <div class="money">
       <span class="big" id="got">$0</span>
       <span class="of"><span id="left"></span> <span id="rem"></span></span>
     </div>
   </div>
   <div class="bar"><i id="prog"></i></div>
-  <div class="scroller" id="weeks"></div>
   <div class="seg-bar">
     <div class="seg" id="tabs">
-      <button data-t="A" class="on">List</button>
-      <button data-t="D">Dinners</button>
-      <button data-t="F">Fuel</button>
+      <button data-t="A" class="on">Shop</button>
+      <button data-t="E">Eat</button>
+      <button data-t="T">Train</button>
     </div>
     <button class="filter-toggle" id="bfilter" title="Toggle checked items">
       <span id="flab">To Get</span>
@@ -1113,16 +1129,21 @@ const pantryOf = n => (pantryState[n] && pantryState[n].s) || 'ok';
    memory keeps working; only four items a month were Meijer-only, and those
    are marked with a tag on the row instead of a whole separate list. */
 const SHOP_TABS = ['A'];
-const RETIRED_TABS = ['P'];   // Days folded into Fuel
-const TAB_NAME  = {A:'Shopping list', P:'Fuel', D:'Dinners', F:'Fuel'};
+/* 'P' was Days, 'D' was Dinners, 'F' was Fuel — one tab that held both the
+   eating and the training and was bursting. Dinners now live with the shopping
+   they generate, and Fuel splits into what you eat and what you ride. */
+const RETIRED_TABS = ['P', 'D'];
+const TAB_NAME  = {A:'Shop', E:'Eat', T:'Train', P:'Eat', D:'Shop', F:'Eat'};
 const modeOf = t => SHOP_TABS.indexOf(t) >= 0 ? 'shop' : 'plan';
+const APP_NAME = 'Musette';
 let lastTab = jget('v2.lastTab', {shop:'A', plan:'F'});
 /* 'M' was a tab until the two stores merged. Anything unknown falls back. */
 if (!TAB_NAME[tab]) tab = 'A';
-if (RETIRED_TABS.indexOf(tab) >= 0) tab = 'F';
+if (tab === 'F') tab = 'E';
+if (RETIRED_TABS.indexOf(tab) >= 0) tab = tab === 'D' ? 'A' : 'E';
 if (!TAB_NAME[lastTab.shop]) lastTab.shop = 'A';
-if (!TAB_NAME[lastTab.plan]) lastTab.plan = 'P';
-if (RETIRED_TABS.indexOf(lastTab.plan) >= 0) lastTab.plan = 'F';
+if (lastTab.plan === 'F') lastTab.plan = 'E';
+if (!TAB_NAME[lastTab.plan] || RETIRED_TABS.indexOf(lastTab.plan) >= 0) lastTab.plan = 'E';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1666,11 +1687,11 @@ const tickKey = (weekId, name) => weekId + '|' + String(name).trim();
    a plan item. render() and totals() MUST agree on this or the budget drifts. */
 const rowKey = (weekId, it) => it.extraId ? 'x|' + it.extraId : tickKey(weekId, it.n);
 
-function chips(){
-  $('#weeks').innerHTML = weeks().map((w,i) =>
-    `<button class="chip${i===wi?' on':''}" data-w="${i}">${esc(weekLabel(w))}</button>`).join('');
-  updateHeaderHeight();
-}
+/* The week strip went from the header. Six chips were a permanent tax on the
+   top of every screen to answer a question — which week am I in — that only
+   the shopping list ever actually asked. Shop names its week inline; Eat has
+   its own day strip; Train shows the whole block at once. */
+function chips(){ updateHeaderHeight(); }
 
 /* Everything this household has ever put on a list, for type-ahead. They buy
    the same couple of hundred things, so suggesting from their own history beats
@@ -2229,13 +2250,24 @@ function weekStrip(){
   return `<div class="hxwk">${out}</div>`;
 }
 
-/* Carbohydrate as a share of the meal's own calories, in three ordinal steps.
-   It is the only per-meal nutrient the plan actually knows, and it is what the
-   whole block is for, so it is what the rail encodes. */
-function carbStep(m){
-  if (!m.kc) return 1;
-  const share = (4 * (Number(m.cb) || 0)) / m.kc;
-  return share >= 0.55 ? 3 : share >= 0.35 ? 2 : 1;
+/* The day's carbohydrate code. Periodisation is a decision about a DAY — how
+   much carbohydrate it gets, and why — so the code belongs to the day and every
+   meal in it carries the same one. An earlier version coloured each meal by its
+   own carb density, which is a real number but answers a question nobody asked:
+   what matters is whether today is a big day, not whether lunch is starchier
+   than breakfast.
+   Cuts at 7.2 and 5.6 g/kg split this block 12 / 13 / 6, and land where you
+   would want them: green takes the long days, the key days and the loading day
+   that preloads them; red is only ever a rest day. */
+const CODE = {
+  hi:  { k: 'hi',  name: 'High carb',  why: 'hard session to fuel' },
+  mid: { k: 'mid', name: 'Moderate',   why: 'steady training day' },
+  lo:  { k: 'lo',  name: 'Low carb',   why: 'rest or easy session' },
+};
+function dayCode(day){
+  if (!day) return CODE.mid;
+  const g = day.meals.reduce((a, m) => a + (Number(m.cb) || 0), 0) / RIDER_KG;
+  return g >= 7.2 ? CODE.hi : g >= 5.6 ? CODE.mid : CODE.lo;
 }
 
 function dayHead(day, tr, sum){
@@ -2275,7 +2307,7 @@ function macroRow(day, sum, eaten){
     ).join('') + `</div>`;
 }
 
-function mealRow(m){
+function mealRow(m, code){
   const f   = ateOf(selDay, m.t);
   const st  = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
   const pct = m.kc ? Math.round(400 * (Number(m.cb) || 0) / m.kc) : 0;
@@ -2283,8 +2315,7 @@ function mealRow(m){
       `<li><i>${Number(it.c) || 0}</i><span>${esc(it.n)}</span></li>`).join('');
   const said = f === 1 ? 'eaten' : f === 0.5 ? 'half eaten' : 'not eaten';
   return `<div class="hxr"><time>${clock(mins(m.t))}</time>`
-    + `<div class="hxc k${carbStep(m)}${st}">`
-      + `<span class="hxrail"><i></i><i></i><i></i></span>`
+    + `<div class="hxc c-${code.k}${st}">`
       + `<div class="hxhd"><span class="hxt">${esc(m.l)}</span>`
       + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span></div>`
       + (items ? `<ul class="hxi">${items}</ul>` : '')
@@ -2342,9 +2373,13 @@ function fuelDay(){
   }
   rows.sort((x, y) => x.at - y.at);
 
-  return weekStrip() + dayHead(day, tr, sum) + macroRow(day, sum, eaten)
+  const code = dayCode(day);
+  return weekStrip() + dayHead(day, tr, sum)
+    + `<div class="hxcode c-${code.k}"><b>${esc(code.name)}</b><span>${esc(code.why)}</span>`
+    + `<i>${sum.cb}<u>g</u></i></div>`
+    + macroRow(day, sum, eaten)
     + `<div class="hxtl">`
-    + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal)).join('')
+    + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal, code)).join('')
     + `</div>`
     + `<p class="hxnote">Tap the circle once for eaten, twice for about half. Calories and carbs are exact; protein and fat are marked * because the plan only carries them as day totals and they are shared out here by calories.</p>`;
 }
@@ -2399,7 +2434,21 @@ function render(){
 
   /* Title says where you are; the eyebrow carries the week and its dates,
      which the old header never showed. No duplicating the chips below. */
-  $('#wlab').textContent = TAB_NAME[tab] || 'Shopping';
+  /* The name of the app, and under it the number that matters where you are.
+     A running grocery total was the right header when this was a grocery list;
+     on the eating and training screens it was answering a question nobody had
+     asked since. */
+  $('#wlab').textContent = APP_NAME;
+  const money = $('.money');
+  if (money) money.style.display = (mode === 'shop') ? '' : 'none';
+  const meta = $('#hmeta');
+  if (meta && mode !== 'shop'){
+    const dd = dayOf(selDay || todayKey());
+    const tt = dd ? (plan.training || []).find(z => z.d === dnum(selDay || todayKey())) : null;
+    meta.textContent = dd
+      ? dd.wd + ' ' + dd.d + ' \u00b7 ' + dayCode(dd).name + (tt && tt.h ? ' \u00b7 ' + hhm(tt.h) : '')
+      : TAB_NAME[tab] || '';
+  }
   $('#hmeta').textContent = [
     w.label,
     w.dates || '',
@@ -2469,7 +2518,7 @@ function render(){
     totals(); updateHeaderHeight(); return;
   }
   
-  if (tab === 'F'){
+  if (tab === 'E'){
     /* Training first: what you are riding this week and what to eat on the bike
        for it. The recipes underneath are how you make that fuel. */
     const wk = (plan.training || []).filter(t => t.wk === w.id);
@@ -2478,10 +2527,23 @@ function render(){
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
 
     if (coach.rides === null && coach.day !== todayKey()) loadRides();
+    m.innerHTML = fuelDay() + coachCard()
+      + `<div class="sech">How to make the fuel</div>`
+      + (plan.fuel || []).map(([hh, pp]) =>
+          `<div class="card"><h3>${esc(hh)}</h3><p>${esc(pp)}</p></div>`).join('');
+    totals(); paintBars(); updateHeaderHeight(); return;
+  }
+
+  /* Train: the block, the rides in it, and what the data says about them. */
+  if (tab === 'T'){
     if (block.state === 'idle') loadBlockRides();
     if (dayRide.day !== (selDay || todayKey())) loadDayRides(selDay || todayKey());
-    m.innerHTML = fuelDay() + rideDetail() + coachCard() + analysisCard()
-      + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
+    const wk = (plan.training || []).filter(t => t.wk === w.id);
+    const hrs = wk.reduce((a, t) => a + (Number(t.h) || 0), 0);
+    const rides = wk.filter(t => (Number(t.h) || 0) > 0).length;
+    const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
+    m.innerHTML = `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
+      + rideDetail() + analysisCard()
       + (wk.length ? `
       <div class="trainhd">
         <div><span class="tnum">${(Math.round(hrs * 100) / 100)}</span><span class="tlab">hours</span></div>
@@ -2489,13 +2551,7 @@ function render(){
         <div><span class="tnum">${onbike}</span><span class="tlab">g carb on bike</span></div>
       </div>
       ` : '')
-      + `<div class="sech">How to make the fuel</div>`
-      + (plan.fuel || []).map(([hh, pp]) =>
-        `<div class="card"><h3>${esc(hh)}</h3><p>${esc(pp)}</p></div>`).join('')
-      + `<div class="hint">Ingredients can appear under two cook nights &mdash; that is deliberate and the totals add up.</div>`;
-    /* Both of these size elements through the CSSOM. paintBars() was only ever
-       called from the retired 'P' branch, so the four macro bars in .hxmac have
-       been rendering at zero width on every reachable path. */
+      ;
     totals(); paintBars(); paintMonth(); updateHeaderHeight(); return;
   }
 
