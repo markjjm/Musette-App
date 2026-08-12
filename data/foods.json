@@ -2,8 +2,98 @@
  "version": 1,
  "built": "deterministic — regenerate with node tools/build-foods.mjs",
  "note": "Standard reference values for raw or as-sold food, per 100 g, with common household units derived from those figures. Good enough to plan from; not a measurement of the specific item in your fridge.",
- "count": 116,
+ "count": 237,
  "foods": [
+  {
+   "id": "alfredo-sauce",
+   "n": "Alfredo sauce",
+   "tag": "condiment",
+   "per100": {
+    "kc": 180,
+    "c": 6,
+    "p": 3,
+    "f": 16,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 250,
+     "kc": 450,
+     "c": 15,
+     "p": 7.5,
+     "f": 40,
+     "fib": 0
+    },
+    {
+     "u": "tbsp",
+     "g": 16,
+     "kc": 29,
+     "c": 1,
+     "p": 0.5,
+     "f": 2.6,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "almond-butter",
+   "n": "Almond butter",
+   "tag": "fat",
+   "per100": {
+    "kc": 614,
+    "c": 18.8,
+    "p": 21,
+    "f": 55.5,
+    "fib": 10.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 16,
+     "kc": 98,
+     "c": 3,
+     "p": 3.4,
+     "f": 8.9,
+     "fib": 1.6
+    },
+    {
+     "u": "cup",
+     "g": 250,
+     "kc": 1535,
+     "c": 47,
+     "p": 52.5,
+     "f": 138.8,
+     "fib": 25.8
+    }
+   ]
+  },
+  {
+   "id": "almond-milk-unsweetened",
+   "n": "Almond milk, unsweetened",
+   "tag": "dairy",
+   "per100": {
+    "kc": 15,
+    "c": 0.6,
+    "p": 0.6,
+    "f": 1.2,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 240,
+     "kc": 36,
+     "c": 1.4,
+     "p": 1.4,
+     "f": 2.9,
+     "fib": 0
+    }
+   ]
+  },
   {
    "id": "almonds",
    "n": "Almonds",
@@ -13,7 +103,8 @@
     "c": 21.6,
     "p": 21.2,
     "f": 49.9,
-    "fib": 12.5
+    "fib": 12.5,
+    "alc": 0
    },
    "units": [
     {
@@ -46,6 +137,39 @@
    ]
   },
   {
+   "id": "american-cheese",
+   "n": "American cheese",
+   "tag": "dairy",
+   "per100": {
+    "kc": 371,
+    "c": 5.8,
+    "p": 18.5,
+    "f": 30.6,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "slice",
+     "g": 21,
+     "kc": 78,
+     "c": 1.2,
+     "p": 3.9,
+     "f": 6.4,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 105,
+     "c": 1.6,
+     "p": 5.2,
+     "f": 8.7,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "apple",
    "n": "Apple",
    "tag": "fruit",
@@ -54,7 +178,8 @@
     "c": 13.8,
     "p": 0.3,
     "f": 0.2,
-    "fib": 2.4
+    "fib": 2.4,
+    "alc": 0
    },
    "units": [
     {
@@ -78,6 +203,96 @@
    ]
   },
   {
+   "id": "apple-juice",
+   "n": "Apple juice",
+   "tag": "fruit",
+   "per100": {
+    "kc": 46,
+    "c": 11.3,
+    "p": 0.1,
+    "f": 0.1,
+    "fib": 0.2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 248,
+     "kc": 114,
+     "c": 28,
+     "p": 0.2,
+     "f": 0.2,
+     "fib": 0.5
+    }
+   ]
+  },
+  {
+   "id": "applesauce-unsweetened",
+   "n": "Applesauce, unsweetened",
+   "tag": "fruit",
+   "per100": {
+    "kc": 42,
+    "c": 11.3,
+    "p": 0.2,
+    "f": 0.1,
+    "fib": 1.1,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 244,
+     "kc": 102,
+     "c": 27.6,
+     "p": 0.5,
+     "f": 0.2,
+     "fib": 2.7
+    },
+    {
+     "u": "pouch",
+     "g": 90,
+     "kc": 38,
+     "c": 10.2,
+     "p": 0.2,
+     "f": 0.1,
+     "fib": 1
+    }
+   ]
+  },
+  {
+   "id": "asparagus-raw",
+   "n": "Asparagus, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 20,
+    "c": 3.9,
+    "p": 2.2,
+    "f": 0.1,
+    "fib": 2.1,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "spear",
+     "g": 16,
+     "kc": 3,
+     "c": 0.6,
+     "p": 0.4,
+     "f": 0,
+     "fib": 0.3
+    },
+    {
+     "u": "cup",
+     "g": 134,
+     "kc": 27,
+     "c": 5.2,
+     "p": 2.9,
+     "f": 0.1,
+     "fib": 2.8
+    }
+   ]
+  },
+  {
    "id": "avocado",
    "n": "Avocado",
    "tag": "fat",
@@ -86,7 +301,8 @@
     "c": 8.5,
     "p": 2,
     "f": 14.7,
-    "fib": 6.7
+    "fib": 6.7,
+    "alc": 0
    },
    "units": [
     {
@@ -118,7 +334,8 @@
     "c": 1.4,
     "p": 37,
     "f": 42,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -150,7 +367,8 @@
     "c": 1.3,
     "p": 13,
     "f": 39.7,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -182,7 +400,8 @@
     "c": 50.5,
     "p": 10,
     "f": 1.5,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -205,7 +424,8 @@
     "c": 22.8,
     "p": 1.1,
     "f": 0.3,
-    "fib": 2.6
+    "fib": 2.6,
+    "alc": 0
    },
    "units": [
     {
@@ -237,7 +457,8 @@
     "c": 40.8,
     "p": 0.8,
     "f": 0.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -252,6 +473,39 @@
    ]
   },
   {
+   "id": "barley-pearled-dry",
+   "n": "Barley, pearled, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 352,
+    "c": 77.7,
+    "p": 9.9,
+    "f": 1.2,
+    "fib": 15.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 200,
+     "kc": 704,
+     "c": 155.4,
+     "p": 19.8,
+     "f": 2.4,
+     "fib": 31.2
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 100,
+     "c": 22,
+     "p": 2.8,
+     "f": 0.3,
+     "fib": 4.4
+    }
+   ]
+  },
+  {
    "id": "beef-broth",
    "n": "Beef broth",
    "tag": "condiment",
@@ -260,7 +514,8 @@
     "c": 0.1,
     "p": 1.1,
     "f": 0.2,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -284,6 +539,72 @@
    ]
   },
   {
+   "id": "beer-regular",
+   "n": "Beer, regular",
+   "tag": "drink",
+   "per100": {
+    "kc": 43,
+    "c": 3.6,
+    "p": 0.5,
+    "f": 0,
+    "fib": 0,
+    "alc": 3.9
+   },
+   "units": [
+    {
+     "u": "bottle",
+     "g": 355,
+     "kc": 153,
+     "c": 12.8,
+     "p": 1.8,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "fl oz",
+     "g": 30,
+     "kc": 13,
+     "c": 1.1,
+     "p": 0.2,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "beets-raw",
+   "n": "Beets, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 43,
+    "c": 9.6,
+    "p": 1.6,
+    "f": 0.2,
+    "fib": 2.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "beet",
+     "g": 82,
+     "kc": 35,
+     "c": 7.9,
+     "p": 1.3,
+     "f": 0.2,
+     "fib": 2.3
+    },
+    {
+     "u": "cup",
+     "g": 136,
+     "kc": 58,
+     "c": 13.1,
+     "p": 2.2,
+     "f": 0.3,
+     "fib": 3.8
+    }
+   ]
+  },
+  {
    "id": "bell-pepper-raw",
    "n": "Bell pepper, raw",
    "tag": "veg",
@@ -292,7 +613,8 @@
     "c": 6,
     "p": 1,
     "f": 0.3,
-    "fib": 2.1
+    "fib": 2.1,
+    "alc": 0
    },
    "units": [
     {
@@ -316,6 +638,30 @@
    ]
   },
   {
+   "id": "biscuit-refrigerated-dough",
+   "n": "Biscuit, refrigerated dough",
+   "tag": "grain",
+   "per100": {
+    "kc": 330,
+    "c": 44,
+    "p": 6,
+    "f": 14,
+    "fib": 1.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "biscuit",
+     "g": 57,
+     "kc": 188,
+     "c": 25.1,
+     "p": 3.4,
+     "f": 8,
+     "fib": 0.9
+    }
+   ]
+  },
+  {
    "id": "black-beans-canned-drained",
    "n": "Black beans, canned, drained",
    "tag": "legume",
@@ -324,7 +670,8 @@
     "c": 16.6,
     "p": 6,
     "f": 0.3,
-    "fib": 7.5
+    "fib": 7.5,
+    "alc": 0
    },
    "units": [
     {
@@ -348,6 +695,30 @@
    ]
   },
   {
+   "id": "blackberries",
+   "n": "Blackberries",
+   "tag": "fruit",
+   "per100": {
+    "kc": 43,
+    "c": 9.6,
+    "p": 1.4,
+    "f": 0.5,
+    "fib": 5.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 144,
+     "kc": 62,
+     "c": 13.8,
+     "p": 2,
+     "f": 0.7,
+     "fib": 7.6
+    }
+   ]
+  },
+  {
    "id": "blueberries",
    "n": "Blueberries",
    "tag": "fruit",
@@ -356,7 +727,8 @@
     "c": 14.5,
     "p": 0.7,
     "f": 0.3,
-    "fib": 2.4
+    "fib": 2.4,
+    "alc": 0
    },
    "units": [
     {
@@ -388,7 +760,8 @@
     "c": 49,
     "p": 9,
     "f": 3.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -411,7 +784,8 @@
     "c": 41.3,
     "p": 13,
     "f": 3.4,
-    "fib": 6.8
+    "fib": 6.8,
+    "alc": 0
    },
    "units": [
     {
@@ -434,7 +808,8 @@
     "c": 71.9,
     "p": 13.4,
     "f": 5.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -458,6 +833,39 @@
    ]
   },
   {
+   "id": "breakfast-sausage-patty-raw",
+   "n": "Breakfast sausage patty, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 320,
+    "c": 1,
+    "p": 14,
+    "f": 29,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "patty",
+     "g": 45,
+     "kc": 144,
+     "c": 0.5,
+     "p": 6.3,
+     "f": 13.1,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 91,
+     "c": 0.3,
+     "p": 4,
+     "f": 8.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "broccoli-raw",
    "n": "Broccoli, raw",
    "tag": "veg",
@@ -466,7 +874,8 @@
     "c": 6.6,
     "p": 2.8,
     "f": 0.4,
-    "fib": 2.6
+    "fib": 2.6,
+    "alc": 0
    },
    "units": [
     {
@@ -498,7 +907,8 @@
     "c": 25.6,
     "p": 2.7,
     "f": 1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -521,7 +931,8 @@
     "c": 77.2,
     "p": 7.9,
     "f": 2.9,
-    "fib": 3.5
+    "fib": 3.5,
+    "alc": 0
    },
    "units": [
     {
@@ -553,7 +964,8 @@
     "c": 98.1,
     "p": 0.1,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -577,6 +989,39 @@
    ]
   },
   {
+   "id": "brussels-sprouts-raw",
+   "n": "Brussels sprouts, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 43,
+    "c": 9,
+    "p": 3.4,
+    "f": 0.3,
+    "fib": 3.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 88,
+     "kc": 38,
+     "c": 7.9,
+     "p": 3,
+     "f": 0.3,
+     "fib": 3.3
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 12,
+     "c": 2.6,
+     "p": 1,
+     "f": 0.1,
+     "fib": 1.1
+    }
+   ]
+  },
+  {
    "id": "butter",
    "n": "Butter",
    "tag": "fat",
@@ -585,7 +1030,8 @@
     "c": 0.1,
     "p": 0.9,
     "f": 81.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -609,6 +1055,87 @@
    ]
   },
   {
+   "id": "butternut-squash-raw",
+   "n": "Butternut squash, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 45,
+    "c": 11.7,
+    "p": 1,
+    "f": 0.1,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup cubed",
+     "g": 140,
+     "kc": 63,
+     "c": 16.4,
+     "p": 1.4,
+     "f": 0.1,
+     "fib": 2.8
+    }
+   ]
+  },
+  {
+   "id": "cabbage-raw",
+   "n": "Cabbage, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 25,
+    "c": 5.8,
+    "p": 1.3,
+    "f": 0.1,
+    "fib": 2.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup shredded",
+     "g": 89,
+     "kc": 22,
+     "c": 5.2,
+     "p": 1.2,
+     "f": 0.1,
+     "fib": 2.2
+    },
+    {
+     "u": "head",
+     "g": 908,
+     "kc": 227,
+     "c": 52.7,
+     "p": 11.8,
+     "f": 0.9,
+     "fib": 22.7
+    }
+   ]
+  },
+  {
+   "id": "cantaloupe",
+   "n": "Cantaloupe",
+   "tag": "fruit",
+   "per100": {
+    "kc": 34,
+    "c": 8.2,
+    "p": 0.8,
+    "f": 0.2,
+    "fib": 0.9,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 160,
+     "kc": 54,
+     "c": 13.1,
+     "p": 1.3,
+     "f": 0.3,
+     "fib": 1.4
+    }
+   ]
+  },
+  {
    "id": "carrots-raw",
    "n": "Carrots, raw",
    "tag": "veg",
@@ -617,7 +1144,8 @@
     "c": 9.6,
     "p": 0.9,
     "f": 0.2,
-    "fib": 2.8
+    "fib": 2.8,
+    "alc": 0
    },
    "units": [
     {
@@ -649,7 +1177,8 @@
     "c": 10,
     "p": 72,
     "f": 3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -681,7 +1210,8 @@
     "c": 30.2,
     "p": 18.2,
     "f": 43.9,
-    "fib": 3.3
+    "fib": 3.3,
+    "alc": 0
    },
    "units": [
     {
@@ -705,6 +1235,39 @@
    ]
   },
   {
+   "id": "cauliflower-raw",
+   "n": "Cauliflower, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 25,
+    "c": 5,
+    "p": 1.9,
+    "f": 0.3,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 107,
+     "kc": 27,
+     "c": 5.4,
+     "p": 2,
+     "f": 0.3,
+     "fib": 2.1
+    },
+    {
+     "u": "head",
+     "g": 588,
+     "kc": 147,
+     "c": 29.4,
+     "p": 11.2,
+     "f": 1.8,
+     "fib": 11.8
+    }
+   ]
+  },
+  {
    "id": "celery-raw",
    "n": "Celery, raw",
    "tag": "veg",
@@ -713,7 +1276,8 @@
     "c": 3,
     "p": 0.7,
     "f": 0.2,
-    "fib": 1.6
+    "fib": 1.6,
+    "alc": 0
    },
    "units": [
     {
@@ -737,6 +1301,87 @@
    ]
   },
   {
+   "id": "cereal-bran-flakes",
+   "n": "Cereal, bran flakes",
+   "tag": "grain",
+   "per100": {
+    "kc": 330,
+    "c": 80,
+    "p": 10,
+    "f": 2,
+    "fib": 18,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 40,
+     "kc": 132,
+     "c": 32,
+     "p": 4,
+     "f": 0.8,
+     "fib": 7.2
+    }
+   ]
+  },
+  {
+   "id": "cereal-corn-flakes",
+   "n": "Cereal, corn flakes",
+   "tag": "grain",
+   "per100": {
+    "kc": 357,
+    "c": 84,
+    "p": 7.5,
+    "f": 0.4,
+    "fib": 3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 28,
+     "kc": 100,
+     "c": 23.5,
+     "p": 2.1,
+     "f": 0.1,
+     "fib": 0.8
+    }
+   ]
+  },
+  {
+   "id": "cereal-granola",
+   "n": "Cereal, granola",
+   "tag": "grain",
+   "per100": {
+    "kc": 471,
+    "c": 64,
+    "p": 10,
+    "f": 20,
+    "fib": 7,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 122,
+     "kc": 575,
+     "c": 78.1,
+     "p": 12.2,
+     "f": 24.4,
+     "fib": 8.5
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 134,
+     "c": 18.1,
+     "p": 2.8,
+     "f": 5.7,
+     "fib": 2
+    }
+   ]
+  },
+  {
    "id": "cheddar-cheese",
    "n": "Cheddar cheese",
    "tag": "dairy",
@@ -745,7 +1390,8 @@
     "c": 3.1,
     "p": 22.9,
     "f": 33.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -769,6 +1415,30 @@
    ]
   },
   {
+   "id": "cherries",
+   "n": "Cherries",
+   "tag": "fruit",
+   "per100": {
+    "kc": 63,
+    "c": 16,
+    "p": 1.1,
+    "f": 0.2,
+    "fib": 2.1,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 154,
+     "kc": 97,
+     "c": 24.6,
+     "p": 1.7,
+     "f": 0.3,
+     "fib": 3.2
+    }
+   ]
+  },
+  {
    "id": "chia-seeds",
    "n": "Chia seeds",
    "tag": "fat",
@@ -777,7 +1447,8 @@
     "c": 42.1,
     "p": 16.5,
     "f": 30.7,
-    "fib": 34.4
+    "fib": 34.4,
+    "alc": 0
    },
    "units": [
     {
@@ -809,7 +1480,8 @@
     "c": 0,
     "p": 31,
     "f": 3.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -841,7 +1513,8 @@
     "c": 0,
     "p": 22.5,
     "f": 2.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -882,7 +1555,8 @@
     "c": 0.4,
     "p": 0.5,
     "f": 0.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -906,6 +1580,39 @@
    ]
   },
   {
+   "id": "chicken-tenderloin-raw",
+   "n": "Chicken tenderloin, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 109,
+    "c": 0,
+    "p": 22.9,
+    "f": 1.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 31,
+     "c": 0,
+     "p": 6.5,
+     "f": 0.4,
+     "fib": 0
+    },
+    {
+     "u": "tender",
+     "g": 30,
+     "kc": 33,
+     "c": 0,
+     "p": 6.9,
+     "f": 0.4,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "chicken-thigh-boneless-skinless-raw",
    "n": "Chicken thigh, boneless skinless, raw",
    "tag": "meat",
@@ -914,7 +1621,8 @@
     "c": 0,
     "p": 19.7,
     "f": 4.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -938,6 +1646,39 @@
    ]
   },
   {
+   "id": "chicken-wing-raw",
+   "n": "Chicken wing, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 203,
+    "c": 0,
+    "p": 18.3,
+    "f": 14,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "wing",
+     "g": 34,
+     "kc": 69,
+     "c": 0,
+     "p": 6.2,
+     "f": 4.8,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 58,
+     "c": 0,
+     "p": 5.2,
+     "f": 4,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "chicken-whole-roasted-meat-only",
    "n": "Chicken, whole, roasted, meat only",
    "tag": "meat",
@@ -946,7 +1687,8 @@
     "c": 0,
     "p": 28.9,
     "f": 7.4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -978,7 +1720,8 @@
     "c": 22.5,
     "p": 7.1,
     "f": 2.6,
-    "fib": 6
+    "fib": 6,
+    "alc": 0
    },
    "units": [
     {
@@ -1002,6 +1745,162 @@
    ]
   },
   {
+   "id": "chocolate-chips-semisweet",
+   "n": "Chocolate chips, semisweet",
+   "tag": "sugar",
+   "per100": {
+    "kc": 480,
+    "c": 63.9,
+    "p": 4.2,
+    "f": 30,
+    "fib": 5.9,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 170,
+     "kc": 816,
+     "c": 108.6,
+     "p": 7.1,
+     "f": 51,
+     "fib": 10
+    },
+    {
+     "u": "tbsp",
+     "g": 11,
+     "kc": 53,
+     "c": 7,
+     "p": 0.5,
+     "f": 3.3,
+     "fib": 0.6
+    }
+   ]
+  },
+  {
+   "id": "chocolate-milk-2",
+   "n": "Chocolate milk, 2%",
+   "tag": "dairy",
+   "per100": {
+    "kc": 76,
+    "c": 12.3,
+    "p": 3.2,
+    "f": 1.9,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 250,
+     "kc": 190,
+     "c": 30.8,
+     "p": 8,
+     "f": 4.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "cocoa-powder-unsweetened",
+   "n": "Cocoa powder, unsweetened",
+   "tag": "sugar",
+   "per100": {
+    "kc": 228,
+    "c": 57.9,
+    "p": 19.6,
+    "f": 13.7,
+    "fib": 45,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 5,
+     "kc": 11,
+     "c": 2.9,
+     "p": 1,
+     "f": 0.7,
+     "fib": 2.3
+    },
+    {
+     "u": "cup",
+     "g": 86,
+     "kc": 196,
+     "c": 49.8,
+     "p": 16.9,
+     "f": 11.8,
+     "fib": 38.7
+    }
+   ]
+  },
+  {
+   "id": "coconut-milk-canned",
+   "n": "Coconut milk, canned",
+   "tag": "fat",
+   "per100": {
+    "kc": 197,
+    "c": 2.8,
+    "p": 2,
+    "f": 21.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 240,
+     "kc": 473,
+     "c": 6.7,
+     "p": 4.8,
+     "f": 51.1,
+     "fib": 0
+    },
+    {
+     "u": "can",
+     "g": 400,
+     "kc": 788,
+     "c": 11.2,
+     "p": 8,
+     "f": 85.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "coconut-oil",
+   "n": "Coconut oil",
+   "tag": "fat",
+   "per100": {
+    "kc": 862,
+    "c": 0,
+    "p": 0,
+    "f": 100,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 13.6,
+     "kc": 117,
+     "c": 0,
+     "p": 0,
+     "f": 13.6,
+     "fib": 0
+    },
+    {
+     "u": "tsp",
+     "g": 4.5,
+     "kc": 39,
+     "c": 0,
+     "p": 0,
+     "f": 4.5,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "cod-raw",
    "n": "Cod, raw",
    "tag": "fish",
@@ -1010,7 +1909,8 @@
     "c": 0,
     "p": 17.8,
     "f": 0.7,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1034,6 +1934,72 @@
    ]
   },
   {
+   "id": "coffee-black",
+   "n": "Coffee, black",
+   "tag": "drink",
+   "per100": {
+    "kc": 1,
+    "c": 0,
+    "p": 0.1,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 237,
+     "kc": 2,
+     "c": 0,
+     "p": 0.2,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "fl oz",
+     "g": 30,
+     "kc": 0,
+     "c": 0,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "coleslaw-mix",
+   "n": "Coleslaw mix",
+   "tag": "veg",
+   "per100": {
+    "kc": 25,
+    "c": 5.8,
+    "p": 1.3,
+    "f": 0.1,
+    "fib": 2.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 70,
+     "kc": 18,
+     "c": 4.1,
+     "p": 0.9,
+     "f": 0.1,
+     "fib": 1.8
+    },
+    {
+     "u": "bag",
+     "g": 397,
+     "kc": 99,
+     "c": 23,
+     "p": 5.2,
+     "f": 0.4,
+     "fib": 9.9
+    }
+   ]
+  },
+  {
    "id": "corn-frozen",
    "n": "Corn, frozen",
    "tag": "veg",
@@ -1042,7 +2008,8 @@
     "c": 21,
     "p": 3,
     "f": 0.8,
-    "fib": 2
+    "fib": 2,
+    "alc": 0
    },
    "units": [
     {
@@ -1065,7 +2032,8 @@
     "c": 79,
     "p": 7.1,
     "f": 1.8,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1089,6 +2057,39 @@
    ]
   },
   {
+   "id": "cornstarch",
+   "n": "Cornstarch",
+   "tag": "grain",
+   "per100": {
+    "kc": 381,
+    "c": 91.3,
+    "p": 0.3,
+    "f": 0.1,
+    "fib": 0.9,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 8,
+     "kc": 30,
+     "c": 7.3,
+     "p": 0,
+     "f": 0,
+     "fib": 0.1
+    },
+    {
+     "u": "cup",
+     "g": 128,
+     "kc": 488,
+     "c": 116.9,
+     "p": 0.4,
+     "f": 0.1,
+     "fib": 1.2
+    }
+   ]
+  },
+  {
    "id": "cottage-cheese-2",
    "n": "Cottage cheese, 2%",
    "tag": "dairy",
@@ -1097,7 +2098,8 @@
     "c": 4.3,
     "p": 11,
     "f": 2.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1121,6 +2123,138 @@
    ]
   },
   {
+   "id": "cottage-cheese-4",
+   "n": "Cottage cheese, 4%",
+   "tag": "dairy",
+   "per100": {
+    "kc": 98,
+    "c": 3.4,
+    "p": 11.1,
+    "f": 4.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 226,
+     "kc": 221,
+     "c": 7.7,
+     "p": 25.1,
+     "f": 9.7,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 28,
+     "c": 1,
+     "p": 3.1,
+     "f": 1.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "couscous-dry",
+   "n": "Couscous, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 376,
+    "c": 77.4,
+    "p": 12.8,
+    "f": 0.6,
+    "fib": 5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 173,
+     "kc": 650,
+     "c": 133.9,
+     "p": 22.1,
+     "f": 1,
+     "fib": 8.7
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 107,
+     "c": 21.9,
+     "p": 3.6,
+     "f": 0.2,
+     "fib": 1.4
+    }
+   ]
+  },
+  {
+   "id": "crab-meat-cooked",
+   "n": "Crab meat, cooked",
+   "tag": "fish",
+   "per100": {
+    "kc": 83,
+    "c": 0,
+    "p": 17.2,
+    "f": 1.1,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 24,
+     "c": 0,
+     "p": 4.9,
+     "f": 0.3,
+     "fib": 0
+    },
+    {
+     "u": "cup",
+     "g": 135,
+     "kc": 112,
+     "c": 0,
+     "p": 23.2,
+     "f": 1.5,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "crackers-saltine",
+   "n": "Crackers, saltine",
+   "tag": "grain",
+   "per100": {
+    "kc": 418,
+    "c": 72,
+    "p": 9,
+    "f": 10,
+    "fib": 2.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cracker",
+     "g": 3,
+     "kc": 13,
+     "c": 2.2,
+     "p": 0.3,
+     "f": 0.3,
+     "fib": 0.1
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 119,
+     "c": 20.4,
+     "p": 2.6,
+     "f": 2.8,
+     "fib": 0.8
+    }
+   ]
+  },
+  {
    "id": "cream-cheese",
    "n": "Cream cheese",
    "tag": "dairy",
@@ -1129,7 +2263,8 @@
     "c": 5.5,
     "p": 6.2,
     "f": 34,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1153,6 +2288,39 @@
    ]
   },
   {
+   "id": "cream-of-chicken-soup-condensed",
+   "n": "Cream of chicken soup, condensed",
+   "tag": "condiment",
+   "per100": {
+    "kc": 100,
+    "c": 8,
+    "p": 2.4,
+    "f": 6,
+    "fib": 0.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "can",
+     "g": 298,
+     "kc": 298,
+     "c": 23.8,
+     "p": 7.2,
+     "f": 17.9,
+     "fib": 1.2
+    },
+    {
+     "u": "cup",
+     "g": 248,
+     "kc": 248,
+     "c": 19.8,
+     "p": 6,
+     "f": 14.9,
+     "fib": 1
+    }
+   ]
+  },
+  {
    "id": "croutons",
    "n": "Croutons",
    "tag": "grain",
@@ -1161,7 +2329,8 @@
     "c": 73.5,
     "p": 11.9,
     "f": 6.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1193,7 +2362,8 @@
     "c": 7.3,
     "p": 1.6,
     "f": 0.3,
-    "fib": 1.9
+    "fib": 1.9,
+    "alc": 0
    },
    "units": [
     {
@@ -1225,7 +2395,8 @@
     "c": 3.6,
     "p": 0.7,
     "f": 0.1,
-    "fib": 0.5
+    "fib": 0.5,
+    "alc": 0
    },
    "units": [
     {
@@ -1257,7 +2428,8 @@
     "c": 75,
     "p": 1.8,
     "f": 0.2,
-    "fib": 6.7
+    "fib": 6.7,
+    "alc": 0
    },
    "units": [
     {
@@ -1289,7 +2461,8 @@
     "c": 2.5,
     "p": 16.6,
     "f": 3.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1321,7 +2494,8 @@
     "c": 3.5,
     "p": 17,
     "f": 2,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1345,6 +2519,39 @@
    ]
   },
   {
+   "id": "dried-cranberries",
+   "n": "Dried cranberries",
+   "tag": "fruit",
+   "per100": {
+    "kc": 308,
+    "c": 82.4,
+    "p": 0.1,
+    "f": 1.4,
+    "fib": 5.7,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 120,
+     "kc": 370,
+     "c": 98.9,
+     "p": 0.1,
+     "f": 1.7,
+     "fib": 6.8
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 87,
+     "c": 23.4,
+     "p": 0,
+     "f": 0.4,
+     "fib": 1.6
+    }
+   ]
+  },
+  {
    "id": "drink-mix-carbohydrate",
    "n": "Drink mix, carbohydrate",
    "tag": "supplement",
@@ -1353,7 +2560,8 @@
     "c": 95,
     "p": 0,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1385,7 +2593,8 @@
     "c": 71.3,
     "p": 14.2,
     "f": 4.4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1417,7 +2626,8 @@
     "c": 0.7,
     "p": 10.9,
     "f": 0.2,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1441,6 +2651,30 @@
    ]
   },
   {
+   "id": "egg-whole-extra-large",
+   "n": "Egg, whole, extra large",
+   "tag": "dairy",
+   "per100": {
+    "kc": 143,
+    "c": 0.7,
+    "p": 12.6,
+    "f": 9.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "egg",
+     "g": 56,
+     "kc": 80,
+     "c": 0.4,
+     "p": 7.1,
+     "f": 5.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "egg-whole-large",
    "n": "Egg, whole, large",
    "tag": "dairy",
@@ -1449,7 +2683,8 @@
     "c": 0.7,
     "p": 12.6,
     "f": 9.5,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1473,6 +2708,72 @@
    ]
   },
   {
+   "id": "eggplant-raw",
+   "n": "Eggplant, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 25,
+    "c": 5.9,
+    "p": 1,
+    "f": 0.2,
+    "fib": 3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup cubed",
+     "g": 82,
+     "kc": 21,
+     "c": 4.8,
+     "p": 0.8,
+     "f": 0.2,
+     "fib": 2.5
+    },
+    {
+     "u": "eggplant",
+     "g": 458,
+     "kc": 115,
+     "c": 27,
+     "p": 4.6,
+     "f": 0.9,
+     "fib": 13.7
+    }
+   ]
+  },
+  {
+   "id": "enchilada-sauce",
+   "n": "Enchilada sauce",
+   "tag": "condiment",
+   "per100": {
+    "kc": 40,
+    "c": 7,
+    "p": 1,
+    "f": 1,
+    "fib": 1.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 250,
+     "kc": 100,
+     "c": 17.5,
+     "p": 2.5,
+     "f": 2.5,
+     "fib": 3.8
+    },
+    {
+     "u": "can",
+     "g": 283,
+     "kc": 113,
+     "c": 19.8,
+     "p": 2.8,
+     "f": 2.8,
+     "fib": 4.2
+    }
+   ]
+  },
+  {
    "id": "energy-bar",
    "n": "Energy bar",
    "tag": "supplement",
@@ -1481,7 +2782,8 @@
     "c": 60,
     "p": 10,
     "f": 11,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1504,7 +2806,8 @@
     "c": 77,
     "p": 0,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1519,6 +2822,96 @@
    ]
   },
   {
+   "id": "english-muffin",
+   "n": "English muffin",
+   "tag": "grain",
+   "per100": {
+    "kc": 227,
+    "c": 44,
+    "p": 8.9,
+    "f": 1.7,
+    "fib": 2.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "muffin",
+     "g": 57,
+     "kc": 129,
+     "c": 25.1,
+     "p": 5.1,
+     "f": 1,
+     "fib": 1.4
+    }
+   ]
+  },
+  {
+   "id": "farro-dry",
+   "n": "Farro, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 340,
+    "c": 71,
+    "p": 13,
+    "f": 2,
+    "fib": 10,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 190,
+     "kc": 646,
+     "c": 134.9,
+     "p": 24.7,
+     "f": 3.8,
+     "fib": 19
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 96,
+     "c": 20.1,
+     "p": 3.7,
+     "f": 0.6,
+     "fib": 2.8
+    }
+   ]
+  },
+  {
+   "id": "feta",
+   "n": "Feta",
+   "tag": "dairy",
+   "per100": {
+    "kc": 264,
+    "c": 4.1,
+    "p": 14.2,
+    "f": 21.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 75,
+     "c": 1.2,
+     "p": 4,
+     "f": 6,
+     "fib": 0
+    },
+    {
+     "u": "cup crumbled",
+     "g": 150,
+     "kc": 396,
+     "c": 6.2,
+     "p": 21.3,
+     "f": 32,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "flour-all-purpose",
    "n": "Flour, all purpose",
    "tag": "grain",
@@ -1527,7 +2920,8 @@
     "c": 76.3,
     "p": 10.3,
     "f": 1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1551,6 +2945,30 @@
    ]
   },
   {
+   "id": "frozen-mixed-vegetables",
+   "n": "Frozen mixed vegetables",
+   "tag": "veg",
+   "per100": {
+    "kc": 65,
+    "c": 13.1,
+    "p": 3.3,
+    "f": 0.5,
+    "fib": 4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 182,
+     "kc": 118,
+     "c": 23.8,
+     "p": 6,
+     "f": 0.9,
+     "fib": 7.3
+    }
+   ]
+  },
+  {
    "id": "fruit-jam",
    "n": "Fruit jam",
    "tag": "sugar",
@@ -1559,7 +2977,8 @@
     "c": 68.9,
     "p": 0.4,
     "f": 0.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1574,6 +2993,72 @@
    ]
   },
   {
+   "id": "garlic",
+   "n": "Garlic",
+   "tag": "veg",
+   "per100": {
+    "kc": 149,
+    "c": 33.1,
+    "p": 6.4,
+    "f": 0.5,
+    "fib": 2.1,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "clove",
+     "g": 3,
+     "kc": 4,
+     "c": 1,
+     "p": 0.2,
+     "f": 0,
+     "fib": 0.1
+    },
+    {
+     "u": "head",
+     "g": 45,
+     "kc": 67,
+     "c": 14.9,
+     "p": 2.9,
+     "f": 0.2,
+     "fib": 0.9
+    }
+   ]
+  },
+  {
+   "id": "gnocchi",
+   "n": "Gnocchi",
+   "tag": "grain",
+   "per100": {
+    "kc": 152,
+    "c": 31,
+    "p": 3.6,
+    "f": 1.3,
+    "fib": 1.9,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 150,
+     "kc": 228,
+     "c": 46.5,
+     "p": 5.4,
+     "f": 2,
+     "fib": 2.9
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 43,
+     "c": 8.8,
+     "p": 1,
+     "f": 0.4,
+     "fib": 0.5
+    }
+   ]
+  },
+  {
    "id": "grapes",
    "n": "Grapes",
    "tag": "fruit",
@@ -1582,7 +3067,8 @@
     "c": 18.1,
     "p": 0.7,
     "f": 0.2,
-    "fib": 0.9
+    "fib": 0.9,
+    "alc": 0
    },
    "units": [
     {
@@ -1597,6 +3083,39 @@
    ]
   },
   {
+   "id": "greek-yogurt-plain-2",
+   "n": "Greek yogurt, plain, 2%",
+   "tag": "dairy",
+   "per100": {
+    "kc": 73,
+    "c": 4,
+    "p": 12,
+    "f": 1.9,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 245,
+     "kc": 179,
+     "c": 9.8,
+     "p": 29.4,
+     "f": 4.7,
+     "fib": 0
+    },
+    {
+     "u": "container",
+     "g": 170,
+     "kc": 124,
+     "c": 6.8,
+     "p": 20.4,
+     "f": 3.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "greek-yogurt-plain-nonfat",
    "n": "Greek yogurt, plain, nonfat",
    "tag": "dairy",
@@ -1605,7 +3124,8 @@
     "c": 3.6,
     "p": 10.3,
     "f": 0.4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1637,7 +3157,8 @@
     "c": 5.9,
     "p": 13.5,
     "f": 0.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1669,7 +3190,8 @@
     "c": 7,
     "p": 1.8,
     "f": 0.2,
-    "fib": 2.7
+    "fib": 2.7,
+    "alc": 0
    },
    "units": [
     {
@@ -1684,6 +3206,72 @@
    ]
   },
   {
+   "id": "green-onion",
+   "n": "Green onion",
+   "tag": "veg",
+   "per100": {
+    "kc": 32,
+    "c": 7.3,
+    "p": 1.8,
+    "f": 0.2,
+    "fib": 2.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "onion",
+     "g": 15,
+     "kc": 5,
+     "c": 1.1,
+     "p": 0.3,
+     "f": 0,
+     "fib": 0.4
+    },
+    {
+     "u": "cup",
+     "g": 100,
+     "kc": 32,
+     "c": 7.3,
+     "p": 1.8,
+     "f": 0.2,
+     "fib": 2.6
+    }
+   ]
+  },
+  {
+   "id": "grits-dry",
+   "n": "Grits, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 371,
+    "c": 79.6,
+    "p": 8.8,
+    "f": 1.2,
+    "fib": 4.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 156,
+     "kc": 579,
+     "c": 124.2,
+     "p": 13.7,
+     "f": 1.9,
+     "fib": 6.9
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 105,
+     "c": 22.6,
+     "p": 2.5,
+     "f": 0.3,
+     "fib": 1.2
+    }
+   ]
+  },
+  {
    "id": "ground-beef-80-20-raw",
    "n": "Ground beef, 80/20, raw",
    "tag": "meat",
@@ -1692,7 +3280,8 @@
     "c": 0,
     "p": 17.2,
     "f": 20,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1716,6 +3305,39 @@
    ]
   },
   {
+   "id": "ground-beef-85-15-raw",
+   "n": "Ground beef, 85/15, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 215,
+    "c": 0,
+    "p": 18.6,
+    "f": 15,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 61,
+     "c": 0,
+     "p": 5.3,
+     "f": 4.3,
+     "fib": 0
+    },
+    {
+     "u": "lb",
+     "g": 453.6,
+     "kc": 975,
+     "c": 0,
+     "p": 84.4,
+     "f": 68,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "ground-beef-90-10-raw",
    "n": "Ground beef, 90/10, raw",
    "tag": "meat",
@@ -1724,7 +3346,8 @@
     "c": 0,
     "p": 20,
     "f": 10,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1748,6 +3371,72 @@
    ]
   },
   {
+   "id": "ground-chicken-raw",
+   "n": "Ground chicken, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 143,
+    "c": 0,
+    "p": 17.4,
+    "f": 8.1,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 41,
+     "c": 0,
+     "p": 4.9,
+     "f": 2.3,
+     "fib": 0
+    },
+    {
+     "u": "lb",
+     "g": 453.6,
+     "kc": 649,
+     "c": 0,
+     "p": 78.9,
+     "f": 36.7,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "ground-turkey-85-15-raw",
+   "n": "Ground turkey, 85/15, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 213,
+    "c": 0,
+    "p": 17.3,
+    "f": 15.7,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 60,
+     "c": 0,
+     "p": 4.9,
+     "f": 4.5,
+     "fib": 0
+    },
+    {
+     "u": "lb",
+     "g": 453.6,
+     "kc": 966,
+     "c": 0,
+     "p": 78.5,
+     "f": 71.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "ground-turkey-93-7-raw",
    "n": "Ground turkey, 93/7, raw",
    "tag": "meat",
@@ -1756,7 +3445,8 @@
     "c": 0,
     "p": 19,
     "f": 8,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1788,7 +3478,8 @@
     "c": 0,
     "p": 24.6,
     "f": 1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1812,6 +3503,105 @@
    ]
   },
   {
+   "id": "guacamole",
+   "n": "Guacamole",
+   "tag": "fat",
+   "per100": {
+    "kc": 155,
+    "c": 8,
+    "p": 2,
+    "f": 14,
+    "fib": 6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 23,
+     "c": 1.2,
+     "p": 0.3,
+     "f": 2.1,
+     "fib": 0.9
+    },
+    {
+     "u": "cup",
+     "g": 230,
+     "kc": 357,
+     "c": 18.4,
+     "p": 4.6,
+     "f": 32.2,
+     "fib": 13.8
+    }
+   ]
+  },
+  {
+   "id": "half-and-half",
+   "n": "Half and half",
+   "tag": "dairy",
+   "per100": {
+    "kc": 130,
+    "c": 4.3,
+    "p": 3,
+    "f": 11.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 20,
+     "c": 0.6,
+     "p": 0.5,
+     "f": 1.7,
+     "fib": 0
+    },
+    {
+     "u": "cup",
+     "g": 242,
+     "kc": 315,
+     "c": 10.4,
+     "p": 7.3,
+     "f": 27.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "ham-steak",
+   "n": "Ham steak",
+   "tag": "meat",
+   "per100": {
+    "kc": 145,
+    "c": 1.5,
+    "p": 21,
+    "f": 5.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 41,
+     "c": 0.4,
+     "p": 6,
+     "f": 1.6,
+     "fib": 0
+    },
+    {
+     "u": "steak",
+     "g": 170,
+     "kc": 247,
+     "c": 2.6,
+     "p": 35.7,
+     "f": 9.4,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "hamburger-bun",
    "n": "Hamburger bun",
    "tag": "grain",
@@ -1820,7 +3610,8 @@
     "c": 50,
     "p": 9.6,
     "f": 4.2,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1843,7 +3634,8 @@
     "c": 2.8,
     "p": 2.1,
     "f": 36.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1875,7 +3667,8 @@
     "c": 82.4,
     "p": 0.3,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1899,6 +3692,243 @@
    ]
   },
   {
+   "id": "hot-dog-bun",
+   "n": "Hot dog bun",
+   "tag": "grain",
+   "per100": {
+    "kc": 279,
+    "c": 50,
+    "p": 9.6,
+    "f": 4.2,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "bun",
+     "g": 43,
+     "kc": 120,
+     "c": 21.5,
+     "p": 4.1,
+     "f": 1.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "hot-dog-beef",
+   "n": "Hot dog, beef",
+   "tag": "meat",
+   "per100": {
+    "kc": 290,
+    "c": 3,
+    "p": 11,
+    "f": 26,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "hot dog",
+     "g": 45,
+     "kc": 131,
+     "c": 1.4,
+     "p": 5,
+     "f": 11.7,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "hot-sauce",
+   "n": "Hot sauce",
+   "tag": "condiment",
+   "per100": {
+    "kc": 11,
+    "c": 1.8,
+    "p": 0.5,
+    "f": 0.4,
+    "fib": 1.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tsp",
+     "g": 5,
+     "kc": 1,
+     "c": 0.1,
+     "p": 0,
+     "f": 0,
+     "fib": 0.1
+    },
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 2,
+     "c": 0.3,
+     "p": 0.1,
+     "f": 0.1,
+     "fib": 0.2
+    }
+   ]
+  },
+  {
+   "id": "hummus",
+   "n": "Hummus",
+   "tag": "fat",
+   "per100": {
+    "kc": 166,
+    "c": 14.3,
+    "p": 7.9,
+    "f": 9.6,
+    "fib": 6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 25,
+     "c": 2.1,
+     "p": 1.2,
+     "f": 1.4,
+     "fib": 0.9
+    },
+    {
+     "u": "cup",
+     "g": 246,
+     "kc": 408,
+     "c": 35.2,
+     "p": 19.4,
+     "f": 23.6,
+     "fib": 14.8
+    }
+   ]
+  },
+  {
+   "id": "ice-cream-vanilla",
+   "n": "Ice cream, vanilla",
+   "tag": "dairy",
+   "per100": {
+    "kc": 207,
+    "c": 23.6,
+    "p": 3.5,
+    "f": 11,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 132,
+     "kc": 273,
+     "c": 31.2,
+     "p": 4.6,
+     "f": 14.5,
+     "fib": 0
+    },
+    {
+     "u": "scoop",
+     "g": 66,
+     "kc": 137,
+     "c": 15.6,
+     "p": 2.3,
+     "f": 7.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "italian-sausage-raw",
+   "n": "Italian sausage, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 290,
+    "c": 2,
+    "p": 16,
+    "f": 24,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "link",
+     "g": 85,
+     "kc": 247,
+     "c": 1.7,
+     "p": 13.6,
+     "f": 20.4,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 82,
+     "c": 0.6,
+     "p": 4.5,
+     "f": 6.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "jalapeno",
+   "n": "Jalapeno",
+   "tag": "veg",
+   "per100": {
+    "kc": 29,
+    "c": 6.5,
+    "p": 0.9,
+    "f": 0.4,
+    "fib": 2.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "pepper",
+     "g": 14,
+     "kc": 4,
+     "c": 0.9,
+     "p": 0.1,
+     "f": 0.1,
+     "fib": 0.4
+    }
+   ]
+  },
+  {
+   "id": "kale-raw",
+   "n": "Kale, raw",
+   "tag": "veg",
+   "per100": {
+    "kc": 49,
+    "c": 8.8,
+    "p": 4.3,
+    "f": 0.9,
+    "fib": 3.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 67,
+     "kc": 33,
+     "c": 5.9,
+     "p": 2.9,
+     "f": 0.6,
+     "fib": 2.4
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 14,
+     "c": 2.5,
+     "p": 1.2,
+     "f": 0.3,
+     "fib": 1
+    }
+   ]
+  },
+  {
    "id": "ketchup",
    "n": "Ketchup",
    "tag": "condiment",
@@ -1907,7 +3937,8 @@
     "c": 25.8,
     "p": 1,
     "f": 0.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -1930,7 +3961,8 @@
     "c": 15.1,
     "p": 5.5,
     "f": 0.3,
-    "fib": 6.4
+    "fib": 6.4,
+    "alc": 0
    },
    "units": [
     {
@@ -1954,6 +3986,105 @@
    ]
   },
   {
+   "id": "kombucha",
+   "n": "Kombucha",
+   "tag": "drink",
+   "per100": {
+    "kc": 13,
+    "c": 3.2,
+    "p": 0,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "bottle",
+     "g": 480,
+     "kc": 62,
+     "c": 15.4,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "cup",
+     "g": 240,
+     "kc": 31,
+     "c": 7.7,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "lasagna-noodles-dry",
+   "n": "Lasagna noodles, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 371,
+    "c": 74.7,
+    "p": 13,
+    "f": 1.5,
+    "fib": 3.2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "noodle",
+     "g": 27,
+     "kc": 100,
+     "c": 20.2,
+     "p": 3.5,
+     "f": 0.4,
+     "fib": 0.9
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 105,
+     "c": 21.2,
+     "p": 3.7,
+     "f": 0.4,
+     "fib": 0.9
+    }
+   ]
+  },
+  {
+   "id": "lemon-juice",
+   "n": "Lemon juice",
+   "tag": "fruit",
+   "per100": {
+    "kc": 22,
+    "c": 6.9,
+    "p": 0.4,
+    "f": 0.2,
+    "fib": 0.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 3,
+     "c": 1,
+     "p": 0.1,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "lemon",
+     "g": 48,
+     "kc": 11,
+     "c": 3.3,
+     "p": 0.2,
+     "f": 0.1,
+     "fib": 0.1
+    }
+   ]
+  },
+  {
    "id": "lentils-dry",
    "n": "Lentils, dry",
    "tag": "legume",
@@ -1962,7 +4093,8 @@
     "c": 60.1,
     "p": 25.8,
     "f": 1.1,
-    "fib": 10.7
+    "fib": 10.7,
+    "alc": 0
    },
    "units": [
     {
@@ -1986,6 +4118,72 @@
    ]
   },
   {
+   "id": "lime-juice",
+   "n": "Lime juice",
+   "tag": "fruit",
+   "per100": {
+    "kc": 25,
+    "c": 8.4,
+    "p": 0.4,
+    "f": 0.1,
+    "fib": 0.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 4,
+     "c": 1.3,
+     "p": 0.1,
+     "f": 0,
+     "fib": 0.1
+    },
+    {
+     "u": "lime",
+     "g": 44,
+     "kc": 11,
+     "c": 3.7,
+     "p": 0.2,
+     "f": 0,
+     "fib": 0.2
+    }
+   ]
+  },
+  {
+   "id": "mango",
+   "n": "Mango",
+   "tag": "fruit",
+   "per100": {
+    "kc": 60,
+    "c": 15,
+    "p": 0.8,
+    "f": 0.4,
+    "fib": 1.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "mango",
+     "g": 336,
+     "kc": 202,
+     "c": 50.4,
+     "p": 2.7,
+     "f": 1.3,
+     "fib": 5.4
+    },
+    {
+     "u": "cup",
+     "g": 165,
+     "kc": 99,
+     "c": 24.8,
+     "p": 1.3,
+     "f": 0.7,
+     "fib": 2.6
+    }
+   ]
+  },
+  {
    "id": "maple-syrup",
    "n": "Maple syrup",
    "tag": "sugar",
@@ -1994,7 +4192,8 @@
     "c": 67,
     "p": 0,
     "f": 0.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2026,7 +4225,8 @@
     "c": 8.8,
     "p": 1.6,
     "f": 1.8,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2058,7 +4258,8 @@
     "c": 0.6,
     "p": 1,
     "f": 75,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2081,7 +4282,8 @@
     "c": 4.8,
     "p": 3.4,
     "f": 2,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2113,7 +4315,8 @@
     "c": 5,
     "p": 3.4,
     "f": 0.1,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2145,7 +4348,8 @@
     "c": 4.8,
     "p": 3.2,
     "f": 3.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2169,6 +4373,39 @@
    ]
   },
   {
+   "id": "mixed-salad-greens",
+   "n": "Mixed salad greens",
+   "tag": "veg",
+   "per100": {
+    "kc": 20,
+    "c": 3.5,
+    "p": 1.8,
+    "f": 0.3,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 30,
+     "kc": 6,
+     "c": 1.1,
+     "p": 0.5,
+     "f": 0.1,
+     "fib": 0.6
+    },
+    {
+     "u": "bag",
+     "g": 142,
+     "kc": 28,
+     "c": 5,
+     "p": 2.6,
+     "f": 0.4,
+     "fib": 2.8
+    }
+   ]
+  },
+  {
    "id": "mozzarella-part-skim-shredded",
    "n": "Mozzarella, part skim, shredded",
    "tag": "dairy",
@@ -2177,7 +4414,8 @@
     "c": 3.5,
     "p": 24.3,
     "f": 20,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2209,7 +4447,8 @@
     "c": 3.3,
     "p": 3.1,
     "f": 0.3,
-    "fib": 1
+    "fib": 1,
+    "alc": 0
    },
    "units": [
     {
@@ -2241,7 +4480,8 @@
     "c": 5.8,
     "p": 3.7,
     "f": 3.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2265,6 +4505,30 @@
    ]
   },
   {
+   "id": "naan",
+   "n": "Naan",
+   "tag": "grain",
+   "per100": {
+    "kc": 310,
+    "c": 50,
+    "p": 9,
+    "f": 8,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "naan",
+     "g": 90,
+     "kc": 279,
+     "c": 45,
+     "p": 8.1,
+     "f": 7.2,
+     "fib": 1.8
+    }
+   ]
+  },
+  {
    "id": "olive-oil",
    "n": "Olive oil",
    "tag": "fat",
@@ -2273,7 +4537,8 @@
     "c": 0,
     "p": 0,
     "f": 100,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2297,6 +4562,39 @@
    ]
   },
   {
+   "id": "olives-green",
+   "n": "Olives, green",
+   "tag": "fat",
+   "per100": {
+    "kc": 145,
+    "c": 3.8,
+    "p": 1,
+    "f": 15.3,
+    "fib": 3.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "olive",
+     "g": 4,
+     "kc": 6,
+     "c": 0.2,
+     "p": 0,
+     "f": 0.6,
+     "fib": 0.1
+    },
+    {
+     "u": "cup",
+     "g": 134,
+     "kc": 194,
+     "c": 5.1,
+     "p": 1.3,
+     "f": 20.5,
+     "fib": 4.4
+    }
+   ]
+  },
+  {
    "id": "onion-raw",
    "n": "Onion, raw",
    "tag": "veg",
@@ -2305,7 +4603,8 @@
     "c": 9.3,
     "p": 1.1,
     "f": 0.1,
-    "fib": 1.7
+    "fib": 1.7,
+    "alc": 0
    },
    "units": [
     {
@@ -2337,7 +4636,8 @@
     "c": 11.8,
     "p": 0.9,
     "f": 0.1,
-    "fib": 2.4
+    "fib": 2.4,
+    "alc": 0
    },
    "units": [
     {
@@ -2352,6 +4652,39 @@
    ]
   },
   {
+   "id": "orange-juice",
+   "n": "Orange juice",
+   "tag": "fruit",
+   "per100": {
+    "kc": 45,
+    "c": 10.4,
+    "p": 0.7,
+    "f": 0.2,
+    "fib": 0.2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 248,
+     "kc": 112,
+     "c": 25.8,
+     "p": 1.7,
+     "f": 0.5,
+     "fib": 0.5
+    },
+    {
+     "u": "fl oz",
+     "g": 31,
+     "kc": 14,
+     "c": 3.2,
+     "p": 0.2,
+     "f": 0.1,
+     "fib": 0.1
+    }
+   ]
+  },
+  {
    "id": "pancake-mix-dry",
    "n": "Pancake mix, dry",
    "tag": "grain",
@@ -2360,7 +4693,8 @@
     "c": 72,
     "p": 9,
     "f": 4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2384,6 +4718,39 @@
    ]
   },
   {
+   "id": "panko-breadcrumbs",
+   "n": "Panko breadcrumbs",
+   "tag": "grain",
+   "per100": {
+    "kc": 390,
+    "c": 74,
+    "p": 12,
+    "f": 3,
+    "fib": 4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 60,
+     "kc": 234,
+     "c": 44.4,
+     "p": 7.2,
+     "f": 1.8,
+     "fib": 2.4
+    },
+    {
+     "u": "tbsp",
+     "g": 4,
+     "kc": 16,
+     "c": 3,
+     "p": 0.5,
+     "f": 0.1,
+     "fib": 0.2
+    }
+   ]
+  },
+  {
    "id": "parmesan-grated",
    "n": "Parmesan, grated",
    "tag": "dairy",
@@ -2392,7 +4759,8 @@
     "c": 4.1,
     "p": 38,
     "f": 28,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2424,7 +4792,8 @@
     "c": 30.9,
     "p": 5.8,
     "f": 0.9,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2447,7 +4816,8 @@
     "c": 74.7,
     "p": 13,
     "f": 1.5,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2471,6 +4841,39 @@
    ]
   },
   {
+   "id": "peach",
+   "n": "Peach",
+   "tag": "fruit",
+   "per100": {
+    "kc": 39,
+    "c": 9.5,
+    "p": 0.9,
+    "f": 0.3,
+    "fib": 1.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "peach",
+     "g": 150,
+     "kc": 59,
+     "c": 14.3,
+     "p": 1.4,
+     "f": 0.5,
+     "fib": 2.3
+    },
+    {
+     "u": "cup",
+     "g": 154,
+     "kc": 60,
+     "c": 14.6,
+     "p": 1.4,
+     "f": 0.5,
+     "fib": 2.3
+    }
+   ]
+  },
+  {
    "id": "peanut-butter",
    "n": "Peanut butter",
    "tag": "fat",
@@ -2479,7 +4882,8 @@
     "c": 20,
     "p": 25.1,
     "f": 50.4,
-    "fib": 6
+    "fib": 6,
+    "alc": 0
    },
    "units": [
     {
@@ -2503,6 +4907,63 @@
    ]
   },
   {
+   "id": "peanuts",
+   "n": "Peanuts",
+   "tag": "fat",
+   "per100": {
+    "kc": 567,
+    "c": 16.1,
+    "p": 25.8,
+    "f": 49.2,
+    "fib": 8.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 161,
+     "c": 4.6,
+     "p": 7.3,
+     "f": 13.9,
+     "fib": 2.4
+    },
+    {
+     "u": "cup",
+     "g": 146,
+     "kc": 828,
+     "c": 23.5,
+     "p": 37.7,
+     "f": 71.8,
+     "fib": 12.4
+    }
+   ]
+  },
+  {
+   "id": "pear",
+   "n": "Pear",
+   "tag": "fruit",
+   "per100": {
+    "kc": 57,
+    "c": 15.2,
+    "p": 0.4,
+    "f": 0.1,
+    "fib": 3.1,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "pear",
+     "g": 178,
+     "kc": 101,
+     "c": 27.1,
+     "p": 0.7,
+     "f": 0.2,
+     "fib": 5.5
+    }
+   ]
+  },
+  {
    "id": "peas-frozen",
    "n": "Peas, frozen",
    "tag": "veg",
@@ -2511,7 +4972,8 @@
     "c": 13.6,
     "p": 5.2,
     "f": 0.4,
-    "fib": 4.5
+    "fib": 4.5,
+    "alc": 0
    },
    "units": [
     {
@@ -2526,6 +4988,219 @@
    ]
   },
   {
+   "id": "pecans",
+   "n": "Pecans",
+   "tag": "fat",
+   "per100": {
+    "kc": 691,
+    "c": 13.9,
+    "p": 9.2,
+    "f": 72,
+    "fib": 9.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 196,
+     "c": 3.9,
+     "p": 2.6,
+     "f": 20.4,
+     "fib": 2.7
+    },
+    {
+     "u": "cup",
+     "g": 99,
+     "kc": 684,
+     "c": 13.8,
+     "p": 9.1,
+     "f": 71.3,
+     "fib": 9.5
+    }
+   ]
+  },
+  {
+   "id": "pepperoni",
+   "n": "Pepperoni",
+   "tag": "meat",
+   "per100": {
+    "kc": 504,
+    "c": 1.2,
+    "p": 19.3,
+    "f": 46.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 143,
+     "c": 0.3,
+     "p": 5.5,
+     "f": 13.1,
+     "fib": 0
+    },
+    {
+     "u": "slice",
+     "g": 5,
+     "kc": 25,
+     "c": 0.1,
+     "p": 1,
+     "f": 2.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "pesto",
+   "n": "Pesto",
+   "tag": "fat",
+   "per100": {
+    "kc": 458,
+    "c": 6,
+    "p": 6,
+    "f": 46,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 16,
+     "kc": 73,
+     "c": 1,
+     "p": 1,
+     "f": 7.4,
+     "fib": 0.3
+    },
+    {
+     "u": "cup",
+     "g": 240,
+     "kc": 1099,
+     "c": 14.4,
+     "p": 14.4,
+     "f": 110.4,
+     "fib": 4.8
+    }
+   ]
+  },
+  {
+   "id": "pickles-dill",
+   "n": "Pickles, dill",
+   "tag": "veg",
+   "per100": {
+    "kc": 12,
+    "c": 2.3,
+    "p": 0.6,
+    "f": 0.2,
+    "fib": 1.2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "spear",
+     "g": 35,
+     "kc": 4,
+     "c": 0.8,
+     "p": 0.2,
+     "f": 0.1,
+     "fib": 0.4
+    },
+    {
+     "u": "cup",
+     "g": 143,
+     "kc": 17,
+     "c": 3.3,
+     "p": 0.9,
+     "f": 0.3,
+     "fib": 1.7
+    }
+   ]
+  },
+  {
+   "id": "pineapple",
+   "n": "Pineapple",
+   "tag": "fruit",
+   "per100": {
+    "kc": 50,
+    "c": 13.1,
+    "p": 0.5,
+    "f": 0.1,
+    "fib": 1.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup chunks",
+     "g": 165,
+     "kc": 83,
+     "c": 21.6,
+     "p": 0.8,
+     "f": 0.2,
+     "fib": 2.3
+    }
+   ]
+  },
+  {
+   "id": "pistachios",
+   "n": "Pistachios",
+   "tag": "fat",
+   "per100": {
+    "kc": 560,
+    "c": 27.2,
+    "p": 20.2,
+    "f": 45.3,
+    "fib": 10.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 159,
+     "c": 7.7,
+     "p": 5.7,
+     "f": 12.8,
+     "fib": 3
+    },
+    {
+     "u": "cup",
+     "g": 123,
+     "kc": 689,
+     "c": 33.5,
+     "p": 24.8,
+     "f": 55.7,
+     "fib": 13
+    }
+   ]
+  },
+  {
+   "id": "pita-bread-whole-wheat",
+   "n": "Pita bread, whole wheat",
+   "tag": "grain",
+   "per100": {
+    "kc": 266,
+    "c": 55.9,
+    "p": 9.8,
+    "f": 2.6,
+    "fib": 7.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "pita",
+     "g": 64,
+     "kc": 170,
+     "c": 35.8,
+     "p": 6.3,
+     "f": 1.7,
+     "fib": 4.7
+    }
+   ]
+  },
+  {
    "id": "pizza-dough-raw",
    "n": "Pizza dough, raw",
    "tag": "grain",
@@ -2534,7 +5209,8 @@
     "c": 49,
     "p": 8.9,
     "f": 3.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2558,6 +5234,72 @@
    ]
   },
   {
+   "id": "popcorn-air-popped",
+   "n": "Popcorn, air popped",
+   "tag": "grain",
+   "per100": {
+    "kc": 387,
+    "c": 77.9,
+    "p": 12.9,
+    "f": 4.5,
+    "fib": 14.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 8,
+     "kc": 31,
+     "c": 6.2,
+     "p": 1,
+     "f": 0.4,
+     "fib": 1.2
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 110,
+     "c": 22.1,
+     "p": 3.7,
+     "f": 1.3,
+     "fib": 4.1
+    }
+   ]
+  },
+  {
+   "id": "pork-chop-raw",
+   "n": "Pork chop, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 196,
+    "c": 0,
+    "p": 20.9,
+    "f": 12,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "chop",
+     "g": 150,
+     "kc": 294,
+     "c": 0,
+     "p": 31.4,
+     "f": 18,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 56,
+     "c": 0,
+     "p": 5.9,
+     "f": 3.4,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "pork-loin-raw",
    "n": "Pork loin, raw",
    "tag": "meat",
@@ -2566,7 +5308,8 @@
     "c": 0,
     "p": 21,
     "f": 6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2590,6 +5333,39 @@
    ]
   },
   {
+   "id": "pork-tenderloin-raw",
+   "n": "Pork tenderloin, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 120,
+    "c": 0,
+    "p": 20.9,
+    "f": 3.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 34,
+     "c": 0,
+     "p": 5.9,
+     "f": 1,
+     "fib": 0
+    },
+    {
+     "u": "lb",
+     "g": 453.6,
+     "kc": 544,
+     "c": 0,
+     "p": 94.8,
+     "f": 15.9,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "potato-russet-raw",
    "n": "Potato, russet, raw",
    "tag": "veg",
@@ -2598,7 +5374,8 @@
     "c": 17.9,
     "p": 2.1,
     "f": 0.1,
-    "fib": 2.1
+    "fib": 2.1,
+    "alc": 0
    },
    "units": [
     {
@@ -2631,6 +5408,105 @@
    ]
   },
   {
+   "id": "powdered-sugar",
+   "n": "Powdered sugar",
+   "tag": "sugar",
+   "per100": {
+    "kc": 389,
+    "c": 99.8,
+    "p": 0,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 120,
+     "kc": 467,
+     "c": 119.8,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "tbsp",
+     "g": 8,
+     "kc": 31,
+     "c": 8,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "pretzels",
+   "n": "Pretzels",
+   "tag": "grain",
+   "per100": {
+    "kc": 384,
+    "c": 80,
+    "p": 10,
+    "f": 3,
+    "fib": 3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 109,
+     "c": 22.7,
+     "p": 2.8,
+     "f": 0.9,
+     "fib": 0.9
+    },
+    {
+     "u": "cup",
+     "g": 30,
+     "kc": 115,
+     "c": 24,
+     "p": 3,
+     "f": 0.9,
+     "fib": 0.9
+    }
+   ]
+  },
+  {
+   "id": "provolone",
+   "n": "Provolone",
+   "tag": "dairy",
+   "per100": {
+    "kc": 351,
+    "c": 2.1,
+    "p": 25.6,
+    "f": 26.6,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "slice",
+     "g": 28,
+     "kc": 98,
+     "c": 0.6,
+     "p": 7.2,
+     "f": 7.4,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 100,
+     "c": 0.6,
+     "p": 7.3,
+     "f": 7.5,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "quinoa-cooked",
    "n": "Quinoa, cooked",
    "tag": "grain",
@@ -2639,7 +5515,8 @@
     "c": 21.3,
     "p": 4.4,
     "f": 1.9,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2662,7 +5539,8 @@
     "c": 64.2,
     "p": 14.1,
     "f": 6.1,
-    "fib": 7
+    "fib": 7,
+    "alc": 0
    },
    "units": [
     {
@@ -2694,7 +5572,8 @@
     "c": 79.2,
     "p": 3.1,
     "f": 0.5,
-    "fib": 3.7
+    "fib": 3.7,
+    "alc": 0
    },
    "units": [
     {
@@ -2718,6 +5597,30 @@
    ]
   },
   {
+   "id": "ramen-noodles-dry",
+   "n": "Ramen noodles, dry",
+   "tag": "grain",
+   "per100": {
+    "kc": 436,
+    "c": 63,
+    "p": 9,
+    "f": 17,
+    "fib": 2.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "pack",
+     "g": 85,
+     "kc": 371,
+     "c": 53.6,
+     "p": 7.7,
+     "f": 14.5,
+     "fib": 2.1
+    }
+   ]
+  },
+  {
    "id": "ranch-dressing",
    "n": "Ranch dressing",
    "tag": "fat",
@@ -2726,7 +5629,8 @@
     "c": 6,
     "p": 1,
     "f": 45,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2741,6 +5645,153 @@
    ]
   },
   {
+   "id": "ranch-seasoning-dry",
+   "n": "Ranch seasoning, dry",
+   "tag": "condiment",
+   "per100": {
+    "kc": 300,
+    "c": 60,
+    "p": 5,
+    "f": 4,
+    "fib": 5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "packet",
+     "g": 28,
+     "kc": 84,
+     "c": 16.8,
+     "p": 1.4,
+     "f": 1.1,
+     "fib": 1.4
+    },
+    {
+     "u": "tbsp",
+     "g": 7,
+     "kc": 21,
+     "c": 4.2,
+     "p": 0.4,
+     "f": 0.3,
+     "fib": 0.4
+    }
+   ]
+  },
+  {
+   "id": "raspberries",
+   "n": "Raspberries",
+   "tag": "fruit",
+   "per100": {
+    "kc": 52,
+    "c": 11.9,
+    "p": 1.2,
+    "f": 0.7,
+    "fib": 6.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 123,
+     "kc": 64,
+     "c": 14.6,
+     "p": 1.5,
+     "f": 0.9,
+     "fib": 8
+    }
+   ]
+  },
+  {
+   "id": "ribeye-steak-raw",
+   "n": "Ribeye steak, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 291,
+    "c": 0,
+    "p": 19,
+    "f": 23,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 82,
+     "c": 0,
+     "p": 5.4,
+     "f": 6.5,
+     "fib": 0
+    },
+    {
+     "u": "steak",
+     "g": 280,
+     "kc": 815,
+     "c": 0,
+     "p": 53.2,
+     "f": 64.4,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "rice-cake",
+   "n": "Rice cake",
+   "tag": "grain",
+   "per100": {
+    "kc": 387,
+    "c": 81.5,
+    "p": 8.2,
+    "f": 2.8,
+    "fib": 4.2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cake",
+     "g": 9,
+     "kc": 35,
+     "c": 7.3,
+     "p": 0.7,
+     "f": 0.3,
+     "fib": 0.4
+    }
+   ]
+  },
+  {
+   "id": "ricotta-part-skim",
+   "n": "Ricotta, part skim",
+   "tag": "dairy",
+   "per100": {
+    "kc": 138,
+    "c": 5.1,
+    "p": 11.4,
+    "f": 7.9,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 246,
+     "kc": 339,
+     "c": 12.5,
+     "p": 28,
+     "f": 19.4,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 39,
+     "c": 1.4,
+     "p": 3.2,
+     "f": 2.2,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "rolled-oats-dry",
    "n": "Rolled oats, dry",
    "tag": "grain",
@@ -2749,7 +5800,8 @@
     "c": 67.7,
     "p": 13.2,
     "f": 6.5,
-    "fib": 10.6
+    "fib": 10.6,
+    "alc": 0
    },
    "units": [
     {
@@ -2781,7 +5833,8 @@
     "c": 3.3,
     "p": 1.2,
     "f": 0.3,
-    "fib": 2.1
+    "fib": 2.1,
+    "alc": 0
    },
    "units": [
     {
@@ -2805,6 +5858,63 @@
    ]
   },
   {
+   "id": "rotisserie-chicken-meat-only",
+   "n": "Rotisserie chicken, meat only",
+   "tag": "meat",
+   "per100": {
+    "kc": 190,
+    "c": 0,
+    "p": 28,
+    "f": 8,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 140,
+     "kc": 266,
+     "c": 0,
+     "p": 39.2,
+     "f": 11.2,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 54,
+     "c": 0,
+     "p": 7.9,
+     "f": 2.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "rye-bread",
+   "n": "Rye bread",
+   "tag": "grain",
+   "per100": {
+    "kc": 259,
+    "c": 48.3,
+    "p": 8.5,
+    "f": 3.3,
+    "fib": 5.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "slice",
+     "g": 32,
+     "kc": 83,
+     "c": 15.5,
+     "p": 2.7,
+     "f": 1.1,
+     "fib": 1.9
+    }
+   ]
+  },
+  {
    "id": "salmon-atlantic-raw",
    "n": "Salmon, Atlantic, raw",
    "tag": "fish",
@@ -2813,7 +5923,8 @@
     "c": 0,
     "p": 20.4,
     "f": 13.4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2837,6 +5948,39 @@
    ]
   },
   {
+   "id": "salmon-canned",
+   "n": "Salmon, canned",
+   "tag": "fish",
+   "per100": {
+    "kc": 142,
+    "c": 0,
+    "p": 19.8,
+    "f": 6.2,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "can",
+     "g": 142,
+     "kc": 202,
+     "c": 0,
+     "p": 28.1,
+     "f": 8.8,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 40,
+     "c": 0,
+     "p": 5.6,
+     "f": 1.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "salsa",
    "n": "Salsa",
    "tag": "condiment",
@@ -2845,7 +5989,8 @@
     "c": 7,
     "p": 1.5,
     "f": 0.2,
-    "fib": 1.5
+    "fib": 1.5,
+    "alc": 0
    },
    "units": [
     {
@@ -2869,6 +6014,87 @@
    ]
   },
   {
+   "id": "sardines-canned-in-oil",
+   "n": "Sardines, canned in oil",
+   "tag": "fish",
+   "per100": {
+    "kc": 208,
+    "c": 0,
+    "p": 24.6,
+    "f": 11.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "can",
+     "g": 92,
+     "kc": 191,
+     "c": 0,
+     "p": 22.6,
+     "f": 10.6,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 59,
+     "c": 0,
+     "p": 7,
+     "f": 3.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "sauerkraut",
+   "n": "Sauerkraut",
+   "tag": "veg",
+   "per100": {
+    "kc": 19,
+    "c": 4.3,
+    "p": 0.9,
+    "f": 0.1,
+    "fib": 2.9,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 142,
+     "kc": 27,
+     "c": 6.1,
+     "p": 1.3,
+     "f": 0.1,
+     "fib": 4.1
+    }
+   ]
+  },
+  {
+   "id": "scallops-raw",
+   "n": "Scallops, raw",
+   "tag": "fish",
+   "per100": {
+    "kc": 69,
+    "c": 3.2,
+    "p": 12.1,
+    "f": 0.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 20,
+     "c": 0.9,
+     "p": 3.4,
+     "f": 0.1,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "shrimp-raw",
    "n": "Shrimp, raw",
    "tag": "fish",
@@ -2877,7 +6103,8 @@
     "c": 0.2,
     "p": 20.1,
     "f": 0.5,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2892,6 +6119,72 @@
    ]
   },
   {
+   "id": "sirloin-steak-raw",
+   "n": "Sirloin steak, raw",
+   "tag": "meat",
+   "per100": {
+    "kc": 201,
+    "c": 0,
+    "p": 21,
+    "f": 12.7,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 57,
+     "c": 0,
+     "p": 6,
+     "f": 3.6,
+     "fib": 0
+    },
+    {
+     "u": "steak",
+     "g": 227,
+     "kc": 456,
+     "c": 0,
+     "p": 47.7,
+     "f": 28.8,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "soda-cola",
+   "n": "Soda, cola",
+   "tag": "drink",
+   "per100": {
+    "kc": 41,
+    "c": 10.6,
+    "p": 0,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "can",
+     "g": 355,
+     "kc": 146,
+     "c": 37.6,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "fl oz",
+     "g": 30,
+     "kc": 12,
+     "c": 3.2,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "sour-cream",
    "n": "Sour cream",
    "tag": "dairy",
@@ -2900,7 +6193,8 @@
     "c": 4.6,
     "p": 2.4,
     "f": 19.4,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2924,6 +6218,30 @@
    ]
   },
   {
+   "id": "sourdough-bread",
+   "n": "Sourdough bread",
+   "tag": "grain",
+   "per100": {
+    "kc": 289,
+    "c": 56,
+    "p": 11.7,
+    "f": 1.8,
+    "fib": 2.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "slice",
+     "g": 50,
+     "kc": 145,
+     "c": 28,
+     "p": 5.9,
+     "f": 0.9,
+     "fib": 1.2
+    }
+   ]
+  },
+  {
    "id": "soy-sauce",
    "n": "Soy sauce",
    "tag": "condiment",
@@ -2932,7 +6250,8 @@
     "c": 4.9,
     "p": 8.1,
     "f": 0.6,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -2964,7 +6283,8 @@
     "c": 3.6,
     "p": 2.9,
     "f": 0.4,
-    "fib": 2.2
+    "fib": 2.2,
+    "alc": 0
    },
    "units": [
     {
@@ -2996,7 +6316,8 @@
     "c": 6.5,
     "p": 0,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3028,7 +6349,8 @@
     "c": 7.7,
     "p": 0.7,
     "f": 0.3,
-    "fib": 2
+    "fib": 2,
+    "alc": 0
    },
    "units": [
     {
@@ -3051,7 +6373,8 @@
     "c": 100,
     "p": 0,
     "f": 0,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3075,6 +6398,39 @@
    ]
   },
   {
+   "id": "sunflower-seeds",
+   "n": "Sunflower seeds",
+   "tag": "fat",
+   "per100": {
+    "kc": 584,
+    "c": 20,
+    "p": 20.8,
+    "f": 51.5,
+    "fib": 8.6,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 166,
+     "c": 5.7,
+     "p": 5.9,
+     "f": 14.6,
+     "fib": 2.4
+    },
+    {
+     "u": "cup",
+     "g": 140,
+     "kc": 818,
+     "c": 28,
+     "p": 29.1,
+     "f": 72.1,
+     "fib": 12
+    }
+   ]
+  },
+  {
    "id": "sweet-corn-on-the-cob",
    "n": "Sweet corn on the cob",
    "tag": "veg",
@@ -3083,7 +6439,8 @@
     "c": 19,
     "p": 3.3,
     "f": 1.4,
-    "fib": 2
+    "fib": 2,
+    "alc": 0
    },
    "units": [
     {
@@ -3098,6 +6455,39 @@
    ]
   },
   {
+   "id": "sweet-potato-cooked",
+   "n": "Sweet potato, cooked",
+   "tag": "veg",
+   "per100": {
+    "kc": 90,
+    "c": 20.7,
+    "p": 2,
+    "f": 0.2,
+    "fib": 3.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 200,
+     "kc": 180,
+     "c": 41.4,
+     "p": 4,
+     "f": 0.4,
+     "fib": 6.6
+    },
+    {
+     "u": "potato",
+     "g": 151,
+     "kc": 136,
+     "c": 31.3,
+     "p": 3,
+     "f": 0.3,
+     "fib": 5
+    }
+   ]
+  },
+  {
    "id": "sweet-potato-raw",
    "n": "Sweet potato, raw",
    "tag": "veg",
@@ -3106,7 +6496,8 @@
     "c": 20.1,
     "p": 1.6,
     "f": 0.1,
-    "fib": 3
+    "fib": 3,
+    "alc": 0
    },
    "units": [
     {
@@ -3130,6 +6521,87 @@
    ]
   },
   {
+   "id": "swiss-cheese",
+   "n": "Swiss cheese",
+   "tag": "dairy",
+   "per100": {
+    "kc": 380,
+    "c": 5.4,
+    "p": 27,
+    "f": 27.8,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "slice",
+     "g": 28,
+     "kc": 106,
+     "c": 1.5,
+     "p": 7.6,
+     "f": 7.8,
+     "fib": 0
+    },
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 108,
+     "c": 1.5,
+     "p": 7.7,
+     "f": 7.9,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "tahini",
+   "n": "Tahini",
+   "tag": "fat",
+   "per100": {
+    "kc": 595,
+    "c": 21.2,
+    "p": 17,
+    "f": 53.8,
+    "fib": 9.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 15,
+     "kc": 89,
+     "c": 3.2,
+     "p": 2.6,
+     "f": 8.1,
+     "fib": 1.4
+    }
+   ]
+  },
+  {
+   "id": "teriyaki-sauce",
+   "n": "Teriyaki sauce",
+   "tag": "condiment",
+   "per100": {
+    "kc": 89,
+    "c": 15.6,
+    "p": 5.9,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 18,
+     "kc": 16,
+     "c": 2.8,
+     "p": 1.1,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "tilapia-raw",
    "n": "Tilapia, raw",
    "tag": "fish",
@@ -3138,7 +6610,8 @@
     "c": 0,
     "p": 20.1,
     "f": 1.7,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3162,6 +6635,39 @@
    ]
   },
   {
+   "id": "tofu-firm",
+   "n": "Tofu, firm",
+   "tag": "legume",
+   "per100": {
+    "kc": 144,
+    "c": 4.3,
+    "p": 15.8,
+    "f": 8.7,
+    "fib": 2.3,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 41,
+     "c": 1.2,
+     "p": 4.5,
+     "f": 2.5,
+     "fib": 0.7
+    },
+    {
+     "u": "block",
+     "g": 396,
+     "kc": 570,
+     "c": 17,
+     "p": 62.6,
+     "f": 34.5,
+     "fib": 9.1
+    }
+   ]
+  },
+  {
    "id": "tomato-paste",
    "n": "Tomato paste",
    "tag": "condiment",
@@ -3170,7 +6676,8 @@
     "c": 18.9,
     "p": 4.3,
     "f": 0.5,
-    "fib": 4.1
+    "fib": 4.1,
+    "alc": 0
    },
    "units": [
     {
@@ -3202,7 +6709,8 @@
     "c": 3.9,
     "p": 0.9,
     "f": 0.2,
-    "fib": 1.2
+    "fib": 1.2,
+    "alc": 0
    },
    "units": [
     {
@@ -3226,6 +6734,39 @@
    ]
   },
   {
+   "id": "tortilla-chips",
+   "n": "Tortilla chips",
+   "tag": "grain",
+   "per100": {
+    "kc": 489,
+    "c": 63,
+    "p": 7,
+    "f": 23,
+    "fib": 4.8,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 139,
+     "c": 17.9,
+     "p": 2,
+     "f": 6.5,
+     "fib": 1.4
+    },
+    {
+     "u": "cup",
+     "g": 30,
+     "kc": 147,
+     "c": 18.9,
+     "p": 2.1,
+     "f": 6.9,
+     "fib": 1.4
+    }
+   ]
+  },
+  {
    "id": "tortilla-corn-6-inch",
    "n": "Tortilla, corn, 6 inch",
    "tag": "grain",
@@ -3234,7 +6775,8 @@
     "c": 44.6,
     "p": 5.7,
     "f": 2.9,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3257,7 +6799,8 @@
     "c": 51.4,
     "p": 8.2,
     "f": 7,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3272,6 +6815,39 @@
    ]
   },
   {
+   "id": "tuna-steak-raw",
+   "n": "Tuna steak, raw",
+   "tag": "fish",
+   "per100": {
+    "kc": 109,
+    "c": 0,
+    "p": 24.4,
+    "f": 0.5,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 31,
+     "c": 0,
+     "p": 6.9,
+     "f": 0.1,
+     "fib": 0
+    },
+    {
+     "u": "steak",
+     "g": 170,
+     "kc": 185,
+     "c": 0,
+     "p": 41.5,
+     "f": 0.9,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "tuna-canned-in-water-drained",
    "n": "Tuna, canned in water, drained",
    "tag": "fish",
@@ -3280,7 +6856,8 @@
     "c": 0,
     "p": 25.5,
     "f": 0.8,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3304,6 +6881,72 @@
    ]
   },
   {
+   "id": "turkey-breast-roasted",
+   "n": "Turkey breast, roasted",
+   "tag": "meat",
+   "per100": {
+    "kc": 135,
+    "c": 0,
+    "p": 30.1,
+    "f": 0.7,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "oz",
+     "g": 28.35,
+     "kc": 38,
+     "c": 0,
+     "p": 8.5,
+     "f": 0.2,
+     "fib": 0
+    },
+    {
+     "u": "cup diced",
+     "g": 140,
+     "kc": 189,
+     "c": 0,
+     "p": 42.1,
+     "f": 1,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "vanilla-extract",
+   "n": "Vanilla extract",
+   "tag": "sugar",
+   "per100": {
+    "kc": 288,
+    "c": 12.7,
+    "p": 0.1,
+    "f": 0.1,
+    "fib": 0,
+    "alc": 34.4
+   },
+   "units": [
+    {
+     "u": "tsp",
+     "g": 4.2,
+     "kc": 12,
+     "c": 0.5,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "tbsp",
+     "g": 13,
+     "kc": 37,
+     "c": 1.7,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "vegetable-oil",
    "n": "Vegetable oil",
    "tag": "fat",
@@ -3312,7 +6955,8 @@
     "c": 0,
     "p": 0,
     "f": 100,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3344,7 +6988,8 @@
     "c": 6.7,
     "p": 0.3,
     "f": 29,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3359,6 +7004,30 @@
    ]
   },
   {
+   "id": "waffle-frozen",
+   "n": "Waffle, frozen",
+   "tag": "grain",
+   "per100": {
+    "kc": 291,
+    "c": 43,
+    "p": 7,
+    "f": 10,
+    "fib": 2,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "waffle",
+     "g": 35,
+     "kc": 102,
+     "c": 15.1,
+     "p": 2.5,
+     "f": 3.5,
+     "fib": 0.7
+    }
+   ]
+  },
+  {
    "id": "walnuts",
    "n": "Walnuts",
    "tag": "fat",
@@ -3367,7 +7036,8 @@
     "c": 13.7,
     "p": 15.2,
     "f": 65.2,
-    "fib": 6.7
+    "fib": 6.7,
+    "alc": 0
    },
    "units": [
     {
@@ -3391,6 +7061,39 @@
    ]
   },
   {
+   "id": "watermelon",
+   "n": "Watermelon",
+   "tag": "fruit",
+   "per100": {
+    "kc": 30,
+    "c": 7.6,
+    "p": 0.6,
+    "f": 0.2,
+    "fib": 0.4,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 152,
+     "kc": 46,
+     "c": 11.6,
+     "p": 0.9,
+     "f": 0.3,
+     "fib": 0.6
+    },
+    {
+     "u": "wedge",
+     "g": 286,
+     "kc": 86,
+     "c": 21.7,
+     "p": 1.7,
+     "f": 0.6,
+     "fib": 1.1
+    }
+   ]
+  },
+  {
    "id": "whey-protein-powder",
    "n": "Whey protein powder",
    "tag": "supplement",
@@ -3399,7 +7102,8 @@
     "c": 10,
     "p": 75,
     "f": 5,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3423,6 +7127,39 @@
    ]
   },
   {
+   "id": "whipped-cream",
+   "n": "Whipped cream",
+   "tag": "dairy",
+   "per100": {
+    "kc": 257,
+    "c": 12.5,
+    "p": 3.2,
+    "f": 22.2,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 6,
+     "kc": 15,
+     "c": 0.8,
+     "p": 0.2,
+     "f": 1.3,
+     "fib": 0
+    },
+    {
+     "u": "cup",
+     "g": 60,
+     "kc": 154,
+     "c": 7.5,
+     "p": 1.9,
+     "f": 13.3,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "white-rice-cooked",
    "n": "White rice, cooked",
    "tag": "grain",
@@ -3431,7 +7168,8 @@
     "c": 28.2,
     "p": 2.7,
     "f": 0.3,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3454,7 +7192,8 @@
     "c": 80,
     "p": 7.1,
     "f": 0.7,
-    "fib": 0
+    "fib": 0,
+    "alc": 0
    },
    "units": [
     {
@@ -3478,6 +7217,96 @@
    ]
   },
   {
+   "id": "wine-red",
+   "n": "Wine, red",
+   "tag": "drink",
+   "per100": {
+    "kc": 85,
+    "c": 2.6,
+    "p": 0.1,
+    "f": 0,
+    "fib": 0,
+    "alc": 10.6
+   },
+   "units": [
+    {
+     "u": "glass",
+     "g": 148,
+     "kc": 126,
+     "c": 3.8,
+     "p": 0.1,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "fl oz",
+     "g": 30,
+     "kc": 26,
+     "c": 0.8,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "worcestershire-sauce",
+   "n": "Worcestershire sauce",
+   "tag": "condiment",
+   "per100": {
+    "kc": 78,
+    "c": 19.5,
+    "p": 0,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "tbsp",
+     "g": 17,
+     "kc": 13,
+     "c": 3.3,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    },
+    {
+     "u": "tsp",
+     "g": 5.7,
+     "kc": 4,
+     "c": 1.1,
+     "p": 0,
+     "f": 0,
+     "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "yogurt-plain-whole-milk",
+   "n": "Yogurt, plain, whole milk",
+   "tag": "dairy",
+   "per100": {
+    "kc": 61,
+    "c": 4.7,
+    "p": 3.5,
+    "f": 3.3,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 245,
+     "kc": 149,
+     "c": 11.5,
+     "p": 8.6,
+     "f": 8.1,
+     "fib": 0
+    }
+   ]
+  },
+  {
    "id": "zucchini-raw",
    "n": "Zucchini, raw",
    "tag": "veg",
@@ -3486,7 +7315,8 @@
     "c": 3.1,
     "p": 1.2,
     "f": 0.3,
-    "fib": 1
+    "fib": 1,
+    "alc": 0
    },
    "units": [
     {
