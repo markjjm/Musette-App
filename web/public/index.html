@@ -87,6 +87,7 @@
   --btl:       #12305C;   /* carbohydrate drunk on the bike  */
   --btl-hatch: #4E6E9E;   /* hatch stripe inside the bottle segment */
   --cg-line:   #B9AE92;   /* 6 and 8 g/kg reference hairlines */
+  --cg-todo:   #8C93A6;   /* a ride still to come: outline, not fill */
   --cg-track:  #E2DAC4;   /* adherence track, empty */
   --cg-fill:   #6B6450;   /* adherence track, logged */
 }
@@ -123,7 +124,7 @@
     --i1: #4A6C99; --i2: #6B95CC; --i3: #93B8E6; --i4: #C6DAF5; --i0: #3A3527;
     --carb1: #94A3B8; --carb2: #E0A050; --carb3: #4FB07E;
     --tbl: #3F9E72; --btl: #B4CFF2; --btl-hatch: #7FA3D2;
-    --cg-line: #4A4331; --cg-track: #2A2519; --cg-fill: #A69E8A;
+    --cg-line: #4A4331; --cg-track: #2A2519; --cg-fill: #A69E8A; --cg-todo: #7F8798;
   }
 }
 :root[data-theme="dark"] {
@@ -137,7 +138,7 @@
   --i1:#4A6C99; --i2:#6B95CC; --i3:#93B8E6; --i4:#C6DAF5; --i0:#3A3527;
   --carb1:#94A3B8; --carb2:#E0A050; --carb3:#4FB07E;
   --tbl:#3F9E72; --btl:#B4CFF2; --btl-hatch:#7FA3D2;
-  --cg-line:#4A4331; --cg-track:#2A2519; --cg-fill:#A69E8A;
+  --cg-line:#4A4331; --cg-track:#2A2519; --cg-fill:#A69E8A; --cg-todo:#7F8798;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -845,6 +846,20 @@ footer {
   position: absolute; left: 0; right: 0; bottom: 0; height: var(--rh, 0%);
   background: var(--i2); border-radius: 3px;
 }
+/* Still to come: drawn at the height the plan asks for, hollow. A big Saturday
+   two weeks out should look like a big Saturday, not like an empty cell. */
+.cgr.todo { background: transparent; box-shadow: inset 0 0 0 1px var(--rule); }
+.cgr.todo .cgrf {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--cg-todo);
+  border-radius: 3px;
+}
+/* Asked for and not done: the track stays, empty, with the plan's line on it. */
+.cgr.miss { background: var(--cg-track); }
+.cgr.miss .cgrf { background: transparent; }
+/* No ride was ever planned — no track at all, which is a different fact again. */
+.cgr.none { background: transparent; box-shadow: none; }
+.cgr.none .cgrf { display: none; }
 .cgr.s1 .cgrf { background: var(--i1); }
 .cgr.s2 .cgrf { background: var(--i2); }
 .cgr.s3 .cgrf { background: var(--i3); }
@@ -868,6 +883,7 @@ footer {
 /* the unit, small enough not to compete with the number it belongs to */
 .cgv > u { text-decoration: none; font-size: 7.5px; color: var(--gravel); margin-left: -1px; }
 .cgv > s { text-decoration: none; color: var(--bad); }
+.cgv > em { font-style: normal; color: var(--cg-todo); }
 
 /* Adherence. Present only for days that have already happened, so "no track"
    means not yet, and "empty track" means logged and not eaten. Those are
@@ -1917,6 +1933,14 @@ function monthGrid(){
     const kph  = act && act.secs ? act.kcal / (act.secs / 3600) : 0;
     const rPct = act ? Math.max(0, Math.min(100, (act.secs / 3600) / HMAX * 100)) : 0;
     const pPct = Math.max(0, Math.min(100, (Number(x.h) || 0) / HMAX * 100));
+    /* Four states. A ride still to come is drawn at its planned height in
+       outline, so a big Saturday two weeks out is visible as a big Saturday —
+       the old bar showed a 2px hairline on an empty track, which reads as
+       nothing at all. Hollow means not yet; empty means it did not happen. */
+    const rideState = act ? 'done'
+                    : (Number(x.h) || 0) === 0 ? 'none'
+                    : (todayD > 0 && dn < todayD && block.state === 'ok') ? 'miss'
+                    : 'todo';
 
     const ad    = iso ? carbAdherence(iso, day) : null;
     const past  = todayD > 0 && dn <= todayD;
@@ -1933,7 +1957,8 @@ function monthGrid(){
       + ((total - bottle) / RIDER_KG).toFixed(1) + ' at the table, '
       + (bottle / RIDER_KG).toFixed(1) + ' on the bike.'
       + (act ? ' Ridden ' + hhm(act.secs / 3600) + ' at ' + Math.round(kph) + ' kilocalories an hour.'
-             : (gone && hrs > 0 && block.state === 'ok' ? ' Not ridden.' : ''))
+             : rideState === 'miss' ? ' Not ridden.'
+             : rideState === 'todo' ? ' Still to come.' : '')
       + (past ? (ad === null ? ' Nothing logged yet.'
                              : ' ' + Math.round(ad * 100) + ' percent logged as eaten.')
               : ' Not yet.');
@@ -1948,14 +1973,16 @@ function monthGrid(){
            hairline is what was planned, the fill is what was actually ridden,
            and its shade is the measured rate. Geometry is time and colour is a
            rate, so neither restates the other. */
-        + `<span class="cgr${act ? ' s' + rideStep(kph) : ''}${act && !act.meas ? ' est' : ''}"`
-        + ` data-rh="${rPct.toFixed(1)}" data-rp="${pPct.toFixed(1)}">`
-          + `<span class="cgrf"></span>` + (hrs > 0 ? `<span class="cgrp"></span>` : '')
+        + `<span class="cgr ${rideState}${act ? ' s' + rideStep(kph) : ''}${act && !act.meas ? ' est' : ''}"`
+        + ` data-rh="${(act ? rPct : pPct).toFixed(1)}" data-rp="${pPct.toFixed(1)}">`
+          + (hrs > 0 || act ? `<span class="cgrf"></span>` : '')
+          + (hrs > 0 && act ? `<span class="cgrp"></span>` : '')
         + `</span>`
       + `</span>`
       + `<span class="cgv" aria-hidden="true">${Math.round(total)}<u>g</u>`
       + (act ? `<b>${(act.secs / 3600).toFixed(1)}h</b>`
-             : (gone && hrs > 0 && block.state === 'ok' ? `<s>&mdash;</s>` : ''))
+             : rideState === 'miss' ? `<s>&mdash;</s>`
+             : rideState === 'todo' ? `<em>${hrs.toFixed(1)}h</em>` : '')
       + `</span>`
       /* Three different facts, three different marks. No track at all = the day
          has not happened. Dashed empty track = it happened and nothing was
