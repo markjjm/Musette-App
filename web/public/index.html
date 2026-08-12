@@ -865,6 +865,8 @@ footer {
   color: var(--ink-soft); font-variant-numeric: tabular-nums; line-height: 1;
 }
 .cgv > b { color: var(--ink); font-weight: 700; }
+/* the unit, small enough not to compete with the number it belongs to */
+.cgv > u { text-decoration: none; font-size: 7.5px; color: var(--gravel); margin-left: -1px; }
 .cgv > s { text-decoration: none; color: var(--bad); }
 
 /* Adherence. Present only for days that have already happened, so "no track"
@@ -909,6 +911,7 @@ footer {
 }
 .cgkeys i.ka { background: var(--cg-fill); height: 3px; border-radius: 2px; }
 .cgnote { margin: 6px 2px 0; font-size: var(--t-micro); color: var(--gravel); line-height: 1.5; }
+.cgnote b { color: var(--ink-soft); font-weight: 700; }
 
 /* the day's ride, sitting directly above that day's meals */
 .pmeal.rideline { background: var(--pen); border-bottom: 0; }
@@ -1925,7 +1928,8 @@ function monthGrid(){
 
     const label = dn + ' ' + String(x.wd || '') + ', ' + kindLong(x.kind) + ', '
       + (hrs > 0 ? hhm(hrs) + ' riding' : 'no riding') + '. '
-      + bandName(gkg) + ' carbohydrate day, ' + gkg.toFixed(1) + ' grams per kilogram: '
+      + bandName(gkg) + ' carbohydrate day, ' + Math.round(total) + ' grams, which is '
+      + gkg.toFixed(1) + ' per kilogram of bodyweight: '
       + ((total - bottle) / RIDER_KG).toFixed(1) + ' at the table, '
       + (bottle / RIDER_KG).toFixed(1) + ' on the bike.'
       + (act ? ' Ridden ' + hhm(act.secs / 3600) + ' at ' + Math.round(kph) + ' kilocalories an hour.'
@@ -1949,7 +1953,7 @@ function monthGrid(){
           + `<span class="cgrf"></span>` + (hrs > 0 ? `<span class="cgrp"></span>` : '')
         + `</span>`
       + `</span>`
-      + `<span class="cgv" aria-hidden="true">${gkg.toFixed(1)}`
+      + `<span class="cgv" aria-hidden="true">${Math.round(total)}<u>g</u>`
       + (act ? `<b>${(act.secs / 3600).toFixed(1)}h</b>`
              : (gone && hrs > 0 && block.state === 'ok' ? `<s>&mdash;</s>` : ''))
       + `</span>`
@@ -1979,14 +1983,17 @@ function monthGrid(){
         <span><i class="ka"></i><b>Eaten</b></span>
       </span>
       <span class="cgkeys">
-        <span><b>Lines</b> 6 &amp; 8 g/kg</span>
-        <span><b>Top</b> 12 g/kg</span>
+        <span><b>Lines</b> ${Math.round(6 * RIDER_KG)} &amp; ${Math.round(8 * RIDER_KG)}&thinsp;g &mdash; moderate, then high</span>
       </span>
     </div>
-    <p class="cgnote">Bar height is the day&rsquo;s carbohydrate per kilogram of you, and the
-      split is where it comes from. The kitchen barely moves across the whole block
-      (${FLAT_LO.toFixed(1)}&ndash;${FLAT_HI.toFixed(1)}&thinsp;g/kg) &mdash; what makes a day big is the bottle.
-      A bar with no track under it is a day that has not happened yet.</p>
+    <p class="cgnote"><b>The number is grams of carbohydrate for that day</b>, and the bar
+      splits it by where it comes from: solid is food you eat at the table, hatched is what
+      goes in the bottle on the bike. The kitchen barely moves across the whole block
+      (${Math.round(FLAT_LO * RIDER_KG)}&ndash;${Math.round(FLAT_HI * RIDER_KG)}&thinsp;g) &mdash;
+      what makes a day big is the bottle.<br>
+      The bar beside it is the ride: the line across it is the time the plan asked for and the
+      fill is what you actually rode, shaded darker the harder it was. A bar with no track
+      under it is a day that has not happened yet.</p>
   </div>`;
 }
 
