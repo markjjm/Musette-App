@@ -584,6 +584,10 @@ footer {
 .hxride > .hxt { display: block; font-size: 14px; font-weight: 700; }
 .hxride > .hxs { display: block; font-size: 12px; margin-top: 2px; color: var(--pen-mute); font-variant-numeric: tabular-nums; }
 .hxride > .hxs > b { color: var(--pen-ink); }
+.rname { font-size: 15px; font-weight: 800; line-height: 1.3; margin-bottom: 10px; }
+.rstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; margin-bottom: 4px; }
+.rst > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.rst > i { display: block; font-style: normal; font-size: 9px; letter-spacing: .04em; color: var(--gravel); line-height: 1.3; margin-top: 1px; }
 .wks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
 .wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--rule); }
 .wk > i { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: var(--gravel); }
@@ -1699,6 +1703,8 @@ function monthGrid(){
    costs money and takes a few seconds, so it only ever happens on a tap. */
 let coach = { day: '', rides: null, advice: null, facts: null, busy: false, err: '' };
 let look  = { data: null, stats: null, busy: false, err: '' };
+/* One day's actual riding. Keyed by date so moving through the week refetches. */
+let dayRide = { day: '', rides: null, read: null, busy: false, err: '' };
 
 function todayKey(){
   const n = new Date();
@@ -1737,6 +1743,64 @@ async function runCoach(){
   coach.busy = false; render();
 }
 
+async function loadDayRides(d){
+  if (dayRide.day === d && dayRide.rides !== null) return;
+  dayRide = { day: d, rides: null, read: null, busy: false, err: '' };
+  try {
+    const r = await api('/ride?date=' + d);
+    dayRide.rides = r.ok ? (r.rides || []) : [];
+  } catch { dayRide.rides = []; }
+  if (tab === 'F') render();
+}
+
+async function readRide(){
+  if (dayRide.busy) return;
+  dayRide.busy = true; dayRide.err = ''; render();
+  try {
+    const r = await api('/ride?date=' + dayRide.day + '&why=1');
+    if (r.ok) dayRide.read = r.advice; else dayRide.err = r.why || 'unavailable';
+  } catch (e) { dayRide.err = e.message; }
+  dayRide.busy = false; render();
+}
+
+/* The open-ended shape both analysts return: a headline, however many sections
+   the data warranted, what to do, and what the data cannot say. */
+function sectionsHtml(a){
+  return `<p class="ahead">${esc(a.headline)}</p>`
+    + (a.sections || []).map(x =>
+        `<div class="asec"><b>${esc(x.title)}</b><span>${esc(x.body)}</span></div>`).join('')
+    + ((a.do_next || []).length
+        ? `<div class="asec"><b>Do next</b><span>` + a.do_next.map(x => `&bull; ${esc(x)}`).join('<br>') + `</span></div>`
+        : '')
+    + (a.caveat ? `<p class="afoot">${esc(a.caveat)}</p>` : '');
+}
+
+/* What he actually did that day, whether or not he asks anything about it. */
+function rideDetail(){
+  if (dayRide.day !== selDay) return '';
+  const rs = dayRide.rides;
+  if (rs === null) return `<div class="card coach"><p class="anone">Loading your ride&hellip;</p></div>`;
+  if (!rs.length) return '';
+  const big = rs.slice().sort((a,b) => b.secs - a.secs)[0];
+  const stat = (v, l) => v ? `<div class="rst"><b>${v}</b><i>${l}</i></div>` : '';
+  let out = `<div class="card coach"><div class="rname">${esc(big.name || big.type)}</div>`
+    + `<div class="rstats">`
+    + stat(hhm(big.secs/3600), 'moving')
+    + stat(big.km ? big.km + ' km' : '', 'distance')
+    + stat(big.up ? big.up + ' m' : '', 'climbing')
+    + stat(big.kcal ? big.kcal + '' : '', 'kcal ' + (big.trust === 'measured' ? 'measured' : 'estimated'))
+    + stat(big.watts ? big.watts + ' W' : '', big.np ? 'avg &middot; ' + big.np + ' W np' : 'average')
+    + stat(big.hr ? big.hr + '' : '', 'avg bpm')
+    + stat(big.load ? big.load + '' : '', 'load')
+    + stat(big.pwhr ? big.pwhr + '' : '', 'W per bpm')
+    + `</div>`;
+  if (rs.length > 1) out += `<p class="anone">and ${rs.length - 1} shorter ${rs.length === 2 ? 'ride' : 'rides'} that day</p>`;
+  out += `<button id="ride_go" class="cbtn"${dayRide.busy ? ' disabled' : ''}>${dayRide.busy ? 'Reading it&hellip;' : (dayRide.read ? 'Read it again' : 'What was this ride?')}</button>`;
+  if (dayRide.err) out += `<p class="cerr">${esc(dayRide.err)}</p>`;
+  if (dayRide.read) out += `<div class="adv">${sectionsHtml(dayRide.read)}</div>`;
+  return out + `</div>`;
+}
+
 async function runAnalyze(){
   if (look.busy) return;
   look.busy = true; look.err = ''; render();
@@ -1762,12 +1826,7 @@ function analysisCard(){
   out += `<button id="look_go" class="cbtn"${look.busy ? ' disabled' : ''}>${look.busy ? 'Reading the data&hellip;' : (look.data ? 'Look again' : 'Analyse my training')}</button>`;
   if (look.err) out += `<p class="cerr">${esc(look.err)}</p>`;
   if (look.data){
-    const a = look.data;
-    out += `<div class="adv"><p class="ahead">${esc(a.headline)}</p>`
-      + [['Fitness', a.fitness], ['Consistency', a.consistency], ['Watch', a.watch]].map(([k, v]) =>
-          `<div class="asec"><b>${k}</b><span>${esc(v)}</span></div>`).join('')
-      + `<div class="asec"><b>Do next</b><span>` + (a.do_next||[]).map(x => `&bull; ${esc(x)}`).join('<br>') + `</span></div>`
-      + `<p class="afoot">${esc(a.caveat)}</p></div>`;
+    out += `<div class="adv">${sectionsHtml(look.data)}</div>`;
   }
   return out + `</div>`;
 }
@@ -2015,7 +2074,8 @@ function render(){
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
 
     if (coach.rides === null && coach.day !== todayKey()) loadRides();
-    m.innerHTML = fuelToday() + coachCard() + analysisCard()
+    if (dayRide.day !== (selDay || todayKey())) loadDayRides(selDay || todayKey());
+    m.innerHTML = fuelToday() + rideDetail() + coachCard() + analysisCard()
       + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
       + (wk.length ? `
       <div class="trainhd">
@@ -2252,6 +2312,7 @@ document.addEventListener('click', e => {
 
   if (e.target.closest('#coach_go')){ runCoach(); return; }
   if (e.target.closest('#look_go')){ runAnalyze(); return; }
+  if (e.target.closest('#ride_go')){ readRide(); return; }
 
   if (e.target.closest('#reset')){
     const w = curWeek();

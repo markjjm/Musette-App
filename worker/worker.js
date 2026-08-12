@@ -207,25 +207,68 @@ const ANALYST_SYSTEM = [
   '  from planned hours and he will be over-fed by the difference.',
   '- Be concrete: name the week, the number, the day.',
   '- No medical advice, no diagnosis, nothing about disordered eating.',
+  '',
+  'Write to a person, not to a data dictionary. Never name a field from the payload and never',
+  'cite where a number was stored: no "(the_day)", no "(ride file)", no "(logging_note)",',
+  'no "(versus_his_own_history)", no "(Figure: ...)". Say "the plan", "your ride", "what you',
+  'logged". Give the number; never give its address.',
 ].join('\n');
 
+/* Open-ended on purpose. An earlier version had four fixed slots — fitness,
+   consistency, watch, next — and got four paragraphs whether or not there were
+   four things worth saying. Now the sections are chosen by whoever is reading
+   the data, so a quiet month is allowed to be two sections and an interesting
+   one can be six. */
 const ANALYST_SCHEMA = {
   type: 'object',
   properties: {
-    headline: { type: 'string', description: 'One sentence: the single most important thing in this data.' },
-    fitness: { type: 'string', description: 'Is he getting fitter, holding, or digging a hole? Cite the figure.' },
-    consistency: { type: 'string', description: 'Planned against actual, and what that means for his food.' },
-    watch: { type: 'string', description: 'The one thing to keep an eye on.' },
-    do_next: {
+    headline: { type: 'string', description: 'One sentence: the most important thing here.' },
+    sections: {
       type: 'array',
-      description: 'One to three concrete actions.',
-      items: { type: 'string' },
+      description: 'Between two and six. Choose the headings the data actually calls for — do not pad to a quota, and do not merge two real findings to stay under one.',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Two or three words, sentence case.' },
+          body: { type: 'string', description: 'A short paragraph. Cite the figure and the week or day it came from.' },
+        },
+        required: ['title', 'body'],
+        additionalProperties: false,
+      },
     },
-    caveat: { type: 'string', description: 'What this data cannot tell him. Be honest.' },
+    do_next: { type: 'array', description: 'Nought to three concrete actions. Empty is allowed when nothing needs changing.', items: { type: 'string' } },
+    caveat: { type: 'string', description: 'What this data cannot tell him.' },
   },
-  required: ['headline', 'fitness', 'consistency', 'watch', 'do_next', 'caveat'],
+  required: ['headline', 'sections', 'do_next', 'caveat'],
   additionalProperties: false,
 };
+
+/* One ride, read against every other ride he has done. The point of difference
+   from a tracking site is the last two blocks of this prompt: it knows what the
+   day was supposed to be, and it knows what he ate. */
+const RIDE_SYSTEM = [
+  'You read a single ride for one cyclist: 67.1 kg, riding to hold weight steady, mid-block.',
+  'He has a power meter, so power is measured rather than estimated.',
+  '',
+  'Every number is already computed, including the percentiles that place this ride against his',
+  'own history. Never recalculate one, never invent one.',
+  '',
+  'Tell him what this ride actually was. Two things make this worth reading over a tracking site,',
+  'so lead with them when the data supports it:',
+  '- Where it sits against HIS OWN riding, not a population. The percentiles are given.',
+  '- How it met the day: what was planned, what he ate, and whether the fuelling fitted the effort.',
+  '',
+  'Rules: say what the data supports and no more. watts_per_bpm is the fitness signal — more power',
+  'at the same heart rate — and a move under about 2% is noise. A short ride is not a bad ride;',
+  'say so rather than manufacturing a concern. If nothing here is notable, the honest answer is',
+  'that it was an ordinary ride that went to plan, and you should give it.',
+  'No medical advice, no diagnosis, nothing about disordered eating.',
+  '',
+  'Write to a person, not to a data dictionary. Never name a field from the payload and never',
+  'cite where a number was stored: no "(the_day)", no "(ride file)", no "(logging_note)",',
+  'no "(versus_his_own_history)", no "(Figure: ...)". Say "the plan", "your ride", "what you',
+  'logged". Give the number; never give its address.',
+].join('\n');
 
 const COACH_SCHEMA = {
   type: 'object',
@@ -314,6 +357,81 @@ function coachFacts(state, rides, dayNum, nowMins) {
   };
 }
 
+/* Where one ride sits in his own history. A tracking site compares you to
+   everyone; the only useful comparison is to yourself. */
+function rideContext(ride, all, day, meals, logMap, dateISO) {
+  const pool = all.filter((r) => (r.kcal || 0) > 0 && r.date !== ride.date);
+  const pct = (val, pick) => {
+    const xs = pool.map(pick).filter((x) => typeof x === 'number' && x > 0).sort((a, b) => a - b);
+    if (xs.length < 4 || typeof val !== 'number' || !val) return null;
+    let below = 0;
+    for (const x of xs) if (x < val) below += 1;
+    return Math.round((below / xs.length) * 100);
+  };
+  const eaten = (meals || []).reduce((a, m) => {
+    const e = logMap[dateISO + '|' + m.t];
+    return a + m.kc * (e ? Number(e.v) || 0 : 0);
+  }, 0);
+  const anyLogged = (meals || []).some((m) => logMap[dateISO + '|' + m.t]);
+
+  /* Deliberately flat. An earlier version nested this under `ride`,
+     `the_day` and `versus_his_own_history`, and the model cited those names
+     back at the reader as though they were sources — "(the_day)". Telling it
+     not to did not work; twice. With no container names in the payload there
+     is nothing to cite, which is the difference between asking for a
+     behaviour and making the other one unavailable. */
+  return {
+    what_it_was: ride.name,
+    activity_type: ride.type,
+    on_date: ride.date,
+    minutes: Math.round(ride.secs / 60),
+    kilometres: ride.km,
+    climb_metres: ride.up,
+    calories_burned: ride.kcal,
+    calories_came_from: ride.basis,
+    average_watts: ride.watts,
+    normalised_watts: ride.np,
+    average_heart_rate: ride.hr,
+    training_load: ride.load,
+    watts_per_heartbeat: ride.pwhr,
+
+    compared_against_how_many_of_his_rides: pool.length,
+    harder_than_this_percent_on_calories: pct(ride.kcal, (r) => r.kcal),
+    longer_than_this_percent: pct(ride.secs, (r) => r.secs),
+    more_powerful_than_this_percent: pct(ride.watts, (r) => r.watts),
+    higher_load_than_this_percent: pct(ride.load, (r) => r.load),
+    better_watts_per_heartbeat_than_this_percent: pct(ride.pwhr, (r) => r.pwhr),
+
+    day_was_planned_as: day ? day.kind : null,
+    planned_ride_hours: day ? day.h : null,
+    planned_ride_calories: day ? Math.round((day.h || 0) * 600) : null,
+    planned_food_calories_for_the_day: day ? day.kc : null,
+    planned_carb_grams_for_the_day: day ? day.cb : null,
+    planned_carb_grams_on_the_bike: null,
+    calories_he_ticked_off_eating: anyLogged ? Math.round(eaten) : null,
+    did_he_log_his_food: anyLogged
+      ? 'yes, so the eaten figure is real'
+      : 'no, so what he ate is unknown and must not be assumed to match the plan',
+  };
+}
+
+/* Strips citation-shaped parentheticals — "(the_day)", "(ride data)" — while
+   leaving real ones like "(81st percentile)" alone. Prompting against this
+   failed twice, and a deterministic pass cannot fail a third time. */
+const CITE = /\s*\((?:[a-z][a-z0-9]*_[a-z0-9_]*(?:\s*[\/,]\s*[a-z0-9_]+)*|ride data|ride file|Figure:[^)]*)\)/gi;
+const scrub = (v) => String(v == null ? '' : v).replace(CITE, '').replace(/\s{2,}/g, ' ').trim();
+
+function scrubAdvice(a) {
+  if (!a || typeof a !== 'object') return a;
+  if (typeof a.headline === 'string') a.headline = scrub(a.headline);
+  if (typeof a.caveat === 'string') a.caveat = scrub(a.caveat);
+  if (typeof a.detail === 'string') a.detail = scrub(a.detail);
+  if (Array.isArray(a.do_next)) a.do_next = a.do_next.map(scrub);
+  if (Array.isArray(a.sections)) a.sections = a.sections.map((s) => ({ title: scrub(s.title), body: scrub(s.body) }));
+  if (Array.isArray(a.changes)) a.changes = a.changes.map((c) => ({ ...c, change: scrub(c.change), meal: scrub(c.meal) }));
+  return a;
+}
+
 /* Never throws. A coach that is down must not take the meal plan with it. */
 async function askModel(env, system, schema, name, facts) {
   if (!env.OPENAI_KEY) return { ok: false, why: 'not configured' };
@@ -358,7 +476,7 @@ async function askModel(env, system, schema, name, facts) {
     const u = d.usage || {};
     return {
       ok: true,
-      advice: out,
+      advice: scrubAdvice(out),
       cost: Math.round(((u.input_tokens || 0) * 0.25 + (u.output_tokens || 0) * 2.0) / 10) / 100000,
       model: d.model || COACH_MODEL,
     };
@@ -579,7 +697,7 @@ function cleanRide(a) {
     load: Number(a.icu_training_load) || null,
     /* Watts per heartbeat. Rising over weeks at the same heart rate is the
        cleanest cheap signal that aerobic fitness is actually improving. */
-    pwhr: Number(a.icu_power_hr) || null,
+    pwhr: a.icu_power_hr ? Math.round(Number(a.icu_power_hr) * 1000) / 1000 : null,
     intensity: Number(a.icu_intensity) || null,
   };
 }
@@ -819,6 +937,46 @@ export default {
       const stats = trainingStats(rideRes.rides, state.plan, to);
       const out = await askModel(env, ANALYST_SYSTEM, ANALYST_SCHEMA, 'analysis', stats);
       return json({ ...out, stats, calls_today: budget.n }, 200, origin);
+    }
+
+    /* One day's actual riding, and what it was. Without ?why it is just the
+       activity — free, cached, no model involved — so the app can show what he
+       did every time he opens a day. The analysis is a separate, paid opt-in. */
+    if (path === '/ride' && request.method === 'GET') {
+      const date = url.searchParams.get('date') || '';
+      if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
+      const want = url.searchParams.get('why') === '1';
+
+      const dayRes = await fetchRides(env, date, date);
+      if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
+      if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
+      if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
+
+      const budget = await listStub(env).spend(date);
+      if (!budget.ok) return json({ ok: false, rides: dayRes.rides, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
+
+      /* Six weeks of his own riding is the comparison set. */
+      const from = new Date(date + 'T12:00:00Z');
+      from.setUTCDate(from.getUTCDate() - 42);
+      const hist = await fetchRides(env, from.toISOString().slice(0, 10), date);
+      const state = await listStub(env).read();
+      const dayNum = Number(date.slice(8, 10));
+      const day = ((state.plan || {}).days || []).find((d) => d.d === dayNum);
+      const train = ((state.plan || {}).training || []).find((t) => t.d === dayNum);
+
+      /* Longest ride of the day is the one worth reading; the 5-minute
+         commutes either side of it are not the story. */
+      const main = dayRes.rides.slice().sort((a, b) => b.secs - a.secs)[0];
+      const ctx = rideContext(
+        main, hist.ok ? hist.rides : dayRes.rides,
+        day ? { ...day, h: (train && train.h) || day.h } : null,
+        (day && day.meals) || [], state.log || {}, date
+      );
+      if (train && train.bk) ctx.planned_carb_grams_on_the_bike = train.bk.cb || 0;
+      if (dayRes.rides.length > 1) ctx.other_rides_that_day = dayRes.rides.filter((r) => r !== main).length;
+
+      const out = await askModel(env, RIDE_SYSTEM, ANALYST_SCHEMA, 'ride_read', ctx);
+      return json({ ...out, rides: dayRes.rides, context: ctx, calls_today: budget.n }, 200, origin);
     }
 
     if (path === '/state' && request.method === 'PUT') {
