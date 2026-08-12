@@ -515,6 +515,63 @@ footer {
 }
 
 /* ---------------- training week (Fuel tab) ---------------------------- */
+/* Today's card: planned above ridden, and the difference between them. */
+.card.coach { padding: 14px 16px 16px; }
+.ctype {
+  font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--pen-text); margin-bottom: 10px;
+}
+.meas { color: var(--gravel); font-weight: 700; }
+.cmp {
+  display: grid; grid-template-columns: 5.5em 1fr auto; align-items: baseline;
+  gap: 8px; padding: 5px 0; font-variant-numeric: tabular-nums;
+}
+.cmp > span { font-size: 13px; color: var(--ink-soft); }
+.cmp > b { font-size: 16px; font-weight: 700; }
+.cmp.dim > b { color: var(--gravel); font-weight: 600; }
+/* The gap is the whole point of the card, so it is the only bold colour on it. */
+.cmp.gap { border-top: 1px solid var(--rule); margin-top: 4px; padding-top: 8px; }
+.cmp.gap > b:last-child { font-size: 19px; font-weight: 800; }
+.cmp.gap.under > b:last-child { color: #B4531F; }
+.cmp.gap.over  > b:last-child { color: #2F6B3A; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cmp.gap.under > b:last-child { color: #F0A472; }
+  :root:not([data-theme="light"]) .cmp.gap.over  > b:last-child { color: #86C795; }
+}
+:root[data-theme="dark"] .cmp.gap.under > b:last-child { color: #F0A472; }
+:root[data-theme="dark"] .cmp.gap.over  > b:last-child { color: #86C795; }
+.cbtn {
+  display: block; width: 100%; margin-top: 12px; padding: 11px 14px;
+  font: inherit; font-size: 15px; font-weight: 700;
+  background: var(--pen); color: var(--pen-ink);
+  border: 0; border-radius: 11px; cursor: pointer;
+}
+.cbtn[disabled] { opacity: .6; }
+.adv { margin-top: 14px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.ahead { font-size: 15px; font-weight: 700; margin: 0 0 6px; line-height: 1.35; }
+.adet { font-size: 14px; color: var(--ink-soft); margin: 0 0 10px; line-height: 1.45; }
+.achg {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+  padding: 8px 0; border-top: 1px dashed var(--rule);
+}
+.achg > b { font-size: 13px; font-weight: 700; }
+.achg > span { grid-column: 1; font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+.achg > i {
+  grid-row: 1 / span 2; align-self: center; font-style: normal;
+  font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.achg > i.dn { color: #B4531F; }
+.achg > i.up { color: #2F6B3A; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .achg > i.dn { color: #F0A472; }
+  :root:not([data-theme="light"]) .achg > i.up { color: #86C795; }
+}
+:root[data-theme="dark"] .achg > i.dn { color: #F0A472; }
+:root[data-theme="dark"] .achg > i.up { color: #86C795; }
+.anone { font-size: 14px; color: var(--ink-soft); margin: 4px 0 0; }
+.afoot { font-size: 12px; color: var(--gravel); margin: 10px 0 0; }
+.cerr { font-size: 13px; color: var(--gravel); margin: 10px 0 0; }
+
 .trainhd {
   display: flex; gap: 10px; margin: 14px 16px 4px;
   background: var(--pen); color: var(--pen-ink);
@@ -1550,6 +1607,98 @@ function monthGrid(){
   </div>`;
 }
 
+/* ---- Today, planned against ridden -------------------------------------
+   Ride data is cheap and cached at the edge, so it loads on its own. Advice
+   costs money and takes a few seconds, so it only ever happens on a tap. */
+let coach = { day: '', rides: null, advice: null, facts: null, busy: false, err: '' };
+
+function todayKey(){
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0')
+       + '-' + String(n.getDate()).padStart(2, '0');
+}
+
+async function api(pathq){
+  const base = (cfg.url || '').replace(/\/+$/, '');
+  if (!base || !cfg.key) throw new Error('not connected');
+  const r = await fetch(base + pathq, { headers: { 'X-List-Key': cfg.key } });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+async function loadRides(){
+  const d = todayKey();
+  if (coach.day === d && coach.rides) return;
+  try {
+    const r = await api('/rides?oldest=' + d + '&newest=' + d);
+    coach = { ...coach, day: d, rides: r.ok ? r.rides : [], err: r.ok ? '' : '' };
+  } catch { coach = { ...coach, day: d, rides: [] }; }
+  if (tab === 'F') render();
+}
+
+async function runCoach(){
+  if (coach.busy) return;
+  coach.busy = true; coach.err = ''; render();
+  const n = new Date();
+  const hhmm = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  try {
+    const r = await api('/coach?date=' + todayKey() + '&now=' + hhmm);
+    if (r.ok) { coach.advice = r.advice; coach.facts = r.facts; }
+    else coach.err = r.why || 'unavailable';
+  } catch (e) { coach.err = e.message; }
+  coach.busy = false; render();
+}
+
+const hhm = (h) => { const t = Math.round(h * 60); return t >= 60 ? (t / 60 | 0) + 'h ' + (t % 60) + 'm' : t + 'm'; };
+
+function coachCard(){
+  const d = todayKey();
+  const dayNum = Number(d.slice(8, 10));
+  const day = (plan.days || []).find(x => x.d === dayNum);
+  const tr  = (plan.training || []).find(x => x.d === dayNum);
+  if (!day || d.slice(0, 7) !== '2026-08') return '';
+
+  const rides = coach.rides || [];
+  const secs  = rides.reduce((a, r) => a + (r.secs || 0), 0);
+  const burn  = rides.reduce((a, r) => a + (r.kcal || 0), 0);
+  const planH = (tr && tr.h) || 0;
+  const planK = Math.round(planH * 600);
+  const gap   = rides.length ? Math.round(burn - planK) : 0;
+  const meas  = rides.length > 0 && rides.every(r => r.trust === 'measured');
+
+  let rows = `<div class="cmp"><span>planned</span><b>${esc(hhm(planH))}</b><b>${planK} kcal</b></div>`;
+  if (coach.rides === null){
+    rows += `<div class="cmp dim"><span>actual</span><b>&hellip;</b><b></b></div>`;
+  } else if (!rides.length){
+    rows += `<div class="cmp dim"><span>actual</span><b>no ride yet</b><b></b></div>`;
+  } else {
+    rows += `<div class="cmp"><span>actual</span><b>${esc(hhm(secs / 3600))}</b><b>${burn} kcal</b></div>`
+          + `<div class="cmp gap ${gap < 0 ? 'under' : 'over'}"><span></span><b></b><b>${gap > 0 ? '+' : ''}${gap} kcal</b></div>`;
+  }
+
+  let out = `<div class="sech">Today &middot; ${esc(day.wd)} ${dayNum} August</div>
+    <div class="card coach">
+      <div class="ctype">${esc(day.kind)}${meas ? ' &middot; <span class="meas">power meter</span>' : ''}</div>
+      ${rows}
+      <button id="coach_go" class="cbtn"${coach.busy ? ' disabled' : ''}>${coach.busy ? 'Thinking&hellip;' : 'What should change?'}</button>`;
+
+  if (coach.err) out += `<p class="cerr">${esc(coach.err)}</p>`;
+
+  if (coach.advice){
+    const a = coach.advice;
+    out += `<div class="adv">
+      <p class="ahead">${esc(a.headline)}</p>
+      <p class="adet">${esc(a.detail)}</p>`;
+    out += (a.changes || []).map(c =>
+      `<div class="achg"><b>${esc(c.meal)}</b><span>${esc(c.change)}</span>
+        <i class="${c.kcal_delta < 0 ? 'dn' : 'up'}">${c.kcal_delta > 0 ? '+' : ''}${Number(c.kcal_delta) || 0}</i></div>`).join('');
+    if (!(a.changes || []).length) out += `<p class="anone">Nothing to change &mdash; today is close enough.</p>`;
+    /* Advice, not instruction. Nothing here writes to the plan. */
+    out += `<p class="afoot">A suggestion, not a change &mdash; the plan is untouched.</p></div>`;
+  }
+  return out + `</div>`;
+}
+
 function render(){
   const w = curWeek();
   if (!w){ $('#main').innerHTML = '<div class="empty">No plan loaded.</div>'; return; }
@@ -1636,7 +1785,9 @@ function render(){
     const rides = wk.filter(t => (Number(t.h) || 0) > 0).length;
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
 
-    m.innerHTML = `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
+    if (coach.rides === null && coach.day !== todayKey()) loadRides();
+    m.innerHTML = coachCard()
+      + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
       + (wk.length ? `
       <div class="trainhd">
         <div><span class="tnum">${(Math.round(hrs * 100) / 100)}</span><span class="tlab">hours</span></div>
@@ -1852,6 +2003,8 @@ document.addEventListener('click', e => {
     triggerHaptic();
     return;
   }
+
+  if (e.target.closest('#coach_go')){ runCoach(); return; }
 
   if (e.target.closest('#reset')){
     const w = curWeek();
