@@ -151,6 +151,12 @@ html, body {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
 }
+/* Built for a phone. On a desktop the 7-column month grid was stretching to
+   1600px and the bars shrank to specks in acres of card. Cap the reading
+   column; the header and footer stay full-bleed. */
+#main { max-width: 760px; margin: 0 auto; }
+.htop, .hbot, #tabs, #foot { max-width: 760px; margin-left: auto; margin-right: auto; }
+
 body {
   padding-top: var(--hdr-h);
   padding-bottom: calc(var(--foot-h) + var(--sb) + 8px);
@@ -799,11 +805,12 @@ footer {
    gradient rather than as elements: 31 cells x 2 lines would otherwise be 62
    extra nodes for something that is identical in every cell. */
 .cgstack {
-  position: relative; width: 100%; height: 30px;
+  position: relative; width: 100%; height: 44px;
   background-image: linear-gradient(to top,
     transparent 0 calc(50% - 1px),   var(--cg-line) calc(50% - 1px) 50%,
     transparent 50% calc(66.7% - 1px), var(--cg-line) calc(66.7% - 1px) 66.7%,
     transparent 66.7% 100%);
+  background-size: 40px 100%; background-position: left bottom; background-repeat: no-repeat;
 }
 .cgc.pad .cgstack { background-image: none; }
 
@@ -812,7 +819,7 @@ footer {
    every bar renders flat. Custom properties assigned from script are fine,
    and they give a continuous scale instead of a .h1-.h20 class ladder. */
 .cgbar {
-  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 0; left: 50%; margin-left: -20px;
   width: 18px; height: var(--h, 0%);
   display: flex; flex-direction: column;
   border-radius: 3px 3px 0 0; overflow: hidden;
@@ -824,10 +831,41 @@ footer {
 }
 .cgt { flex: 1 1 auto; background: var(--tbl); }   /* table: takes the rest */
 
+/* ---- the ride, beside the food ---------------------------------------
+   Track = the block's longest day. Fill = hours actually ridden, shaded by
+   the measured rate. Hairline = what the plan asked for, so a short session
+   and a missed one cannot look alike. */
+.cgr {
+  position: absolute; bottom: 0; left: 50%; margin-left: 4px;
+  width: 14px; height: 100%;
+  background: var(--cg-track); border-radius: 3px; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--rule-soft);
+}
+.cgrf {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--rh, 0%);
+  background: var(--i2); border-radius: 3px;
+}
+.cgr.s1 .cgrf { background: var(--i1); }
+.cgr.s2 .cgrf { background: var(--i2); }
+.cgr.s3 .cgrf { background: var(--i3); }
+.cgr.s4 .cgrf { background: var(--i4); }
+/* energy inferred from heart rate rather than measured at the crank */
+.cgr.est .cgrf {
+  background-image: repeating-linear-gradient(135deg,
+    rgba(255,255,255,.32) 0 2px, rgba(255,255,255,0) 2px 5px);
+}
+.cgrp {
+  position: absolute; left: -2px; right: -2px; bottom: var(--rp, 0%);
+  height: 0; border-top: 2px solid var(--ink); box-shadow: 0 0 0 1px var(--card);
+}
+
 .cgv {
+  display: flex; align-items: baseline; justify-content: center; gap: 5px;
   font-family: var(--mono); font-size: 9px; font-weight: 650;
   color: var(--ink-soft); font-variant-numeric: tabular-nums; line-height: 1;
 }
+.cgv > b { color: var(--ink); font-weight: 700; }
+.cgv > s { text-decoration: none; color: var(--bad); }
 
 /* Adherence. Present only for days that have already happened, so "no track"
    means not yet, and "empty track" means logged and not eaten. Those are
@@ -1788,6 +1826,40 @@ function dayCarb(day){
    carbohydrate rather than by meal count, because this chart is about carbs.
    Returns null when nothing has been logged at all -- which is a different
    fact from "logged, ate none of it", and the two must stay distinguishable. */
+const isoDay = (d) => { const ym = blockYM(); return ym ? ym + '-' + String(d).padStart(2, '0') : ''; };
+
+/* Every ride in the block, fetched once and indexed by date. The Worker
+   edge-caches this for ten minutes, so opening the Fuel tab repeatedly cannot
+   turn into traffic against intervals.icu. Failure is a state, not an
+   exception: the grid draws the plan with or without it. */
+let block = { state: 'idle', by: {} };
+
+async function loadBlockRides(){
+  if (block.state === 'load' || block.state === 'ok') return;
+  const ds = (plan.training || []).map(x => Number(x.d) || 0).filter(Boolean);
+  if (!ds.length) return;
+  block = { state: 'load', by: {} };
+  try {
+    const r = await api('/rides?oldest=' + isoDay(Math.min(...ds)) + '&newest=' + isoDay(Math.max(...ds)));
+    if (!r || !r.ok) throw new Error((r && r.why) || 'unavailable');
+    const by = {};
+    (r.rides || []).forEach(rd => {
+      const k = String(rd.date || '').slice(0, 10);
+      if (!k) return;
+      const e = by[k] || (by[k] = { secs: 0, kcal: 0, meas: true, n: 0 });
+      e.n += 1; e.secs += Number(rd.secs) || 0; e.kcal += Number(rd.kcal) || 0;
+      if (rd.trust !== 'measured') e.meas = false;
+    });
+    block = { state: 'ok', by: by };
+  } catch { block = { state: 'err', by: {} }; }
+  if (tab === 'F') render();
+}
+
+/* Measured intensity in four steps, with 600 kcal/h — the rate every calorie
+   target in the plan is built on — as a boundary rather than a value inside a
+   band. So the two darker steps are exactly the rides that earned their food. */
+const rideStep = (kph) => kph >= 750 ? 4 : kph >= 600 ? 3 : kph >= 450 ? 2 : 1;
+
 function carbAdherence(iso, day){
   const meals = (day && day.meals) || [];
   let any = false, done = 0, all = 0;
@@ -1818,6 +1890,10 @@ function monthGrid(){
   const lead = idx[t[0].wd] || 0;
   const todayD = todayInBlock();
 
+  /* One scale for every day, so an over-delivered ride cannot clip its track. */
+  const HMAX = Math.max(1, ...t.map(z => Number(z.h) || 0),
+    ...Object.values(block.by || {}).map(a => a.secs / 3600));
+
   const cells = [];
   for (let i = 0; i < lead; i++) cells.push('<span class="cgc pad" aria-hidden="true"></span>');
 
@@ -1833,8 +1909,17 @@ function monthGrid(){
     const hPct = Math.max(0, Math.min(100, gkg / CG_MAX * 100));
     const bPct = total > 0 ? Math.max(0, Math.min(100, bottle / total * 100)) : 0;
 
+    /* Riding, actual against planned, on one scale for all 31 days. */
+    const act  = (block.state === 'ok' && iso) ? (block.by[iso] || null) : null;
+    const kph  = act && act.secs ? act.kcal / (act.secs / 3600) : 0;
+    const rPct = act ? Math.max(0, Math.min(100, (act.secs / 3600) / HMAX * 100)) : 0;
+    const pPct = Math.max(0, Math.min(100, (Number(x.h) || 0) / HMAX * 100));
+
     const ad    = iso ? carbAdherence(iso, day) : null;
     const past  = todayD > 0 && dn <= todayD;
+    /* Today is not a missed session at three in the afternoon — he rides at
+       six. A day is only unridden once it is over. */
+    const gone  = todayD > 0 && dn < todayD;
     const isNow = todayD > 0 && dn === todayD;
     const hrs   = Number(x.h) || 0;
 
@@ -1843,6 +1928,8 @@ function monthGrid(){
       + bandName(gkg) + ' carbohydrate day, ' + gkg.toFixed(1) + ' grams per kilogram: '
       + ((total - bottle) / RIDER_KG).toFixed(1) + ' at the table, '
       + (bottle / RIDER_KG).toFixed(1) + ' on the bike.'
+      + (act ? ' Ridden ' + hhm(act.secs / 3600) + ' at ' + Math.round(kph) + ' kilocalories an hour.'
+             : (gone && hrs > 0 && block.state === 'ok' ? ' Not ridden.' : ''))
       + (past ? (ad === null ? ' Nothing logged yet.'
                              : ' ' + Math.round(ad * 100) + ' percent logged as eaten.')
               : ' Not yet.');
@@ -1853,8 +1940,19 @@ function monthGrid(){
         + `<span class="cgbar" data-h="${hPct.toFixed(1)}" data-bp="${bPct.toFixed(1)}">`
           + `<span class="cgb"></span><span class="cgt"></span>`
         + `</span>`
+        /* The ride beside the food: track is the block's longest day, the
+           hairline is what was planned, the fill is what was actually ridden,
+           and its shade is the measured rate. Geometry is time and colour is a
+           rate, so neither restates the other. */
+        + `<span class="cgr${act ? ' s' + rideStep(kph) : ''}${act && !act.meas ? ' est' : ''}"`
+        + ` data-rh="${rPct.toFixed(1)}" data-rp="${pPct.toFixed(1)}">`
+          + `<span class="cgrf"></span>` + (hrs > 0 ? `<span class="cgrp"></span>` : '')
+        + `</span>`
       + `</span>`
-      + `<span class="cgv" aria-hidden="true">${gkg.toFixed(1)}</span>`
+      + `<span class="cgv" aria-hidden="true">${gkg.toFixed(1)}`
+      + (act ? `<b>${(act.secs / 3600).toFixed(1)}h</b>`
+             : (gone && hrs > 0 && block.state === 'ok' ? `<s>&mdash;</s>` : ''))
+      + `</span>`
       /* Three different facts, three different marks. No track at all = the day
          has not happened. Dashed empty track = it happened and nothing was
          logged. Solid track = it was logged, and the fill is how much of the
@@ -1896,6 +1994,10 @@ function monthGrid(){
    the CSP is hash-only, so an inline style is silently dropped -- which is
    exactly how the macro bars ended up rendering at zero width. */
 function paintMonth(){
+  document.querySelectorAll('.cgr[data-rh]').forEach(r => {
+    r.style.setProperty('--rh', (Number(r.dataset.rh) || 0) + '%');
+    r.style.setProperty('--rp', (Number(r.dataset.rp) || 0) + '%');
+  });
   document.querySelectorAll('.cgbar[data-h]').forEach(b => {
     b.style.setProperty('--h',  (Number(b.dataset.h)  || 0) + '%');
     b.style.setProperty('--bp', (Number(b.dataset.bp) || 0) + '%');
@@ -2342,6 +2444,7 @@ function render(){
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
 
     if (coach.rides === null && coach.day !== todayKey()) loadRides();
+    if (block.state === 'idle') loadBlockRides();
     if (dayRide.day !== (selDay || todayKey())) loadDayRides(selDay || todayKey());
     m.innerHTML = fuelDay() + rideDetail() + coachCard() + analysisCard()
       + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
