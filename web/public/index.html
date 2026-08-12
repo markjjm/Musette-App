@@ -61,7 +61,7 @@
   --st: env(safe-area-inset-top, 12px);
   --sb: env(safe-area-inset-bottom, 12px);
   --hdr-h: 190px;
-  --foot-h: 76px;
+  --foot-h: 0px;   /* the footer is gone; navigation lives in the header */
   --shadow: 0 1px 0 rgba(23,21,15,.05), 0 6px 18px rgba(23,21,15,.07);
 
   /* Training intensity: ordinal, so one hue light->dark, never categorical hues.
@@ -401,21 +401,37 @@ footer {
   padding: 8px 12px calc(var(--sb) + 8px);
   box-shadow: 0 -6px 18px rgba(23,21,15,.07);
 }
-.navbar { display: flex; gap: 4px; align-items: stretch; }
+/* In the header, on the navy, so it reads as part of the app's chrome rather
+   than as content. */
+.navbar { display: flex; gap: 5px; align-items: center; padding: 0 14px 11px; }
 .navbar button[data-t] {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 7px 4px 6px; border: 0; border-radius: 12px; background: transparent;
-  font: inherit; color: var(--ink-soft); cursor: pointer;
+  flex: 1; padding: 8px 4px; border: 0; border-radius: 10px;
+  background: rgba(255,255,255,.10); color: var(--pen-mute);
+  font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
 }
-.navbar button[data-t] > .ni { font-style: normal; font-size: 15px; line-height: 1; opacity: .8; }
-.navbar button[data-t] > span { font-size: 11px; font-weight: 700; letter-spacing: .01em; }
-.navbar button[data-t].on { background: var(--pen); color: var(--pen-ink); }
-.navbar button[data-t].on > .ni { opacity: 1; }
-.navbar .iconbtn { align-self: stretch; border-radius: 12px; padding: 0 14px; }
+.navbar button[data-t].on { background: var(--card); color: var(--pen-text); }
+.navbar .iconbtn {
+  flex: none; width: 38px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: 10px; background: rgba(255,255,255,.10);
+  color: var(--pen-ink); font-size: 15px; line-height: 1; cursor: pointer;
+}
 
 /* The helper sits where a thumb already is, opposite the + so the two never
    occupy the same corner on the same screen. */
-.fab.ask { right: auto; left: 16px; background: var(--card); color: var(--pen-text); box-shadow: 0 2px 10px rgba(23,21,15,.18), inset 0 0 0 1px var(--rule); font-size: 22px; font-weight: 800; }
+/* Three dots rather than a question mark: a "?" has no symmetry to centre on,
+   and it read as "help with the app" rather than "ask me something". Radial
+   gradients centre exactly, at any size, in any font. */
+.fab.ask {
+  right: auto; left: 16px;
+  background-color: var(--card);
+  box-shadow: 0 2px 10px rgba(23,21,15,.18), inset 0 0 0 1px var(--rule);
+  background-image:
+    radial-gradient(circle 3px at center, var(--pen-text) 99%, transparent 100%),
+    radial-gradient(circle 3px at center, var(--pen-text) 99%, transparent 100%),
+    radial-gradient(circle 3px at center, var(--pen-text) 99%, transparent 100%);
+  background-size: 6px 6px, 6px 6px, 6px 6px;
+  background-position: calc(50% - 11px) center, center center, calc(50% + 11px) center;
+}
 .askhint { font-size: 12px; color: var(--gravel); margin: -4px 0 10px; line-height: 1.45; }
 .askout { max-height: 46vh; overflow-y: auto; margin-bottom: 10px; }
 .askout:empty { display: none; }
@@ -449,12 +465,20 @@ footer {
 
 /* ---------------- add button ------------------------------------------ */
 .fab {
-  position: fixed; right: 16px; bottom: calc(var(--foot-h) + var(--sb) + 14px);
+  position: fixed; right: 16px; bottom: calc(var(--sb) + 18px);
   width: 58px; height: 58px; border-radius: 50%; z-index: 45;
   background: var(--mark); color: #3D2900;
-  font-size: 31px; font-weight: 300; line-height: 1;
-  display: grid; place-items: center;
   box-shadow: 0 5px 16px rgba(176,122,10,.4);
+  /* The glyph used to be text sitting in a grid cell, and a font's baseline is
+     not a circle's middle — "+" rode high and "?" rode low, each by a different
+     amount because they are different glyphs. Both are drawn now, so what is
+     centred is a shape rather than a line of type. */
+  display: block; padding: 0; border: 0; font-size: 0;
+  background-repeat: no-repeat; background-position: center center;
+  background-image:
+    linear-gradient(var(--fab-ink,#3D2900),var(--fab-ink,#3D2900)),
+    linear-gradient(var(--fab-ink,#3D2900),var(--fab-ink,#3D2900));
+  background-size: 22px 2.5px, 2.5px 22px;
 }
 .fab:active { transform: scale(.94); }
 
@@ -1048,27 +1072,22 @@ footer {
     </div>
   </div>
   <div class="bar"><i id="prog"></i></div>
-  <div class="seg-bar">
+  <nav class="navbar" id="tabs" role="tablist" aria-label="Sections">
+    <button data-t="A" role="tab"><span>Shop</span></button>
+    <button data-t="E" role="tab"><span>Eat</span></button>
+    <button data-t="T" role="tab"><span>Train</span></button>
+    <button class="iconbtn" id="bset" aria-label="Settings">&#9881;</button>
     <button class="filter-toggle" id="bfilter" title="Toggle checked items">
       <span id="flab">To Get</span>
     </button>
-  </div>
+  </nav>
 </header>
 
 <main id="main"></main>
 <button class="fab" id="badd" aria-label="Add item">+</button>
 <button class="fab ask" id="bask" aria-label="Ask about your training">?</button>
 
-<footer>
-  <!-- One navigation. Sections and mode used to be two separate controls at
-       opposite ends of the screen, both of which had a button called "Shop". -->
-  <nav class="navbar" id="tabs" role="tablist" aria-label="Sections">
-    <button data-t="A" role="tab"><i class="ni">&#9776;</i><span>Shop</span></button>
-    <button data-t="E" role="tab"><i class="ni">&#9679;</i><span>Eat</span></button>
-    <button data-t="T" role="tab"><i class="ni">&#9650;</i><span>Train</span></button>
-    <button class="iconbtn" id="bset" aria-label="Settings">&#9881;</button>
-  </nav>
-</footer>
+
 
 <div class="sheet" id="asksheet"><div class="panel">
   <h2>Ask about your training</h2>
