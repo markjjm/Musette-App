@@ -258,8 +258,106 @@ async function readJson(request) {
 /* One household, one list, so one object. */
 const listStub = (env) => env.LIST_DO.get(env.LIST_DO.idFromName('household'));
 
+/* ---- Rides, via intervals.icu ------------------------------------------
+   The plan says how hard a day was *meant* to be. This says how hard it
+   actually was, so the two can be compared.
+
+   intervals.icu rather than Strava or Garmin, for three reasons that are not
+   about technology: Garmin's Connect Developer Program is enterprise-only and
+   has paused new access entirely; Strava now requires a paid subscription to
+   create an app, and its API policy forbids passing ride data to an AI, which
+   is the whole point of what comes next. intervals.icu issues a personal API
+   key from a settings page, and imports from Garmin and Strava anyway — so the
+   data still arrives from whatever the ride was actually recorded on.
+
+   The key is a Worker secret. It is never sent to the page, and the page has
+   no way to reach intervals.icu directly: connect-src in the CSP names only
+   this Worker. */
+const ICU = 'https://intervals.icu/api/v1';
+
+/* Only the columns that matter here. The full activity object carries 183
+   fields, which is a lot to push at a phone on mobile data. */
+const ICU_FIELDS = [
+  'id', 'start_date_local', 'type', 'name', 'moving_time', 'elapsed_time',
+  'distance', 'total_elevation_gain', 'icu_joules', 'calories', 'device_watts',
+  'icu_average_watts', 'icu_weighted_avg_watts', 'average_heartrate',
+  'max_heartrate', 'icu_training_load',
+].join(',');
+
+const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+
+/* How many calories a ride actually cost, and how much to trust the number.
+
+   With a power meter the answer is close to free: `icu_joules` is measured
+   mechanical work, and a cyclist converts food to pedals at roughly 20-25%
+   efficiency. The reciprocal of that lands near 4.18 — the same number that
+   converts kJ to kcal — so the two cancel and work in kJ is within a few
+   percent of energy burned in kcal. That coincidence is why power-meter riders
+   read kJ as calories directly.
+
+   Without a power meter every remaining option is an estimate, and is labelled
+   as one rather than being quietly mixed in with measurements. */
+function rideEnergy(a) {
+  const kj = Math.round((Number(a.icu_joules) || 0) / 1000);
+  if (kj > 0) {
+    return a.device_watts === true
+      ? { kcal: kj, basis: 'power meter', trust: 'measured' }
+      : { kcal: kj, basis: 'estimated power', trust: 'estimated' };
+  }
+  const cal = Number(a.calories) || 0;
+  if (cal > 0) return { kcal: Math.round(cal), basis: 'device estimate', trust: 'estimated' };
+  return { kcal: null, basis: 'no energy data', trust: 'none' };
+}
+
+function cleanRide(a) {
+  const e = rideEnergy(a);
+  return {
+    id: String(a.id || '').slice(0, MAX_STR),
+    date: String(a.start_date_local || '').slice(0, 10),
+    type: clamp(a.type),
+    name: clamp(a.name),
+    secs: Number(a.moving_time) || 0,
+    km: Math.round(((Number(a.distance) || 0) / 1000) * 10) / 10,
+    up: Math.round(Number(a.total_elevation_gain) || 0),
+    kcal: e.kcal,
+    basis: e.basis,
+    trust: e.trust,
+    watts: Number(a.icu_average_watts) || null,
+    np: Number(a.icu_weighted_avg_watts) || null,
+    hr: Number(a.average_heartrate) || null,
+    load: Number(a.icu_training_load) || null,
+  };
+}
+
+/* Never throws, and never returns an error that would stop the page rendering.
+   A meal plan must not stop working because a fitness site is having a bad
+   day, so every failure here degrades to "no ride data" and the app carries on
+   showing the plan. */
+async function fetchRides(env, oldest, newest) {
+  if (!env.INTERVALS_KEY) return { ok: false, why: 'not linked' };
+  const athlete = env.INTERVALS_ATHLETE || '0'; // 0 means "whoever owns the key"
+  const q = new URLSearchParams({ oldest, newest, fields: ICU_FIELDS });
+  const auth = btoa(`API_KEY:${env.INTERVALS_KEY}`);
+  try {
+    const r = await fetch(`${ICU}/athlete/${encodeURIComponent(athlete)}/activities?${q}`, {
+      headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.status === 401 || r.status === 403) return { ok: false, why: 'key rejected' };
+    if (r.status === 429) return { ok: false, why: 'rate limited' };
+    if (!r.ok) return { ok: false, why: `upstream ${r.status}` };
+    const raw = await r.json();
+    if (!Array.isArray(raw)) return { ok: false, why: 'unexpected response' };
+    const rides = raw.filter((a) => a && a.id).slice(0, 200).map(cleanRide);
+    return { ok: true, rides, fetched: new Date().toISOString() };
+  } catch {
+    /* Timeout, DNS, TLS — all the same to the caller. */
+    return { ok: false, why: 'unreachable' };
+  }
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin');
 
     if (request.method === 'OPTIONS') {
@@ -314,6 +412,35 @@ export default {
 
     if (path === '/rev' && request.method === 'GET') {
       return json(await listStub(env).rev(), 200, origin);
+    }
+
+    /* What was actually ridden, to sit beside what was planned. Behind the
+       access code like everything else — it is the same household — but the
+       intervals.icu key itself stays in the Worker and is never returned.
+
+       Cached at the edge for ten minutes. Rides do not change after the fact,
+       and both phones polling `/rev` every four seconds must not turn into
+       traffic against someone else's API. */
+    if (path === '/rides' && request.method === 'GET') {
+      const oldest = url.searchParams.get('oldest') || '';
+      const newest = url.searchParams.get('newest') || '';
+      if (!isDate(oldest) || !isDate(newest))
+        return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
+
+      const key = new Request(`https://rides.local/${oldest}/${newest}`);
+      const cache = caches.default;
+      const hit = await cache.match(key);
+      if (hit) return new Response(hit.body, { status: 200, headers: { ...Object.fromEntries(hit.headers), ...corsHeaders(origin) } });
+
+      const body = await fetchRides(env, oldest, newest);
+      const res = json(body, 200, origin);
+      if (body.ok) {
+        const copy = new Response(JSON.stringify(body), {
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=600' },
+        });
+        ctx.waitUntil(cache.put(key, copy));
+      }
+      return res;
     }
 
     if (path === '/state' && request.method === 'GET') {

@@ -53,6 +53,37 @@ printf '1234' | npx wrangler secret put LIST_KEY --config worker/wrangler.toml
 Because writes are unauthenticated, the Durable Object keeps the previous good
 state and `PUT /undo` (admin key) rolls back one step.
 
+## Ride data (intervals.icu)
+
+`GET /rides` returns what was actually ridden, so it can sit next to what was
+planned. It is a **server-side proxy**: `INTERVALS_KEY` is a Worker secret, the
+page never receives it, and the page could not call intervals.icu directly in
+any case — `connect-src` names only this Worker.
+
+Why intervals.icu and not the obvious two: Garmin's Connect Developer Program is
+enterprise-only and has paused new access; Strava now requires a paid
+subscription to create an app, and its API policy §5.3 forbids passing ride data
+to an AI, which is exactly what the next feature does. intervals.icu issues a
+personal API key from a settings page and imports from Garmin, Strava, Zwift and
+Wahoo, so the data still arrives from whatever recorded the ride.
+
+**Prefer syncing intervals.icu from Garmin or the head unit rather than from
+Strava.** It keeps Strava out of the data path entirely, so §5.3 has no purchase
+on data this app then hands to a model. That is a routing decision, not a
+technical one, and it is the whole reason to care which upstream is connected.
+
+Failure is always soft. A 401, a 429, a timeout and a DNS failure all collapse to
+`{ok:false}` and the app carries on showing the meal plan. **A grocery list must
+not stop working because a fitness site is having a bad day.** Responses are
+edge-cached for ten minutes so that two phones polling `/rev` every four seconds
+cannot turn into traffic against someone else's API.
+
+Rotate the key from intervals.icu → Settings → Developer Settings, then:
+
+```sh
+npx wrangler secret put INTERVALS_KEY --config worker/wrangler.toml
+```
+
 **There are zero third-party runtime dependencies.** Nothing from npm reaches a
 browser or the Worker. That removes the entire dependency-CVE class, and it is
 why the dependency automation here is deliberately small.
