@@ -1486,6 +1486,77 @@ function shopList(w){
    Quantities in the method match the double batches the plan shops for.
    Keyed on dish name, which is stable across blocks. */
 const RECIPES = {
+  'Turkey meatloaf': {
+    serves: 'One large loaf: dinner tonight, sandwiches or a reheat for two more meals.',
+    pantry: [
+      '1 cup breadcrumbs', '2 eggs', '1/2 cup milk',
+      '2 tbsp tomato paste', '2 tbsp ketchup + 1 tbsp brown sugar for the glaze',
+      '1 tbsp Worcestershire', 'salt and pepper',
+    ],
+    method: [
+      'Oven to 375F. Line a sheet pan with foil — a free-form loaf on a sheet pan browns on all sides, which a loaf tin cannot do.',
+      'Soften the onion and the grated carrot in a little oil, 6-8 minutes, then let them cool. Raw onion in a meatloaf stays crunchy and weeps water.',
+      'Soak the breadcrumbs in the milk for 5 minutes until they are a paste. This is the whole trick: it is what keeps 93/7 turkey from going dry and dense.',
+      'Mix turkey, soaked crumbs, cooled vegetables, eggs, tomato paste, Worcestershire, 1.5 tsp salt and plenty of pepper. Use your hands and stop the moment it comes together — worked mixture goes rubbery.',
+      'Shape into a loaf about 9 by 5 inches on the pan. Bake 40 minutes.',
+      'Stir the ketchup and brown sugar together, brush it over, and give it another 15-20 minutes until the middle reads 165F.',
+      'Rest 10 minutes before slicing or it falls apart. Slices reheat better than the whole loaf, so cut it all up once it is cool.',
+    ],
+  },
+
+  'Spaghetti and meatballs': {
+    serves: 'Double batch of meatballs: tonight, and enough to freeze for a second dinner.',
+    pantry: [
+      '1 cup breadcrumbs', '2 eggs', '1/2 cup milk', '1/2 cup grated parmesan',
+      '2 tbsp tomato paste', '2 tbsp oil', 'garlic', 'dried oregano and basil',
+      'salt and pepper',
+    ],
+    method: [
+      'Soak the breadcrumbs in the milk for 5 minutes. Same reason as any meatball: without it, lean meat sets hard.',
+      'Mix beef and turkey with the soaked crumbs, eggs, parmesan, minced garlic, 1 tsp oregano, 1.5 tsp salt and pepper. Hands, and lightly — overworking is what makes a bouncy meatball.',
+      'Roll into balls a bit smaller than a golf ball. A double batch is about 40. Wet hands stop the mix sticking.',
+      'Brown them in oil over medium-high, in batches, turning once or twice. They do not need to cook through here, only to colour — they finish in the sauce.',
+      'Same pot: garlic in the fat for 30 seconds, then the tomato paste for a full minute, then the crushed tomatoes, the basil, a big pinch of salt and a splash of water from the tomato can.',
+      'Meatballs back in. Simmer covered 25-30 minutes. Do not stir hard or they break; shake the pot instead.',
+      'Boil the spaghetti one minute short of the box, then finish it in a ladle of the sauce for a minute so it actually takes the sauce on.',
+      'Freeze half the meatballs in sauce. They are better the second time.',
+    ],
+  },
+
+  'Homemade pizza': {
+    serves: 'Two 12-inch pizzas — dinner, and cold pizza is a perfectly good breakfast.',
+    pantry: [
+      '2 tbsp oil', 'cornmeal or flour for the peel',
+      '1 tbsp tomato paste', 'dried oregano', 'garlic', 'salt',
+    ],
+    method: [
+      'Take the dough out of the fridge an hour before. Cold dough fights you and tears; room-temperature dough stretches.',
+      'Oven as hot as it goes, 500F or higher, with a stone or an upturned sheet pan in it for a full 45 minutes. The long preheat is the difference between a crust and a cracker — the pan needs to be saturated with heat, not just hot.',
+      'Sauce: crushed tomatoes, the tomato paste, a grated clove of garlic, 1 tsp oregano, a good pinch of salt. No cooking. It cooks on the pizza.',
+      'Stretch the dough on a floured surface with your knuckles, from the middle out, leaving the outer inch alone — that rim is what puffs. Never a rolling pin.',
+      'Dust the peel or a flat tray generously with cornmeal and build on it. Sauce thinly, cheese, then toppings. Too much of anything makes it soggy in the middle.',
+      'Slide it on and bake 8-10 minutes until the crust is blistered and the cheese has brown spots.',
+      'Rest two minutes before cutting so the cheese sets enough to stay put.',
+    ],
+  },
+
+  'Chicken noodle soup': {
+    serves: 'A big pot: dinner, plus lunches for two or three days. Better on day two.',
+    pantry: [
+      '2 tbsp oil', '8 cups chicken stock', 'bay leaf',
+      'dried thyme', 'salt and pepper', 'a squeeze of lemon',
+    ],
+    method: [
+      'Oil in a big pot over medium. Onion, carrot and celery with a pinch of salt, 8-10 minutes until soft and sweet. Do not rush this — it is the whole base of the soup.',
+      'Stock, bay leaf, 1 tsp thyme, and the chicken thighs in whole. Bring to a bare simmer and hold it there 20-25 minutes. A rolling boil makes the chicken stringy.',
+      'Lift the chicken out, shred it with two forks, and put it back. Thighs stay tender in soup where breast goes dry.',
+      'Noodles straight into the simmering pot for the time on the packet.',
+      'IMPORTANT if you want leftovers: cook the noodles separately and keep them apart. Noodles left in the pot drink the stock overnight and turn to paste. Add them to each bowl.',
+      'Off the heat, a good squeeze of lemon and plenty of pepper. The lemon is what makes it taste finished rather than flat.',
+    ],
+  },
+
+
   'Turkey chili + cornbread': {
     serves: 'Double batch: tonight, plus two reheats later in the week.',
     pantry: ['2 tbsp oil', '2 cups beef or chicken stock', '2 tbsp tomato paste',
