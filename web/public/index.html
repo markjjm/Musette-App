@@ -401,6 +401,31 @@ footer {
   padding: 8px 12px calc(var(--sb) + 8px);
   box-shadow: 0 -6px 18px rgba(23,21,15,.07);
 }
+.navbar { display: flex; gap: 4px; align-items: stretch; }
+.navbar button[data-t] {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 7px 4px 6px; border: 0; border-radius: 12px; background: transparent;
+  font: inherit; color: var(--ink-soft); cursor: pointer;
+}
+.navbar button[data-t] > .ni { font-style: normal; font-size: 15px; line-height: 1; opacity: .8; }
+.navbar button[data-t] > span { font-size: 11px; font-weight: 700; letter-spacing: .01em; }
+.navbar button[data-t].on { background: var(--pen); color: var(--pen-ink); }
+.navbar button[data-t].on > .ni { opacity: 1; }
+.navbar .iconbtn { align-self: stretch; border-radius: 12px; padding: 0 14px; }
+
+/* The helper sits where a thumb already is, opposite the + so the two never
+   occupy the same corner on the same screen. */
+.fab.ask { right: auto; left: 16px; background: var(--card); color: var(--pen-text); box-shadow: 0 2px 10px rgba(23,21,15,.18), inset 0 0 0 1px var(--rule); font-size: 22px; font-weight: 800; }
+.askhint { font-size: 12px; color: var(--gravel); margin: -4px 0 10px; line-height: 1.45; }
+.askout { max-height: 46vh; overflow-y: auto; margin-bottom: 10px; }
+.askout:empty { display: none; }
+.am, .ai2, .ae { padding: 9px 12px; border-radius: 12px; margin-bottom: 7px; font-size: 13.5px; line-height: 1.45; }
+.am  { background: var(--pen); color: var(--pen-ink); margin-left: 18%; }
+.ai2 { background: var(--card-sunk); color: var(--ink); margin-right: 10%; }
+.ai2 > i { display: block; font-style: normal; font-size: 11px; color: var(--gravel); margin-top: 5px; }
+.ai2.wait { color: var(--gravel); }
+.ae  { background: var(--card-sunk); color: var(--bad); }
+
 .modebar { display: flex; gap: 6px; align-items: stretch; }
 .modebar .iconbtn { height: auto; align-self: stretch; border-radius: 13px;
   background: var(--card-sunk); color: var(--gravel); }
@@ -700,12 +725,13 @@ footer {
 .brow > .cbtn { flex: 1; margin-top: 0; }
 .bcan { padding: 10px 14px; border: 0; border-radius: 10px; background: var(--card-sunk); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; }
 
-.swch { display: flex; gap: 4px; margin: 10px 14px 6px; padding: 3px; background: var(--card-sunk); border-radius: 11px; }
+.swch { display: flex; gap: 18px; margin: 12px 16px 4px; border-bottom: 1px solid var(--rule); }
 .swch > button {
-  flex: 1; padding: 8px 6px; border: 0; border-radius: 9px; font: inherit;
-  font-size: 13px; font-weight: 700; color: var(--ink-soft); background: transparent; cursor: pointer;
+  padding: 0 0 9px; border: 0; background: none; font: inherit; cursor: pointer;
+  font-size: 15px; font-weight: 700; color: var(--gravel);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
-.swch > button.on { background: var(--card); color: var(--pen-text); box-shadow: 0 1px 2px rgba(23,21,15,.07); }
+.swch > button.on { color: var(--ink); border-bottom-color: var(--pen-text); }
 
 .hxnote { margin: 10px 16px 2px; font-size: 11px; color: var(--gravel); line-height: 1.45; }
 
@@ -1023,11 +1049,6 @@ footer {
   </div>
   <div class="bar"><i id="prog"></i></div>
   <div class="seg-bar">
-    <div class="seg" id="tabs">
-      <button data-t="A" class="on">Shop</button>
-      <button data-t="E">Eat</button>
-      <button data-t="T">Train</button>
-    </div>
     <button class="filter-toggle" id="bfilter" title="Toggle checked items">
       <span id="flab">To Get</span>
     </button>
@@ -1036,14 +1057,29 @@ footer {
 
 <main id="main"></main>
 <button class="fab" id="badd" aria-label="Add item">+</button>
+<button class="fab ask" id="bask" aria-label="Ask about your training">?</button>
 
 <footer>
-  <div class="modebar" id="modebar" role="tablist" aria-label="Mode">
-    <button data-m="shop" role="tab"><span class="ml">Shop</span><span class="ms">The list</span></button>
-    <button data-m="plan" role="tab"><span class="ml">Plan</span><span class="ms">Meals &amp; fuel</span></button>
+  <!-- One navigation. Sections and mode used to be two separate controls at
+       opposite ends of the screen, both of which had a button called "Shop". -->
+  <nav class="navbar" id="tabs" role="tablist" aria-label="Sections">
+    <button data-t="A" role="tab"><i class="ni">&#9776;</i><span>Shop</span></button>
+    <button data-t="E" role="tab"><i class="ni">&#9679;</i><span>Eat</span></button>
+    <button data-t="T" role="tab"><i class="ni">&#9650;</i><span>Train</span></button>
     <button class="iconbtn" id="bset" aria-label="Settings">&#9881;</button>
-  </div>
+  </nav>
 </footer>
+
+<div class="sheet" id="asksheet"><div class="panel">
+  <h2>Ask about your training</h2>
+  <p class="askhint">How am I doing? What was Saturday&rsquo;s ride? Should I eat more today?</p>
+  <div id="askout" class="askout"></div>
+  <input id="ask_q" placeholder="Ask a question" autocomplete="off" autocapitalize="sentences">
+  <div class="row2">
+    <button class="ghost" data-close>Close</button>
+    <button class="primary" id="ask_go">Ask</button>
+  </div>
+</div></div>
 
 <div class="sheet" id="addsheet"><div class="panel">
   <h2>Add an item</h2>
@@ -2313,6 +2349,32 @@ async function loadRides(){
   if (tab === 'F') render();
 }
 
+let ask = { busy: false, log: [] };
+
+async function runAsk(){
+  const inp = $('#ask_q'); const q = (inp.value || '').trim();
+  if (!q || ask.busy) return;
+  ask.busy = true; ask.log.push({ me: q }); inp.value = ''; paintAsk();
+  try {
+    const r = await api('/ask?date=' + todayKey() + '&q=' + encodeURIComponent(q));
+    ask.log.push(r.ok ? { it: r.advice.answer, on: r.advice.based_on } : { err: r.why || 'unavailable' });
+  } catch (e) { ask.log.push({ err: e.message }); }
+  ask.busy = false; paintAsk();
+}
+
+/* Painted directly rather than through render(): the sheet is open, the input
+   has focus, and a full repaint would close one and steal the other. */
+function paintAsk(){
+  const box = $('#askout'); if (!box) return;
+  box.innerHTML = ask.log.map(m =>
+      m.me  ? `<div class="am">${esc(m.me)}</div>`
+    : m.err ? `<div class="ae">${esc(m.err)}</div>`
+    : `<div class="ai2">${esc(m.it)}${m.on ? `<i>${esc(m.on)}</i>` : ''}</div>`).join('')
+    + (ask.busy ? `<div class="ai2 wait">thinking&hellip;</div>` : '');
+  box.scrollTop = box.scrollHeight;
+  const b = $('#ask_go'); if (b) b.disabled = ask.busy;
+}
+
 async function runCoach(){
   if (coach.busy) return;
   coach.busy = true; coach.err = ''; render();
@@ -2674,19 +2736,16 @@ function render(){
     w.cooks ? w.cooks + ' cook nights' : ''
   ].filter(Boolean).join(' \u00b7 ');
 
-  document.querySelectorAll('#tabs button').forEach(b => {
+  document.querySelectorAll('#tabs button[data-t]').forEach(b => {
     b.classList.toggle('on', b.dataset.t === tab);
-    /* The day-by-day fuelling view only exists when the block ships a
-       days[] array. Without it the tab would open on an empty screen. */
-    b.hidden = modeOf(b.dataset.t) !== mode ||
-               (b.dataset.t === 'P' && !(plan.days && plan.days.length));
   });
-  document.querySelectorAll('#modebar button').forEach(b =>
-    b.classList.toggle('on', b.dataset.m === mode));
 
-  $('#tabs').style.display = (mode === 'shop') ? 'none' : 'flex';
-  $('#badd').style.display = (mode === 'shop') ? 'flex' : 'none';
-  $('#bfilter').style.display = (mode === 'shop') ? 'flex' : 'none';
+  /* The + adds a shopping item, so it only belongs on Shop. Everywhere else the
+     bottom-right corner is the helper. */
+  $('#badd').style.display = (tab === 'A' && shopView === 'list') ? 'flex' : 'none';
+  $('#bfilter').style.display = (tab === 'A' && shopView === 'list') ? 'flex' : 'none';
+  const helpBtn = $('#bask');
+  if (helpBtn) helpBtn.style.display = (tab === 'A') ? 'none' : 'flex';
   
   // Filter button state
   const btnF = $('#bfilter');
@@ -2879,27 +2938,15 @@ document.addEventListener('click', e => {
     return;
   }
 
-  const mb = e.target.closest('#modebar button');
-  if (mb){
-    const m = mb.dataset.m;
-    if (modeOf(tab) !== m){
-      tab = lastTab[m] || (m === 'shop' ? 'A' : 'P');
-      LS.set('v2.tab', tab);
-      render();
-      window.scrollTo(0,0);
-      triggerHaptic();
-    }
-    return;
-  }
 
-  const tb = e.target.closest('#tabs button');
+
+  const tb = e.target.closest('#tabs button[data-t]');
   if (tb){
     tab = tb.dataset.t;
     LS.set('v2.tab', tab);
-    lastTab[modeOf(tab)] = tab;
-    jset('v2.lastTab', lastTab);
     render();
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
+    triggerHaptic();
     return;
   }
 
@@ -3042,6 +3089,10 @@ document.addEventListener('click', e => {
     build = null; fq = ''; dirty = true; persist(); queue(); triggerHaptic(); render(); return;
   }
 
+  if (e.target.closest('#bask')){ $('#asksheet').classList.add('on'); paintAsk();
+    setTimeout(() => { try { $('#ask_q').focus(); } catch(_){} }, 150); return; }
+  if (e.target.closest('#ask_go')){ runAsk(); return; }
+
   if (e.target.closest('#coach_go')){ runCoach(); return; }
   if (e.target.closest('#look_go')){ runAnalyze(); return; }
   if (e.target.closest('#ride_go')){ readRide(); return; }
@@ -3100,6 +3151,10 @@ document.addEventListener('click', e => {
 /* Re-sync when returning to app foreground */
 /* Re-rendering on every keystroke would take the caret with it, so the search
    box repaints only its own results list. */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'ask_q'){ e.preventDefault(); runAsk(); }
+});
+
 document.addEventListener('input', e => {
   if (e.target.id === 'bq'){ fq = e.target.value; const l = $('.bhits'); if (l) l.remove();
     const hits = foodSearch(fq);
