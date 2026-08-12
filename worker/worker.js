@@ -74,7 +74,11 @@ async function safeEqual(a, b) {
 
 const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {}, profile: null, dishes: {} });
 
-const clamp = (v) => (typeof v === 'string' ? v.slice(0, MAX_STR) : '');
+/* Length was the only check. Model-supplied names reach the DOM beside a
+   "looked up" badge, and a bidi override or a zero-width character can reorder
+   or hide what is rendered next to it — esc() escapes markup, not Unicode. */
+const CTRL = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
+const clamp = (v) => (typeof v === 'string' ? v.replace(CTRL, '').slice(0, MAX_STR) : '');
 
 /* Accept only the fields we render, with types and lengths enforced.
    Anything unrecognised is dropped rather than stored and echoed back. */
@@ -607,7 +611,12 @@ const ASK_SCHEMA = {
    language model and the answer becomes stored nutrition data. Three things
    guard it, and the first is the one that matters.
 
-   1. ARITHMETIC. A model that invents numbers will not have them reconcile.
+   1. ARITHMETIC. A model that invents numbers will not usually have them
+      reconcile. Be clear about the limit of this: energy and macros both come
+      from the same answer, so a CONSISTENTLY wrong answer scores zero percent
+      out and passes. It catches transcription slips and nonsense, not
+      confident fabrication, and the interface says so rather than presenting
+      the check as proof the numbers are right.
       Energy is checked against the macros it is made of — 4 kcal a gram for
       carbohydrate and protein, 9 for fat, 7 for alcohol, 2 for fibre — and
       anything more than 25% out is refused and never stored. This same check
@@ -686,7 +695,11 @@ async function lookupFood(env, stub, q) {
   if (key.length < 2) return { ok: false, why: 'too short' };
 
   const hit = await stub.foodCached(key);
-  if (hit) return { ...hit, cached: true };
+  /* Must match the success shape below. It returned the food spread at the top
+     level with no `ok` and no `food`, so the client read every cache hit as a
+     failure — the one control meant to make repeat lookups free instead pushed
+     the user to retype variants, each a fresh charge. */
+  if (hit) return { ok: true, food: hit, cached: true };
 
   const gate = await stub.foodBudget(new Date().toISOString().slice(0, 10));
   if (!gate.ok) return { ok: false, why: `lookup limit reached for today (${FOOD_MAX_DAY})` };
@@ -820,8 +833,15 @@ export class ListDO extends DurableObject {
     });
   }
 
-  async spend(day) {
+  /* The day comes from the server clock, never from the caller. It used to be
+     the `date` query parameter, and isDate() only checks the SHAPE — so
+     alternating ?date=1900-01-05 and ?date=1901-01-05 reset the counter on
+     every request and the cap was never reached once. Verified against the
+     live Worker: calls_today stayed at 1 across four alternating requests.
+     foodBudget already did this correctly; spend did not. */
+  async spend() {
     return await this.ctx.blockConcurrencyWhile(async () => {
+      const day = new Date().toISOString().slice(0, 10);
       const s = (await this.ctx.storage.get('spend')) || {};
       if (s.day !== day) { s.day = day; s.n = 0; }
       if (s.n >= COACH_MAX_DAY) return { ok: false, n: s.n };
@@ -924,7 +944,14 @@ const ICU_FIELDS = [
   'max_heartrate', 'icu_training_load', 'icu_power_hr', 'icu_intensity',
 ].join(',');
 
-const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+/* Shape alone let 1234-56-01 through. Range-check it too. */
+const isDate = (s) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return false;
+  const t = Date.parse(s + 'T12:00:00Z');
+  if (!Number.isFinite(t)) return false;
+  const y = Number(s.slice(0, 4));
+  return y >= 2020 && y <= 2100 && new Date(t).toISOString().slice(0, 10) === s;
+};
 
 /* How many calories a ride actually cost, and how much to trust the number.
 
@@ -1177,7 +1204,7 @@ export default {
       if (q.length < 3) return json({ ok: false, why: 'ask a question' }, 400, origin);
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
 
-      const budget = await listStub(env).spend(date);
+      const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       const from = new Date(date + 'T12:00:00Z');
@@ -1221,7 +1248,7 @@ export default {
       const nowMins = Number(t[1]) * 60 + Number(t[2]);
       if (!(nowMins >= 0 && nowMins < 1440)) return json({ ok: false, why: 'bad now' }, 400, origin);
 
-      const budget = await listStub(env).spend(date);
+      const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       const state = await listStub(env).read();
@@ -1242,7 +1269,7 @@ export default {
       const from = new Date(to + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - weeks * 7);
 
-      const budget = await listStub(env).spend(to);
+      const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       const rideRes = await fetchRides(env, from.toISOString().slice(0, 10), to);
@@ -1268,7 +1295,7 @@ export default {
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
       if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
 
-      const budget = await listStub(env).spend(date);
+      const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, rides: dayRes.rides, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       /* Six weeks of his own riding is the comparison set. */

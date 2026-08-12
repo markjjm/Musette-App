@@ -1920,7 +1920,7 @@ function builder(){
           + `<i>per ${esc(aiFood.food.unit.u)} (${aiFood.food.unit.g}g) &middot; `
           + `${Math.round(aiFood.food.per100.kc * aiFood.food.unit.g / 100)} kcal</i>`
           + `</button></li></ul>`
-          + `<p class="bwarn">These figures came from a model and were checked against the arithmetic, not against a label.</p>`
+          + `<p class="bwarn">A model produced these. The app checked that they add up, which is not the same as checking they are right &mdash; a confidently wrong answer adds up too. Worth a glance at the packet.</p>`
         : '')
     + `<div class="brow"><button id="bsave" class="cbtn">Save dinner</button>`
     + `<button id="bcancel" class="bcan">Cancel</button></div>
