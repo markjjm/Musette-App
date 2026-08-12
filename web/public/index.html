@@ -72,6 +72,23 @@
   --i3: #3A66A4;   /* key      */
   --i4: #12305C;   /* long     */
   --i0: #D2C7A9;   /* rest     */
+
+  /* Carbohydrate density of a meal, in three ordinal steps. The rail's SEGMENT
+     COUNT is the encoding; hue only reinforces it, so it survives greyscale. */
+  --carb1: #7C8BA1;   /* under 35% of the meal's own calories */
+  --carb2: #C87A2B;   /* 35-55% */
+  --carb3: #2F8F6B;   /* over 55% */
+
+  /* Carb grid. Two CATEGORIES, not a ramp: where the carbohydrate came from.
+     Chosen for a wide L* gap (green ~52, navy ~21) so the stack still reads
+     as two parts in greyscale; the bottle half is hatched as well, so colour
+     is never the only channel. */
+  --tbl:       #3E8E6E;   /* carbohydrate eaten at the table */
+  --btl:       #12305C;   /* carbohydrate drunk on the bike  */
+  --btl-hatch: #4E6E9E;   /* hatch stripe inside the bottle segment */
+  --cg-line:   #B9AE92;   /* 6 and 8 g/kg reference hairlines */
+  --cg-track:  #E2DAC4;   /* adherence track, empty */
+  --cg-fill:   #6B6450;   /* adherence track, logged */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,6 +121,9 @@
 
     --shadow: 0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
     --i1: #4A6C99; --i2: #6B95CC; --i3: #93B8E6; --i4: #C6DAF5; --i0: #3A3527;
+    --carb1: #94A3B8; --carb2: #E0A050; --carb3: #4FB07E;
+    --tbl: #3F9E72; --btl: #B4CFF2; --btl-hatch: #7FA3D2;
+    --cg-line: #4A4331; --cg-track: #2A2519; --cg-fill: #A69E8A;
   }
 }
 :root[data-theme="dark"] {
@@ -115,6 +135,9 @@
   --ok:#4FB07E; --ok-soft:#16301F; --bad:#E0785A; --bad-soft:#3A1E16;
   --shadow:0 1px 0 rgba(0,0,0,.3), 0 6px 18px rgba(0,0,0,.35);
   --i1:#4A6C99; --i2:#6B95CC; --i3:#93B8E6; --i4:#C6DAF5; --i0:#3A3527;
+  --carb1:#94A3B8; --carb2:#E0A050; --carb3:#4FB07E;
+  --tbl:#3F9E72; --btl:#B4CFF2; --btl-hatch:#7FA3D2;
+  --cg-line:#4A4331; --cg-track:#2A2519; --cg-fill:#A69E8A;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -515,14 +538,14 @@ footer {
 }
 
 /* ---------------- training week (Fuel tab) ---------------------------- */
-/* ---- Today, as a day rather than a list -------------------------------
-   A week to move through, four numbers that fill as you eat, and the day laid
-   out against the clock with the ride sitting in it at its own time. */
+/* ---- Fuel: one day, one timeline --------------------------------------
+   A week to move through, four counters that fill as you eat, and the day laid
+   out against the clock with its food on the page and the ride in its own slot. */
 .hxwk { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 10px 14px 12px; }
 .hxd {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 7px 0 8px; border: 0; border-radius: 12px; cursor: pointer;
-  background: transparent; color: var(--ink-soft); font: inherit;
+  background: transparent; color: var(--ink-soft); font: inherit; min-height: 46px;
 }
 .hxd > i { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .1em; opacity: .65; }
 .hxd > b { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -531,65 +554,93 @@ footer {
 .hxd.on { background: var(--pen); color: var(--pen-ink); }
 .hxd.on > i { opacity: .85; }
 
+/* the day's own header */
+.hxday { display: flex; align-items: center; gap: 10px; margin: 2px 14px; }
+.hxdate { display: flex; align-items: baseline; gap: 6px; flex: none; }
+.hxdate > i { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--gravel); }
+.hxdate > b { font-size: 30px; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hxwhat { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.hxwhat > b { font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--pen-text); }
+.hxwhat > em { font-style: normal; font-size: 12px; color: var(--ink-soft); }
+/* Amber means exactly one thing in this view: you are cooking tonight. */
+.hxcook {
+  flex: none; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--mark-ink); background: var(--mark-soft);
+  box-shadow: inset 0 0 0 1px var(--mark-line); border-radius: 5px; padding: 3px 7px;
+}
+.hxsum { margin: 6px 14px 10px; font-size: 11.5px; color: var(--gravel); font-variant-numeric: tabular-nums; }
+.hxsum > s { text-decoration: none; color: var(--ink-soft); }
+.hxsum > s::before { content: ' \00b7\00a0'; }
+
 .hxmac { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 14px 12px; }
 .hxm > i { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--ink-soft); }
 .hxm > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.25; }
 .hxm > b > s { text-decoration: none; font-size: 11px; font-weight: 600; color: var(--gravel); }
 .hxm > em { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: var(--rule); overflow: hidden; }
-.hxm > em > u {
-  display: block; height: 100%; width: 0; border-radius: 2px;
-  background: var(--pen-text); text-decoration: none; transition: width .3s ease;
+.hxm > em > u { display: block; height: 100%; width: 0; border-radius: 2px; background: var(--pen-text); text-decoration: none; transition: width .3s ease; }
+/* An apportioned number is hatched, never solid — protein and fat do not exist
+   per meal, so their bars must not look like the two beside them. */
+.hxm.est > i { color: var(--gravel); }
+.hxm.est > em > u {
+  background-color: transparent;
+  background-image: repeating-linear-gradient(135deg, var(--pen-text) 0 3px, transparent 3px 6px);
 }
+.hxm.low > b > s { color: var(--bad); }
 
-.hxkind {
-  margin: 0 16px 8px; font-size: 12px; font-weight: 800;
-  letter-spacing: .07em; text-transform: uppercase; color: var(--pen-text);
-}
+/* the timeline: the rule down the left is the clock */
+.hxtl { margin: 0 14px; border-left: 2px solid var(--rule); }
+.hxr { display: grid; grid-template-columns: 46px 1fr; align-items: start; gap: 8px; margin-bottom: 6px; }
+.hxr > time { font-size: 11px; font-weight: 700; color: var(--gravel); font-variant-numeric: tabular-nums; padding: 12px 0 0 6px; }
 
-/* The rule down the left is the clock; every row hangs off it. */
-.hxtl { margin: 0 14px; border-left: 2px solid var(--rule); padding-left: 0; }
-.hxr { display: grid; grid-template-columns: 46px 1fr; align-items: stretch; gap: 8px; margin-bottom: 6px; }
-.hxr > time {
-  font-size: 11px; font-weight: 700; color: var(--gravel);
-  font-variant-numeric: tabular-nums; padding-top: 12px; padding-left: 6px;
-}
 .hxc {
-  position: relative; display: block; width: 100%; text-align: left;
-  padding: 10px 34px 10px 12px; border: 0; border-radius: 11px;
-  font: inherit; cursor: pointer; color: var(--ink);
+  position: relative; border-radius: 11px; overflow: hidden;
   background: var(--card); box-shadow: inset 0 0 0 1px var(--rule);
+  padding: 10px 12px 10px 14px; --carb: var(--carb1);
 }
-.hxc > .hxt { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; }
-.hxc > .hxs { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
-/* Carbohydrate as a share of the meal's own calories — the app's whole premise,
-   so it is what colours the card. Each keeps a left bar so the code survives
-   greyscale and colour blindness. */
-.hxc.c-hi  { box-shadow: inset 4px 0 0 #2F8F6B, inset 0 0 0 1px var(--rule); }
-.hxc.c-mid { box-shadow: inset 4px 0 0 #C87A2B, inset 0 0 0 1px var(--rule); }
-.hxc.c-lo  { box-shadow: inset 4px 0 0 #7C8BA1, inset 0 0 0 1px var(--rule); }
-.hxmk {
-  position: absolute; right: 11px; top: 50%; margin-top: -9px;
-  width: 18px; height: 18px; border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--rule);
-}
-.hxc.ate  > .hxmk { background: #2F8F6B; box-shadow: none; }
-.hxc.half > .hxmk { background: linear-gradient(90deg, #2F8F6B 50%, transparent 50%); box-shadow: inset 0 0 0 2px var(--rule); }
-.hxc.ate  > .hxt, .hxc.half > .hxt { text-decoration: line-through; text-decoration-color: var(--gravel); }
-.hxc.ate { opacity: .72; }
+.hxc.k1 { --carb: var(--carb1); }
+.hxc.k2 { --carb: var(--carb2); }
+.hxc.k3 { --carb: var(--carb3); }
+.hxc.ate { opacity: .62; }
 
-.hxride {
-  display: block; padding: 10px 12px; border-radius: 11px;
-  background: var(--pen); color: var(--pen-ink);
-}
+/* Three stacked slots filled from the bottom. The COUNT is the datum, so the
+   rail still reads at 100% greyscale and under any colour-vision deficiency. */
+.hxrail { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; display: flex; flex-direction: column-reverse; gap: 2px; padding: 2px 0; }
+.hxrail > i { flex: 1; background: var(--rule-soft); border-radius: 3px; }
+.hxc.k1 > .hxrail > i:nth-child(1),
+.hxc.k2 > .hxrail > i:nth-child(-n+2),
+.hxc.k3 > .hxrail > i { background: var(--carb); }
+
+.hxhd { padding-right: 44px; }
+.hxhd > .hxt { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; color: var(--ink); }
+.hxhd > .hxs { display: block; font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.hxc.ate > .hxhd > .hxt, .hxc.half > .hxhd > .hxt { text-decoration: line-through; text-decoration-color: var(--gravel); text-decoration-thickness: 1.5px; }
+
+/* the food itself, always on the page — no expander, nothing to discover */
+.hxi { list-style: none; margin: 8px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--rule); }
+.hxi > li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: baseline; padding: 1px 0; font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); }
+.hxi > li > i { font-style: normal; font-family: var(--mono); font-size: 11px; font-weight: 650; text-align: right; color: var(--gravel); font-variant-numeric: tabular-nums; }
+.hxi > li > span { min-width: 0; overflow-wrap: anywhere; }
+
+/* the only tap target in a card: 44x44, the platform minimum */
+.hxtick { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; }
+.hxmk { width: 22px; height: 22px; border-radius: 50%; background: var(--card); box-shadow: inset 0 0 0 2px var(--rule); }
+/* Eaten is INK, not a hue — it must never compete with the carbohydrate rail. */
+.hxc.ate > .hxtick > .hxmk { background: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.hxc.half > .hxtick > .hxmk { background: linear-gradient(90deg, var(--ink) 0 50%, transparent 50% 100%); box-shadow: inset 0 0 0 2px var(--ink); }
+
+.hxride { padding: 10px 12px; border-radius: 11px; background: var(--pen); color: var(--pen-ink); }
 .hxride > .hxt { display: block; font-size: 14px; font-weight: 700; }
-.hxride > .hxs { display: block; font-size: 12px; margin-top: 2px; color: var(--pen-mute); font-variant-numeric: tabular-nums; }
-.hxride > .hxs > b { color: var(--pen-ink); }
+.hxride > .hxs { display: block; font-size: 11.5px; margin-top: 2px; color: var(--pen-mute); font-variant-numeric: tabular-nums; }
+.hxride > .hxs > b { color: var(--pen-ink); font-weight: 700; }
+.hxrest { padding: 10px 12px; border-radius: 11px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
+.hxrest > .hxt { display: block; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.hxrest > .hxs { display: block; font-size: 11.5px; margin-top: 2px; color: var(--gravel); }
 .rname { font-size: 15px; font-weight: 800; line-height: 1.3; margin-bottom: 10px; }
 .rstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; margin-bottom: 4px; }
 .rst > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .rst > i { display: block; font-style: normal; font-size: 9px; letter-spacing: .04em; color: var(--gravel); line-height: 1.3; margin-top: 1px; }
 .wks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
-.wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--rule); }
+.wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
 .wk > i { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: var(--gravel); }
 .wk > b { display: block; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .wk > span { display: block; font-size: 8px; color: var(--ink-soft); line-height: 1.3; }
@@ -713,80 +764,114 @@ footer {
   letter-spacing: .04em; color: var(--gravel); margin-top: 2px;
 }
 
-/* ---------------- month training view --------------------------------- */
-.monthwrap { margin: 12px 16px 4px; }
-.monthgrid {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-}
-.mhead {
+/* ---------------- carb grid: the block at a glance --------------------- */
+/* Encoding, stated once so it is not guessable from the code:
+     position  = calendar (weekday column x week row) -> the weekly cadence
+     bar LENGTH = the day's total carbohydrate in g/kg, axis fixed 0-12
+     the SPLIT  = how that total divides: table (bottom) vs bottle (top)
+     hairlines  = 6 and 8 g/kg, the standard low/moderate/high carb bands
+     track      = how much of it was actually logged as eaten
+   Length and split are a PARTITION of one quantity, not two correlated
+   channels, which is exactly what the old height-vs-colour grid got wrong. */
+.cgwrap { margin: 12px 10px 4px; }
+.cggrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cghead {
   font-family: var(--mono); font-size: 9px; font-weight: 700;
   letter-spacing: .08em; text-transform: uppercase; color: var(--gravel);
   text-align: center; padding-bottom: 3px;
 }
-.mcell {
+.cgc {
+  -webkit-appearance: none; appearance: none; font: inherit; text-align: center;
   background: var(--card); border: 1px solid var(--rule-soft);
-  border-radius: 7px; padding: 4px 2px 3px;
+  border-radius: 7px; padding: 4px 1px 4px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
-  min-height: 58px;
+  min-height: 67px; cursor: pointer;
 }
-.mcell.pad { background: transparent; border-color: transparent; }
-.mday {
+.cgc.pad { background: transparent; border-color: transparent; cursor: default; }
+.cgc:active { background: var(--card-sunk); }
+
+.cgd {
   font-family: var(--mono); font-size: 9.5px; font-weight: 700;
   color: var(--gravel); font-variant-numeric: tabular-nums; line-height: 1;
 }
-.mbarbox { flex: 1; display: flex; align-items: flex-end; width: 14px; }
-.mbar {
-  width: 100%; border-radius: 4px 4px 0 0;   /* rounded data-end, flat baseline */
-  background: var(--i0); min-height: 3px;
+
+/* The plot area. The two reference hairlines are painted as a background
+   gradient rather than as elements: 31 cells x 2 lines would otherwise be 62
+   extra nodes for something that is identical in every cell. */
+.cgstack {
+  position: relative; width: 100%; height: 30px;
+  background-image: linear-gradient(to top,
+    transparent 0 calc(50% - 1px),   var(--cg-line) calc(50% - 1px) 50%,
+    transparent 50% calc(66.7% - 1px), var(--cg-line) calc(66.7% - 1px) 66.7%,
+    transparent 66.7% 100%);
 }
-.mbar.h1 { height: 5%; }
-.mbar.h2 { height: 10%; }
-.mbar.h3 { height: 15%; }
-.mbar.h4 { height: 20%; }
-.mbar.h5 { height: 25%; }
-.mbar.h6 { height: 30%; }
-.mbar.h7 { height: 35%; }
-.mbar.h8 { height: 40%; }
-.mbar.h9 { height: 45%; }
-.mbar.h10 { height: 50%; }
-.mbar.h11 { height: 55%; }
-.mbar.h12 { height: 60%; }
-.mbar.h13 { height: 65%; }
-.mbar.h14 { height: 70%; }
-.mbar.h15 { height: 75%; }
-.mbar.h16 { height: 80%; }
-.mbar.h17 { height: 85%; }
-.mbar.h18 { height: 90%; }
-.mbar.h19 { height: 95%; }
-.mbar.h20 { height: 100%; }
-.sw0 { background: var(--i0); }
-.sw1 { background: var(--i1); }
-.sw2 { background: var(--i2); }
-.sw3 { background: var(--i3); }
-.sw4 { background: var(--i4); }
-.mbar.h0 { height: 3px; }
-.mbar.l1 { background: var(--i1); }
-.mbar.l2 { background: var(--i2); }
-.mbar.l3 { background: var(--i3); }
-.mbar.l4 { background: var(--i4); }
-.mhrs {
+.cgc.pad .cgstack { background-image: none; }
+
+/* --h, --bp are set through the CSSOM in paintMonth(). The CSP is hash-only,
+   so a style="height:74%" written into innerHTML is dropped on the floor and
+   every bar renders flat. Custom properties assigned from script are fine,
+   and they give a continuous scale instead of a .h1-.h20 class ladder. */
+.cgbar {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 18px; height: var(--h, 0%);
+  display: flex; flex-direction: column;
+  border-radius: 3px 3px 0 0; overflow: hidden;
+}
+.cgb {                      /* bottle: on top, hatched, height set from data */
+  height: var(--bp, 0%); flex: none; background-color: var(--btl);
+  background-image: repeating-linear-gradient(45deg,
+    transparent 0 2px, var(--btl-hatch) 2px 4px);
+}
+.cgt { flex: 1 1 auto; background: var(--tbl); }   /* table: takes the rest */
+
+.cgv {
   font-family: var(--mono); font-size: 9px; font-weight: 650;
   color: var(--ink-soft); font-variant-numeric: tabular-nums; line-height: 1;
 }
-.mlegend {
-  display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 11px 2px 2px;
-  font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em;
+
+/* Adherence. Present only for days that have already happened, so "no track"
+   means not yet, and "empty track" means logged and not eaten. Those are
+   different facts and the grid must not merge them. */
+.cgtrack {
+  width: 18px; height: 3px; border-radius: 2px; overflow: hidden;
+  background: var(--cg-track); box-shadow: inset 0 0 0 1px var(--rule-soft);
+}
+.cgfill { display: block; height: 100%; width: var(--ad, 0%); background: var(--cg-fill); }
+/* Happened, but never logged. Hollow and dashed so it cannot be mistaken for a
+   solid track sitting at zero, which means the opposite. */
+.cgtrack.untracked {
+  background: none; box-shadow: none;
+  border: 1px dashed var(--cg-line); height: 3px;
+}
+
+/* Today: a ring, plus the date in the mark colour. Not a fill, because a fill
+   would be read as data. */
+.cgc.today { border-color: var(--mark-line); box-shadow: 0 0 0 2px var(--mark-soft); }
+.cgc.today .cgd { color: var(--mark-ink); }
+
+/* Legend. One real specimen cell plus three labels; it teaches the encoding
+   by showing the thing itself rather than by restating it in words. */
+.cglegend {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 10px 2px 2px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: .04em;
   text-transform: uppercase; color: var(--gravel);
 }
-.mlegend span { display: inline-flex; align-items: center; gap: 5px; }
-.mlegend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
-
-/* activity named on each calendar cell, not just coloured */
-.mkind {
-  font-family: var(--mono); font-size: 8px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--gravel);
-  line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.cglegend b { display: block; color: var(--ink-soft); font-weight: 700; }
+.cgspec { width: 26px; height: 30px; position: relative; flex: none; }
+.cgspec .cgstack { height: 30px; }
+.cgspec .cgbar { width: 16px; }
+.cgkeys { display: flex; flex-direction: column; gap: 3px; }
+.cgkeys span { display: inline-flex; align-items: center; gap: 5px; }
+.cgkeys i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex: none; }
+.cgkeys i.kt { background: var(--tbl); }
+.cgkeys i.kb {
+  background-color: var(--btl);
+  background-image: repeating-linear-gradient(45deg, transparent 0 2px, var(--btl-hatch) 2px 4px);
 }
+.cgkeys i.ka { background: var(--cg-fill); height: 3px; border-radius: 2px; }
+.cgnote { margin: 6px 2px 0; font-size: var(--t-micro); color: var(--gravel); line-height: 1.5; }
+
 /* the day's ride, sitting directly above that day's meals */
 .pmeal.rideline { background: var(--pen); border-bottom: 0; }
 .pmeal.rideline .pt { color: var(--pen-mute); font-weight: 700; }
@@ -1558,8 +1643,6 @@ const KIND_SHORT = { 'rest day':'rest', 'moderate day':'mod', 'loading day':'loa
                      'key day':'key', 'long day':'long' };
 const shortKind = k => KIND_SHORT[String(k || '').toLowerCase()] || String(k || '').split(' ')[0].toLowerCase();
 
-/* Month grid: height = volume (hours), colour = intensity, and every cell
-   carries its own number so neither channel is load-bearing on its own. */
 /* The day-by-day eating plan: every meal, its time, what is in it, what it adds
    up to. Rendered in the Fuel tab beside the training it is fuelling. */
 /* The plan lists a repeated food as two identical lines — "1 cup RICE" twice
@@ -1661,41 +1744,165 @@ function dayBlocks(w){
   }).join('');
 }
 
+/* The rider this plan is written for. Carbohydrate guidance is per kilogram,
+   so the grid cannot be drawn without it. */
+const RIDER_KG = 67.1;
+
+/* Axis top and the two band edges, in g/kg. 3-5 low / 6-8 moderate / 8-12 high
+   is the standard carbohydrate-periodisation scale; those numbers come from
+   outside this data set, which is what makes bar length absolutely readable
+   rather than only readable against this block's own maximum. */
+const CG_MAX = 12, CG_MOD = 6, CG_HIGH = 8;
+
+/* Measured off this block: table carbohydrate is nearly constant while bottle
+   carbohydrate is not. That is the single most useful thing the grid has to
+   say, so it is also said in words under it. */
+const FLAT_LO = 4.0, FLAT_HI = 6.4;
+
+const KIND_LONG = { 'rest day':'rest day', 'moderate day':'moderate day',
+                    'loading day':'loading day', 'key day':'key day', 'long day':'long day' };
+const kindLong = k => KIND_LONG[String(k || '').toLowerCase()] || 'training day';
+const bandName = g => g < CG_MOD ? 'Low' : g < CG_HIGH ? 'Moderate' : 'High';
+
+/* Month of the block, so a day-of-month becomes a real ISO date. dnum()/dayOf()
+   elsewhere key on day-of-month alone and alias September onto August; this
+   grid does not, because it builds the date from the block itself. */
+const MONTHS = ['January','February','March','April','May','June','July',
+                'August','September','October','November','December'];
+function blockYM(){
+  const b = String((plan && plan.block) || '');
+  const mi = MONTHS.findIndex(m => b.indexOf(m) >= 0);
+  const y  = (b.match(/\b(20\d{2})\b/) || [])[1];
+  if (mi < 0 || !y) return null;
+  return y + '-' + String(mi + 1).padStart(2, '0');
+}
+
+/* Total carbohydrate for a day. The day-level cb field disagrees with the sum
+   of its own meals on 13 of 31 days, so the meals win: they are what the day
+   view shows and what a tap logs against. */
+function dayCarb(day){
+  return ((day && day.meals) || []).reduce((a, m) => a + (Number(m.cb) || 0), 0);
+}
+
+/* How much of the day's carbohydrate has been logged as eaten, weighted by
+   carbohydrate rather than by meal count, because this chart is about carbs.
+   Returns null when nothing has been logged at all -- which is a different
+   fact from "logged, ate none of it", and the two must stay distinguishable. */
+function carbAdherence(iso, day){
+  const meals = (day && day.meals) || [];
+  let any = false, done = 0, all = 0;
+  meals.forEach(m => {
+    const cb = Number(m.cb) || 0;
+    all += cb;
+    if (Object.prototype.hasOwnProperty.call(mealLog, logKey(iso, m.t))){
+      any = true;
+      done += cb * ateOf(iso, m.t);
+    }
+  });
+  if (!any || !all) return null;
+  return Math.max(0, Math.min(1, done / all));
+}
+
+/* The block at a glance, as the carbohydrate story.
+   Colour is categorical (two sources of carbohydrate); geometry is one
+   quantity split into those two parts. Nothing here touches the network: the
+   grid is drawn from the bundled plan and from taps held in localStorage, so
+   it is complete and correct while intervals.icu is down, slow, or has never
+   been reachable once. */
 function monthGrid(){
   const t = plan.training || [];
   if (!t.length) return '';
-  const maxH = Math.max(1, ...t.map(x => Number(x.h) || 0));
-  const WD = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const idx = {Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};
+  const ym   = blockYM();
+  const WD   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const idx  = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
   const lead = idx[t[0].wd] || 0;
+  const todayD = todayInBlock();
+
   const cells = [];
-  for (let i = 0; i < lead; i++) cells.push('<div class="mcell pad"></div>');
+  for (let i = 0; i < lead; i++) cells.push('<span class="cgc pad" aria-hidden="true"></span>');
+
   t.forEach(x => {
-    const hrs = Number(x.h) || 0;
-    const s = stepOf(x.kind);
-    /* Bar height comes from a class, not a style attribute: the CSP allows no
-       inline styles, so a style="" here would be dropped and every bar would
-       render flat. Rounded to the nearest 5%. */
-    const h20 = hrs > 0 ? Math.max(3, Math.min(20, Math.round(hrs / maxH * 20))) : 0;
-    cells.push(`<div class="mcell">
-      <span class="mday">${Number(x.d) || 0}</span>
-      <span class="mbarbox"><span class="mbar l${s} h${h20}"></span></span>
-      <span class="mkind">${esc(shortKind(x.kind))}</span>
-      <span class="mhrs">${hrs > 0 ? hrs + ' h' : '\u2013'}</span>
-    </div>`);
+    const dn     = Number(x.d) || 0;
+    const iso    = ym ? ym + '-' + String(dn).padStart(2, '0') : '';
+    const day    = (plan.days || []).find(z => z.d === dn);
+    const total  = dayCarb(day);
+    const bottle = Math.min(total, Number(x.bk && x.bk.cb) || 0);
+    const gkg    = total / RIDER_KG;
+
+    /* Percentages, computed here from numbers. None of them can carry markup. */
+    const hPct = Math.max(0, Math.min(100, gkg / CG_MAX * 100));
+    const bPct = total > 0 ? Math.max(0, Math.min(100, bottle / total * 100)) : 0;
+
+    const ad    = iso ? carbAdherence(iso, day) : null;
+    const past  = todayD > 0 && dn <= todayD;
+    const isNow = todayD > 0 && dn === todayD;
+    const hrs   = Number(x.h) || 0;
+
+    const label = dn + ' ' + String(x.wd || '') + ', ' + kindLong(x.kind) + ', '
+      + (hrs > 0 ? hhm(hrs) + ' riding' : 'no riding') + '. '
+      + bandName(gkg) + ' carbohydrate day, ' + gkg.toFixed(1) + ' grams per kilogram: '
+      + ((total - bottle) / RIDER_KG).toFixed(1) + ' at the table, '
+      + (bottle / RIDER_KG).toFixed(1) + ' on the bike.'
+      + (past ? (ad === null ? ' Nothing logged yet.'
+                             : ' ' + Math.round(ad * 100) + ' percent logged as eaten.')
+              : ' Not yet.');
+
+    cells.push(`<button class="cgc${isNow ? ' today' : ''}" role="listitem" data-cgday="${esc(iso)}" aria-label="${esc(label)}">`
+      + `<span class="cgd" aria-hidden="true">${Number(dn)}</span>`
+      + `<span class="cgstack" aria-hidden="true">`
+        + `<span class="cgbar" data-h="${hPct.toFixed(1)}" data-bp="${bPct.toFixed(1)}">`
+          + `<span class="cgb"></span><span class="cgt"></span>`
+        + `</span>`
+      + `</span>`
+      + `<span class="cgv" aria-hidden="true">${gkg.toFixed(1)}</span>`
+      /* Three different facts, three different marks. No track at all = the day
+         has not happened. Dashed empty track = it happened and nothing was
+         logged. Solid track = it was logged, and the fill is how much of the
+         carbohydrate was actually eaten -- including a solid, empty track for
+         "logged, ate none of it", which is not the same as never having looked. */
+      + (past
+          ? (ad === null
+              ? `<span class="cgtrack untracked" aria-hidden="true"></span>`
+              : `<span class="cgtrack" aria-hidden="true"><span class="cgfill" data-ad="${(ad * 100).toFixed(0)}"></span></span>`)
+          : '')
+      + `</button>`);
   });
-  return `<div class="monthwrap">
-    <div class="monthgrid">${WD.map(d => `<div class="mhead">${esc(d)}</div>`).join('')}</div>
-    <div class="monthgrid">${cells.join('')}</div>
-    <div class="mlegend">
-      <span><i class="sw0"></i>Rest</span>
-      <span><i class="sw1"></i>Moderate</span>
-      <span><i class="sw2"></i>Loading</span>
-      <span><i class="sw3"></i>Key</span>
-      <span><i class="sw4"></i>Long</span>
-      <span>bar height = hours</span>
+
+  return `<div class="cgwrap">
+    <div class="cggrid" aria-hidden="true">${WD.map(d => `<div class="cghead">${esc(d)}</div>`).join('')}</div>
+    <div class="cggrid" role="list">${cells.join('')}</div>
+    <div class="cglegend">
+      <span class="cgspec" aria-hidden="true"><span class="cgstack">
+        <span class="cgbar" data-h="90" data-bp="44"><span class="cgb"></span><span class="cgt"></span></span>
+      </span></span>
+      <span class="cgkeys">
+        <span><i class="kt"></i><b>Table</b></span>
+        <span><i class="kb"></i><b>Bottle</b></span>
+        <span><i class="ka"></i><b>Eaten</b></span>
+      </span>
+      <span class="cgkeys">
+        <span><b>Lines</b> 6 &amp; 8 g/kg</span>
+        <span><b>Top</b> 12 g/kg</span>
+      </span>
     </div>
+    <p class="cgnote">Bar height is the day&rsquo;s carbohydrate per kilogram of you, and the
+      split is where it comes from. The kitchen barely moves across the whole block
+      (${FLAT_LO.toFixed(1)}&ndash;${FLAT_HI.toFixed(1)}&thinsp;g/kg) &mdash; what makes a day big is the bottle.
+      A bar with no track under it is a day that has not happened yet.</p>
   </div>`;
+}
+
+/* Sizes are custom properties assigned from script, never a style attribute:
+   the CSP is hash-only, so an inline style is silently dropped -- which is
+   exactly how the macro bars ended up rendering at zero width. */
+function paintMonth(){
+  document.querySelectorAll('.cgbar[data-h]').forEach(b => {
+    b.style.setProperty('--h',  (Number(b.dataset.h)  || 0) + '%');
+    b.style.setProperty('--bp', (Number(b.dataset.bp) || 0) + '%');
+  });
+  document.querySelectorAll('.cgfill[data-ad]').forEach(f => {
+    f.style.setProperty('--ad', (Number(f.dataset.ad) || 0) + '%');
+  });
 }
 
 /* ---- Today, planned against ridden -------------------------------------
@@ -1838,7 +2045,22 @@ let selDay = '';
 
 const DOW = ['S','M','T','W','T','F','S'];
 const dnum = (d) => Number(d.slice(8,10));
-const dayOf = (d) => (plan.days || []).find(x => x.d === dnum(d));
+/* The block is one month, and days are keyed by day-of-month alone. When the
+   last week of the block straddles into the next month — August 31 2026 is a
+   Monday, so its strip runs to September 6 — a bare day-of-month lookup hands
+   back the wrong month's food: September 3 would offer August 3's chili, and a
+   tap would log against a day that does not exist in the plan. Gate on the
+   month named in plan.block. */
+const BLK_MONTHS = ['january','february','march','april','may','june','july',
+                    'august','september','october','november','december'];
+function inBlock(key){
+  const m = /([A-Za-z]+)\s+(\d{4})/.exec(String((plan && plan.block) || ''));
+  if (!m) return true;                       // no block label: behave as before
+  const mi = BLK_MONTHS.indexOf(m[1].toLowerCase());
+  if (mi < 0) return true;
+  return Number(key.slice(0,4)) === Number(m[2]) && Number(key.slice(5,7)) === mi + 1;
+}
+const dayOf = (d) => (inBlock(d) ? (plan.days || []).find(x => x.d === dnum(d)) : undefined);
 
 /* Meal times are '6:15 am'; the timeline wants 06:15 and a sort order. */
 function mins(t){
@@ -1857,14 +2079,6 @@ function setAte(d, t, v){
   dirty = true; persist(); queue(); triggerHaptic(); render();
 }
 
-/* Carbohydrate as a share of the meal's own calories. This is the signal the
-   whole app is about, so it is what colours the card — not the meal's name. */
-function carbCode(m){
-  if (!m.kc) return 'lo';
-  const share = (4 * (m.cb || 0)) / m.kc;
-  return share >= 0.55 ? 'hi' : share >= 0.35 ? 'mid' : 'lo';
-}
-
 function weekStrip(){
   const sel = new Date(selDay + 'T12:00:00');
   const mon = new Date(sel); mon.setDate(sel.getDate() - ((sel.getDay() + 6) % 7));
@@ -1879,70 +2093,124 @@ function weekStrip(){
   return `<div class="hxwk">${out}</div>`;
 }
 
-/* Consumed against target, for the four numbers the plan actually tracks.
-   Calories and carbohydrate are exact — both live on every meal. Protein and
-   fat exist only as day totals, so they are apportioned across meals by
-   calorie share and labelled as the estimates they are. */
-function macros(day, eaten){
-  const done = day.meals.reduce((a,m) => a + m.kc * ateOf(selDay, m.t), 0);
-  const share = day.kc ? done / day.kc : 0;
-  return [
-    ['kcal', Math.round(eaten.kc), day.kc, ''],
-    ['C',    Math.round(eaten.cb), day.cb, 'g'],
-    ['P',    Math.round((day.pr||0) * share), day.pr||0, 'g'],
-    ['F',    Math.round((day.ft||0) * share), day.ft||0, 'g'],
-  ];
+/* Carbohydrate as a share of the meal's own calories, in three ordinal steps.
+   It is the only per-meal nutrient the plan actually knows, and it is what the
+   whole block is for, so it is what the rail encodes. */
+function carbStep(m){
+  if (!m.kc) return 1;
+  const share = (4 * (Number(m.cb) || 0)) / m.kc;
+  return share >= 0.55 ? 3 : share >= 0.35 ? 2 : 1;
 }
 
-function fuelToday(){
+function dayHead(day, tr, sum){
+  const dkc = Number(day.kc) || 0, dcb = Number(day.cb) || 0;
+  /* days[].kc disagrees with its own meals on 19 of 31 days and days[].cb on
+     13. Sum the meals, and say so where the day total dissents rather than
+     silently picking a winner. */
+  const drift = (dkc && dkc !== sum.kc) || (dcb && dcb !== sum.cb);
+  return `<div class="hxday">`
+    + `<span class="hxdate"><i>${esc(day.wd)}</i><b>${Number(day.d) || 0}</b></span>`
+    + `<span class="hxwhat"><b>${esc(day.kind)}</b>`
+    + `<em>${tr && tr.h ? esc(hhm(tr.h)) + ' planned' : 'no riding'}</em></span>`
+    + (day.dish ? `<span class="hxcook">Cook</span>` : '')
+    + `</div>`
+    + `<p class="hxsum">${day.meals.length} meals &middot; ${sum.kc} kcal &middot; ${sum.cb} g carb`
+    + (drift ? `<s>day total says ${dkc} kcal / ${dcb} g</s>` : '') + `</p>`;
+}
+
+/* Calories and carbohydrate are exact — every meal carries both. Protein and
+   fat exist ONLY as day totals, so they are apportioned by calorie share, and
+   those two tiles are starred and drawn hatched. An estimate must not be able
+   to pass for a measurement just because it is rendered the same way. */
+function macroRow(day, sum, eaten){
+  const share = sum.kc ? eaten.kc / sum.kc : 0;
+  const pr = Number(day.pr) || 0, ft = Number(day.ft) || 0;
+  const fatLow = sum.kc > 0 && (9 * ft) / sum.kc < 0.20;
+  const tiles = [
+    ['kcal', Math.round(eaten.kc),   sum.kc, '',  ''],
+    ['C',    Math.round(eaten.cb),   sum.cb, 'g', ''],
+    ['P',    Math.round(pr * share), pr,     'g', 'est'],
+    ['F',    Math.round(ft * share), ft,     'g', fatLow ? 'est low' : 'est'],
+  ];
+  return `<div class="hxmac">` + tiles.map(([k, v, t, u, cls]) =>
+      `<div class="hxm${cls ? ' ' + cls : ''}"><i>${k}${cls ? '*' : ''}</i>`
+    + `<b>${v}<s>/${t}${u}</s></b>`
+    + `<em><u data-pct="${t ? Math.min(100, Math.round(v / t * 100)) : 0}"></u></em></div>`
+    ).join('') + `</div>`;
+}
+
+function mealRow(m){
+  const f   = ateOf(selDay, m.t);
+  const st  = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
+  const pct = m.kc ? Math.round(400 * (Number(m.cb) || 0) / m.kc) : 0;
+  const items = combineMealItems(m.i || []).map(it =>
+      `<li><i>${Number(it.c) || 0}</i><span>${esc(it.n)}</span></li>`).join('');
+  const said = f === 1 ? 'eaten' : f === 0.5 ? 'half eaten' : 'not eaten';
+  return `<div class="hxr"><time>${clock(mins(m.t))}</time>`
+    + `<div class="hxc k${carbStep(m)}${st}">`
+      + `<span class="hxrail"><i></i><i></i><i></i></span>`
+      + `<div class="hxhd"><span class="hxt">${esc(m.l)}</span>`
+      + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span></div>`
+      + (items ? `<ul class="hxi">${items}</ul>` : '')
+      /* The day travels on the button, not in a global: a tap must log against
+         its own card's date even if the strip moves underneath it. */
+      + `<button class="hxtick" data-log="${esc(m.t)}" data-log-day="${esc(selDay)}"`
+      + ` aria-pressed="${f > 0 ? 'true' : 'false'}" aria-label="${esc(m.l)}, ${said}">`
+      + `<span class="hxmk"></span></button>`
+    + `</div></div>`;
+}
+
+function rideRow(tr, at){
+  const bkc = (tr.bk && Number(tr.bk.cb)) || 0;
+  const bkk = (tr.bk && Number(tr.bk.kc)) || 0;
+  const gph = tr.h ? Math.round(bkc / tr.h) : 0;
+  const act = selDay === todayKey() && coach.rides && coach.rides.length
+    ? coach.rides.reduce((a, x) => a + (Number(x.kcal) || 0), 0) : null;
+  return `<div class="hxr"><time>${at >= 0 ? clock(at + 1) : '&mdash;'}</time>`
+    + `<div class="hxride"><span class="hxt">${esc(hhm(tr.h))} &middot; ${esc(tr.kind)}</span>`
+    + `<span class="hxs">${bkc} g carb on the bike` + (bkk ? ` &middot; ${bkk} kcal` : '')
+    + ` &middot; about ${gph} g an hour</span>`
+    + `<span class="hxs">` + (act !== null ? `<b>${act} kcal ridden</b>` : `${Math.round(tr.h * 600)} kcal planned`)
+    + `</span></div></div>`;
+}
+
+const restRow = () => `<div class="hxr"><time>&mdash;</time>`
+  + `<div class="hxrest"><span class="hxt">No riding</span>`
+  + `<span class="hxs">eat to the day&rsquo;s totals, no bottle needed</span></div></div>`;
+
+/* ---- One day, whole ----------------------------------------------------
+   The timeline could be tapped but showed no food; the day-by-day blocks
+   showed the food but could not be tapped and reprinted all seven days every
+   time. This is both, once. */
+function fuelDay(){
   if (!selDay) selDay = todayKey();
   const day = dayOf(selDay);
-  if (!day) return `<div class="hxwk-wrap">${weekStrip()}</div><div class="empty">No plan for that day.</div>`;
-  const tr = (plan.training || []).find(x => x.d === dnum(selDay));
+  if (!day) return weekStrip() + `<div class="empty">No plan for that day.</div>`;
+  const tr = (plan.training || []).find(x => x.d === dnum(selDay)) || null;
 
-  const eaten = day.meals.reduce((a,m) => {
+  const sum = day.meals.reduce((a, m) =>
+    ({ kc: a.kc + (Number(m.kc) || 0), cb: a.cb + (Number(m.cb) || 0) }), { kc: 0, cb: 0 });
+  const eaten = day.meals.reduce((a, m) => {
     const f = ateOf(selDay, m.t);
-    return { kc: a.kc + m.kc*f, cb: a.cb + (m.cb||0)*f };
-  }, {kc:0, cb:0});
+    return { kc: a.kc + (Number(m.kc) || 0) * f, cb: a.cb + (Number(m.cb) || 0) * f };
+  }, { kc: 0, cb: 0 });
 
-  let out = weekStrip()
-    + `<div class="hxmac">` + macros(day, eaten).map(([k,v,t,u]) =>
-        `<div class="hxm"><i>${k}</i><b>${v}<s>/${t}${u}</s></b><em><u data-pct="${t ? Math.min(100, Math.round(v/t*100)) : 0}"></u></em></div>`
-      ).join('') + `</div>`
-    + `<div class="hxkind">${esc(day.kind)}${tr && tr.h ? ' &middot; ' + esc(hhm(tr.h)) + ' planned' : ''}</div>`;
-
-  /* One row per meal, in clock order, with the ride dropped in at its own time
-     rather than listed among the food. */
   const rows = day.meals.map(m => ({ at: mins(m.t), meal: m }));
   if (tr && tr.h){
-    const ride = day.meals.find(m => /on the bike/i.test(m.l));
-    rows.push({ at: ride ? mins(ride.t) - 1 : 18*60, ride: tr });
+    /* The ride sits where its on-bike food starts. One riding day has no
+       on-bike meal — it gets no clock rather than a fabricated one. */
+    const onb = day.meals.find(m => /on the bike/i.test(m.l || ''));
+    rows.push({ at: onb ? mins(onb.t) - 1 : -1, ride: tr });
+  } else {
+    rows.push({ at: -1, rest: true });
   }
-  rows.sort((x,y) => x.at - y.at);
+  rows.sort((x, y) => x.at - y.at);
 
-  out += `<div class="hxtl">` + rows.map(r => {
-    if (r.ride){
-      const t = r.ride;
-      const gph = t.h ? Math.round(((t.bk && t.bk.cb) || 0) / t.h) : 0;
-      const act = selDay === todayKey() && coach.rides && coach.rides.length
-        ? coach.rides.reduce((a,x) => a + (x.kcal||0), 0) : null;
-      return `<div class="hxr"><time>${clock(Math.max(0,r.at+1))}</time>`
-        + `<div class="hxride"><span class="hxt">${esc(hhm(t.h))} &middot; ${esc(t.kind)}</span>`
-        + `<span class="hxs">${gph} g carb/hr on the bike`
-        + (act !== null ? ` &middot; <b>${act} kcal ridden</b>` : ` &middot; ${Math.round(t.h*600)} kcal planned`)
-        + `</span></div></div>`;
-    }
-    const m = r.meal, f = ateOf(selDay, m.t);
-    const st = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
-    return `<div class="hxr"><time>${clock(r.at)}</time>`
-      + `<button class="hxc c-${carbCode(m)}${st}" data-log="${esc(m.t)}">`
-      + `<span class="hxt">${esc(m.l)}</span>`
-      + `<span class="hxs">${m.kc} kcal &middot; C ${m.cb||0}g</span>`
-      + `<span class="hxmk"></span></button></div>`;
-  }).join('') + `</div>`;
-
-  out += `<p class="hxnote">Tap a meal once for eaten, twice for half. Protein and fat are apportioned across meals by calories &mdash; the plan only carries them as day totals.</p>`;
-  return out;
+  return weekStrip() + dayHead(day, tr, sum) + macroRow(day, sum, eaten)
+    + `<div class="hxtl">`
+    + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal)).join('')
+    + `</div>`
+    + `<p class="hxnote">Tap the circle once for eaten, twice for about half. Calories and carbs are exact; protein and fat are marked * because the plan only carries them as day totals and they are shared out here by calories.</p>`;
 }
 
 function coachCard(){
@@ -2075,7 +2343,7 @@ function render(){
 
     if (coach.rides === null && coach.day !== todayKey()) loadRides();
     if (dayRide.day !== (selDay || todayKey())) loadDayRides(selDay || todayKey());
-    m.innerHTML = fuelToday() + rideDetail() + coachCard() + analysisCard()
+    m.innerHTML = fuelDay() + rideDetail() + coachCard() + analysisCard()
       + `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
       + (wk.length ? `
       <div class="trainhd">
@@ -2083,13 +2351,15 @@ function render(){
         <div><span class="tnum">${rides}</span><span class="tlab">ride days</span></div>
         <div><span class="tnum">${onbike}</span><span class="tlab">g carb on bike</span></div>
       </div>
-      <div class="sech">Day by day</div>` : '')
-      + dayBlocks(w)
+      ` : '')
       + `<div class="sech">How to make the fuel</div>`
       + (plan.fuel || []).map(([hh, pp]) =>
         `<div class="card"><h3>${esc(hh)}</h3><p>${esc(pp)}</p></div>`).join('')
       + `<div class="hint">Ingredients can appear under two cook nights &mdash; that is deliberate and the totals add up.</div>`;
-    totals(); updateHeaderHeight(); return;
+    /* Both of these size elements through the CSSOM. paintBars() was only ever
+       called from the retired 'P' branch, so the four macro bars in .hxmac have
+       been rendering at zero width on every reachable path. */
+    totals(); paintBars(); paintMonth(); updateHeaderHeight(); return;
   }
 
   const secs = shopList(w);
@@ -2301,12 +2571,26 @@ document.addEventListener('click', e => {
     render(); return;
   }
 
+  /* A cell in the block grid selects that day above, so the grid is a way into
+     the plan rather than a picture beside it. Its own class, not .row: the
+     shopping tick handler claims .row globally. */
+  const cgs = e.target.closest('.cgc[data-cgday]');
+  if (cgs && cgs.dataset.cgday){
+    selDay = cgs.dataset.cgday;
+    coach.advice = null; coach.err = '';
+    render();
+    const m = $('#main'); if (m) m.scrollIntoView({ block: 'start' });
+    return;
+  }
+
   /* none -> ate -> half -> none. Two taps for "about half", which is as fine
      as anyone is honestly going to be about a plate of food. */
   const lg = e.target.closest('[data-log]');
   if (lg){
-    const cur = ateOf(selDay, lg.dataset.log);
-    setAte(selDay, lg.dataset.log, cur === 0 ? 1 : cur === 1 ? 0.5 : 0);
+    /* The card's own day, never the strip's — they can differ mid-render. */
+    const d = lg.dataset.logDay || selDay;
+    const cur = ateOf(d, lg.dataset.log);
+    setAte(d, lg.dataset.log, cur === 0 ? 1 : cur === 1 ? 0.5 : 0);
     return;
   }
 
