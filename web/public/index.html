@@ -884,6 +884,15 @@ window.addEventListener('resize', updateHeaderHeight);
 
 /* Sync Backend Logic */
 let syncing = false;
+let planSig = '';
+
+/* Key order is not stable across a round trip, so compare sorted. Anything that
+   sorts equal really is unchanged, and a false "changed" only costs a repaint —
+   the comparison is allowed to be wrong towards doing more work, never less. */
+function stateSig(){
+  const m = (o) => Object.keys(o || {}).sort().map(k => k + '=' + JSON.stringify(o[k])).join('|');
+  return m(ticks) + '\n' + m(extras) + '\n' + m(pantryState);
+}
 let needCode = false;   // set when the Worker rejects the access code
 function openSettings(){
   $('#s_url').value = cfg.url;
@@ -935,18 +944,28 @@ async function sync(push){
     if (r.status === 429) throw new Error('Too many attempts — wait a minute');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const s = await r.json();
+    const was = stateSig();
     ticks  = s.ticks  || {};
     extras = s.extras || {};
     pantryState = s.pantry || pantryState;
+    let changed = stateSig() !== was;
     /* A plan with no weeks blanks the whole app — no current week, nothing to
        render. Never adopt one; keep whatever is already loaded. */
-    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) { plan = fillPlan(s.plan); jset('v2.plan', plan); }
+    if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) {
+      const sig = JSON.stringify(s.plan);
+      if (sig !== planSig) { planSig = sig; plan = fillPlan(s.plan); jset('v2.plan', plan); changed = true; }
+    }
     lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
     dirty = false;
     lastSync = new Date().toISOString();
     LS.set('v2.lastSync', lastSync);
     persist();
-    render();
+    /* Only repaint when something actually came back different. Every tap
+       queues a push 1200 ms later, and that push returns our own state; an
+       unconditional render() here rebuilt #main from innerHTML a beat after
+       every tap, which on iOS throws away the scroll position. Rebuilding the
+       page to tell someone what they just did themselves is pure cost. */
+    if (changed) render();
   } catch(e){
     lastSync = lastSync || '';
     $('#s_stat').textContent = 'Sync failed: ' + e.message;
