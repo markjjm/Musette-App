@@ -126,11 +126,28 @@ function cleanLog(v) {
    400-calorie pizza. Only the composition is stored. */
 function cleanDish(v) {
   if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
-  const items = Array.isArray(v.items) ? v.items.slice(0, 40).map((i) => ({
-    f: clamp(i && i.f),
-    u: clamp(i && i.u),
-    q: num(i && i.q, 0, 9999, 1),
-  })).filter((i) => i.f && i.u) : [];
+  const items = Array.isArray(v.items) ? v.items.slice(0, 40).map((i) => {
+    const out = {
+      f: clamp(i && i.f),
+      u: clamp(i && i.u),
+      q: num(i && i.q, 0, 9999, 1),
+    };
+    /* A looked-up food is deliberately NOT in the shared table, so it carries
+       its own per-unit figures. Dropping them — which this did — left a saved
+       dish unable to resolve its own ingredient, and the calories silently went
+       to zero on the next sync. Kept, clamped to what one unit of a food could
+       plausibly be. */
+    const ai = i && i.ai;
+    if (ai && typeof ai === 'object') {
+      out.ai = {
+        kc: num(ai.kc, 0, 5000, 0),
+        c:  num(ai.c, 0, 1000, 0),
+        p:  num(ai.p, 0, 1000, 0),
+        f:  num(ai.f, 0, 1000, 0),
+      };
+    }
+    return out;
+  }).filter((i) => i.f && i.u) : [];
   const out = { name: clamp(v.name), items, t: v.t };
   if (v.deleted) out.deleted = true;
   return out;
