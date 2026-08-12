@@ -7,11 +7,12 @@
     "build": "node tools/build-csp.mjs",
     "scan": "node tools/scan.mjs",
     "scan:baseline": "node tools/scan.mjs --baseline",
-    "check": "npm run build -- --check && npm run scan",
+    "check": "npm run build -- --check && node tools/build-foods.mjs --check && npm run scan",
     "dev:web": "wrangler pages dev web/public --compatibility-date=2026-07-01",
     "dev:worker": "wrangler dev --config worker/wrangler.toml",
     "deploy:web": "npm run build && wrangler pages deploy web/public --project-name shopping-list-app",
-    "deploy:worker": "wrangler deploy --config worker/wrangler.toml"
+    "deploy:worker": "wrangler deploy --config worker/wrangler.toml",
+    "foods": "node tools/build-foods.mjs"
   },
   "devDependencies": {
     "wrangler": "4.119.0"
