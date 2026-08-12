@@ -72,7 +72,7 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {}, profile: null });
+const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {}, profile: null, dishes: {} });
 
 const clamp = (v) => (typeof v === 'string' ? v.slice(0, MAX_STR) : '');
 
@@ -118,6 +118,22 @@ function cleanLog(v) {
   const n = Number(v.v);
   if (!ATE.has(n)) return null;
   return { v: n, t: v.t };
+}
+
+/* A dinner someone built themselves out of the food table. Ingredients are
+   {food, unit, qty}; the macros are recomputed from the table at render time
+   rather than trusted from the client, so a tampered body cannot invent a
+   400-calorie pizza. Only the composition is stored. */
+function cleanDish(v) {
+  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  const items = Array.isArray(v.items) ? v.items.slice(0, 40).map((i) => ({
+    f: clamp(i && i.f),
+    u: clamp(i && i.u),
+    q: num(i && i.q, 0, 9999, 1),
+  })).filter((i) => i.f && i.u) : [];
+  const out = { name: clamp(v.name), items, t: v.t };
+  if (v.deleted) out.deleted = true;
+  return out;
 }
 
 /* Who the rider is and what he is trying to do. Not a map — one object,
@@ -181,6 +197,9 @@ function prune(state) {
      pass MAX_ENTRIES on its own. Nothing reads a meal log from three months ago. */
   for (const [k, v] of Object.entries(state.log || {})) {
     if (v.t < cutoff) delete state.log[k];
+  }
+  for (const [k, v] of Object.entries(state.dishes || {})) {
+    if (v.deleted && v.t < cutoff) delete state.dishes[k];
   }
   return state;
 }
@@ -563,6 +582,7 @@ export class ListDO extends DurableObject {
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
       state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
       state.log = mergeByTime(state.log || {}, body.log, cleanLog);
+      state.dishes = mergeByTime(state.dishes || {}, body.dishes, cleanDish);
       /* One object, so the newer timestamp simply wins. */
       const inProf = cleanProfile(body.profile);
       if (inProf && (!state.profile || inProf.t > (state.profile.t || 0))) state.profile = inProf;

@@ -218,3 +218,25 @@ if (process.argv.includes('--check')) {
   writeFileSync(path, json);
   console.log(`build-foods: wrote ${path} — ${foods.length} foods, every one Atwater-checked`);
 }
+
+/* The app is one self-contained file under a CSP whose connect-src names
+   exactly one origin — the sync Worker. Fetching foods.json from its own origin
+   would mean adding 'self' to that list, so the table is inlined instead: 9 KB
+   compact against a 226 KB page, which is cheaper than widening the policy.
+   Written from the same source as the JSON, in the same run, so the two cannot
+   drift apart. */
+const compact = foods.map((f) => [f.n, f.tag, ...f.units.map((u) => [u.u, u.g, u.kc, u.c, u.p, u.f])]);
+const INLINE = 'const FOODS = ' + JSON.stringify(compact) + ';';
+const page = 'web/public/index.html';
+if (existsSync(page)) {
+  const html = readFileSync(page, 'utf8');
+  const re = /const FOODS = \[.*?\];/s;
+  const next = re.test(html) ? html.replace(re, INLINE)
+    : html.replace('const RECIPES = {', INLINE + '\n\nconst RECIPES = {');
+  if (process.argv.includes('--check')) {
+    if (next !== html) { console.error('build-foods --check: the FOODS table in index.html is stale'); process.exit(1); }
+  } else if (next !== html) {
+    writeFileSync(page, next);
+    console.log(`build-foods: refreshed the FOODS table in ${page} (${INLINE.length} bytes)`);
+  }
+}
