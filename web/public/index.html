@@ -674,6 +674,13 @@ footer {
 .asec { display: block; padding: 8px 0; border-top: 1px dashed var(--rule); }
 .asec > b { display: block; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--pen-text); margin-bottom: 3px; }
 .asec > span { display: block; font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+.swch { display: flex; gap: 4px; margin: 10px 14px 6px; padding: 3px; background: var(--card-sunk); border-radius: 11px; }
+.swch > button {
+  flex: 1; padding: 8px 6px; border: 0; border-radius: 9px; font: inherit;
+  font-size: 13px; font-weight: 700; color: var(--ink-soft); background: transparent; cursor: pointer;
+}
+.swch > button.on { background: var(--card); color: var(--pen-text); box-shadow: 0 1px 2px rgba(23,21,15,.07); }
+
 .hxnote { margin: 10px 16px 2px; font-size: 11px; color: var(--gravel); line-height: 1.45; }
 
 /* Today's card: planned above ridden, and the difference between them. */
@@ -1136,7 +1143,11 @@ const RETIRED_TABS = ['P', 'D'];
 const TAB_NAME  = {A:'Shop', E:'Eat', T:'Train', P:'Eat', D:'Shop', F:'Eat'};
 const modeOf = t => SHOP_TABS.indexOf(t) >= 0 ? 'shop' : 'plan';
 const APP_NAME = 'Musette';
-let lastTab = jget('v2.lastTab', {shop:'A', plan:'F'});
+let lastTab = jget('v2.lastTab', {shop:'A', plan:'E'});
+/* Shop is the list and the dinners that generate it. Folding Dinners into Shop
+   without giving it a way back was a regression: the section existed but there
+   was no door to it. */
+let shopView = LS.get('v2.shopView') || 'list';
 /* 'M' was a tab until the two stores merged. Anything unknown falls back. */
 if (!TAB_NAME[tab]) tab = 'A';
 if (tab === 'F') tab = 'E';
@@ -1692,6 +1703,16 @@ const rowKey = (weekId, it) => it.extraId ? 'x|' + it.extraId : tickKey(weekId, 
    the shopping list ever actually asked. Shop names its week inline; Eat has
    its own day strip; Train shows the whole block at once. */
 function chips(){ updateHeaderHeight(); }
+
+/* Shop carries both the list and the dinners that generate it, so it needs its
+   own switch. Two words, always visible, no gesture to discover. */
+function shopSwitch(){
+  if (tab !== 'A' && tab !== 'D') return '';
+  return `<div class="swch">`
+    + `<button data-sv="list"${shopView === 'list' ? ' class="on"' : ''}>Shopping list</button>`
+    + `<button data-sv="dinners"${shopView === 'dinners' ? ' class="on"' : ''}>Dinners</button>`
+    + `</div>`;
+}
 
 /* Everything this household has ever put on a list, for type-ahead. They buy
    the same couple of hundred things, so suggesting from their own history beats
@@ -2481,9 +2502,9 @@ function render(){
     totals(); paintBars(); updateHeaderHeight(); return;
   }
 
-  if (tab === 'D'){
+  if (tab === 'D' || (tab === 'A' && shopView === 'dinners')){
     const nights = (w.dinners || []);
-    m.innerHTML = nights.length
+    m.innerHTML = shopSwitch() + (nights.length
       ? nights.map(dn => {
           if (!dn.cook){
             /* A reheat night is not a recipe. Point back at the night it came from. */
@@ -2514,7 +2535,7 @@ function render(){
               `<p class="rtip">No method written for this one yet.</p>`}
           </article>`;
         }).join('')
-      : '<div class="empty">No dinners planned for this week.</div>';
+      : '<div class="empty">No dinners planned for this week.</div>');
     totals(); updateHeaderHeight(); return;
   }
   
@@ -2556,7 +2577,8 @@ function render(){
   }
 
   const secs = shopList(w);
-  let html = (w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '';
+  let html = shopSwitch()
+    + ((w.note && tab === 'A') ? `<p class="wnote">${esc(w.note)}</p>` : '');
 
   let sectionCount = 0;
 
@@ -2786,6 +2808,9 @@ document.addEventListener('click', e => {
     setAte(d, lg.dataset.log, cur === 0 ? 1 : cur === 1 ? 0.5 : 0);
     return;
   }
+
+  const sv = e.target.closest('[data-sv]');
+  if (sv){ shopView = sv.dataset.sv; LS.set('v2.shopView', shopView); render(); return; }
 
   if (e.target.closest('#coach_go')){ runCoach(); return; }
   if (e.target.closest('#look_go')){ runAnalyze(); return; }

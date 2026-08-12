@@ -72,7 +72,7 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {} });
+const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {}, profile: null });
 
 const clamp = (v) => (typeof v === 'string' ? v.slice(0, MAX_STR) : '');
 
@@ -118,6 +118,38 @@ function cleanLog(v) {
   const n = Number(v.v);
   if (!ATE.has(n)) return null;
   return { v: n, t: v.t };
+}
+
+/* Who the rider is and what he is trying to do. Not a map — one object,
+   last-write-wins on its own timestamp — because there is one rider and two
+   phones, and the failure to avoid is a stale phone reviving old goals.
+
+   This is the object a whole month of food gets generated from, so every field
+   is clamped to something a body can actually be. A weight of 9 kg or a target
+   of 40 hours a week is a typo, and a typo here would propagate silently into
+   thirty-one days of meals. */
+const GOALS = new Set(['hold', 'lose', 'gain']);
+const num = (v, lo, hi, dflt) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
+};
+function cleanProfile(v) {
+  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  return {
+    weight_lb:  num(v.weight_lb, 70, 400, 148),
+    height_in:  num(v.height_in, 48, 90, 70),
+    age:        num(v.age, 14, 100, 40),
+    goal:       GOALS.has(v.goal) ? v.goal : 'hold',
+    rate_lb_wk: num(v.rate_lb_wk, 0, 2, 0),
+    hours_wk:   num(v.hours_wk, 0, 30, 9),
+    ftp:        num(v.ftp, 0, 600, 0),
+    /* Which dinners are in the rotation. Names only — the recipes live in the
+       app, so this stays small and cannot smuggle markup. */
+    dinners:    Array.isArray(v.dinners) ? v.dinners.slice(0, 60).map(clamp).filter(Boolean) : [],
+    avoid:      clamp(v.avoid),
+    notes:      clamp(v.notes),
+    t: v.t,
+  };
 }
 
 /* Last-write-wins per key, using each entry's own timestamp. */
@@ -531,6 +563,9 @@ export class ListDO extends DurableObject {
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
       state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
       state.log = mergeByTime(state.log || {}, body.log, cleanLog);
+      /* One object, so the newer timestamp simply wins. */
+      const inProf = cleanProfile(body.profile);
+      if (inProf && (!state.profile || inProf.t > (state.profile.t || 0))) state.profile = inProf;
       prune(state);
       /* One-deep undo. Writes are unauthenticated, so keep the previous good
          state to roll back to rather than relying on nobody ever scribbling. */

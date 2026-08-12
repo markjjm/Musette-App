@@ -159,6 +159,8 @@
   "said",
   "sectionsHtml(dayRide.read)",
   "sectionsHtml(look.data)",
+  "shopView === 'dinners' ? ' class=\"on\"' : ''",
+  "shopView === 'list' ? ' class=\"on\"' : ''",
   "st",
   "st.efficiency_trend_pct",
   "st.efficiency_trend_pct < 0 ? 'dn' : 'up'",
