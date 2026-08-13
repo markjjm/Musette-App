@@ -8,6 +8,9 @@ const KEY = 'state:v1';
 const MAX_BODY = 256 * 1024; // bytes of request body
 const MAX_ENTRIES = 5000;    // keys per map (ticks / extras)
 const MAX_STR = 200;         // chars per user-supplied string
+/* Activities per upstream fetch. Has to comfortably exceed FORM_DAYS of real
+   riding, or the fitness window gets silently clipped at its oldest end. */
+const MAX_RIDES = 1000;
 const STORES = new Set(['A', 'M']);
 
 /* Only the deployed app may read responses cross-origin. Auth is by header,
@@ -94,15 +97,32 @@ const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {},
 const CTRL = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 const clamp = (v) => (typeof v === 'string' ? v.replace(CTRL, '').slice(0, MAX_STR) : '');
 
+/* An entry's timestamp settles two separate things: which side wins the merge,
+   and when prune() is allowed to drop it. A time far in the future settles both
+   permanently and in one direction — the entry beats every real edit for ever and
+   never ages out — which turns one field into both a write-lock and an unprunable
+   row. Phones do drift; they do not drift by a year. So allow a few minutes of
+   clock skew and clamp anything beyond it to now. */
+const CLOCK_SKEW = 5 * 60 * 1000;
+function stamp(t) {
+  if (typeof t !== 'number' || !Number.isFinite(t)) return null;
+  const ceiling = Date.now() + CLOCK_SKEW;
+  return t > ceiling ? ceiling : t;
+}
+
 /* Accept only the fields we render, with types and lengths enforced.
    Anything unrecognised is dropped rather than stored and echoed back. */
 function cleanTick(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
-  return { v: v.v === true, t: v.t };
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
+  return { v: v.v === true, t };
 }
 
 function cleanExtra(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
   const cost = Number(v.cost);
   const out = {
     name: clamp(v.name),
@@ -110,7 +130,7 @@ function cleanExtra(v) {
     cost: Number.isFinite(cost) ? Math.max(0, Math.min(cost, 100000)) : 0,
     store: STORES.has(v.store) ? v.store : 'A',
     week: clamp(v.week),
-    t: v.t,
+    t,
   };
   if (v.deleted) out.deleted = true;
   return out;
@@ -120,9 +140,11 @@ function cleanExtra(v) {
    peanut butter low and it stays low until someone buys it. */
 const PANTRY_STATES = new Set(['ok', 'low', 'out']);
 function cleanPantry(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
   if (!PANTRY_STATES.has(v.s)) return null;
-  return { s: v.s, t: v.t };
+  return { s: v.s, t };
 }
 
 /* What was actually eaten, as opposed to what was planned. Keyed by date and
@@ -132,10 +154,12 @@ function cleanPantry(v) {
    all of it. Nothing finer, because nobody is weighing their dinner. */
 const ATE = new Set([0, 0.25, 0.5, 0.75, 1]);
 function cleanLog(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
   const n = Number(v.v);
   if (!ATE.has(n)) return null;
-  const out = { v: n, t: v.t };
+  const out = { v: n, t };
   /* What was eaten INSTEAD of what was planned. The plan is a suggestion and
      some evenings it loses; recording the substitution is more useful than
      recording a zero, because a zero says "skipped" when the truth is "ate
@@ -160,7 +184,9 @@ function cleanLog(v) {
    rather than trusted from the client, so a tampered body cannot invent a
    400-calorie pizza. Only the composition is stored. */
 function cleanDish(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
   const items = Array.isArray(v.items) ? v.items.slice(0, 40).map((i) => {
     const out = {
       f: clamp(i && i.f),
@@ -183,7 +209,7 @@ function cleanDish(v) {
     }
     return out;
   }).filter((i) => i.f && i.u) : [];
-  const out = { name: clamp(v.name), items, t: v.t };
+  const out = { name: clamp(v.name), items, t };
   if (v.deleted) out.deleted = true;
   return out;
 }
@@ -202,7 +228,9 @@ const num = (v, lo, hi, dflt) => {
   return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
 };
 function cleanProfile(v) {
-  if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
   return {
     weight_lb:  num(v.weight_lb, 70, 400, 148),
     height_in:  num(v.height_in, 48, 90, 70),
@@ -216,31 +244,68 @@ function cleanProfile(v) {
     dinners:    Array.isArray(v.dinners) ? v.dinners.slice(0, 60).map(clamp).filter(Boolean) : [],
     avoid:      clamp(v.avoid),
     notes:      clamp(v.notes),
-    t: v.t,
+    t,
   };
 }
 
-/* Last-write-wins per key, using each entry's own timestamp. */
-function mergeByTime(mine, theirs, clean) {
+/* Last-write-wins per key, using each entry's own timestamp.
+
+   MAX_ENTRIES is a ceiling on the RESULT, not on the loop. It used to be spent
+   per call over the incoming map, so every request arrived with a fresh
+   allowance of 5000 and the stored map had no ceiling at all: one 79 KB PUT of
+   5000 keys built a map whose round-trip exceeded MAX_BODY, and from then on
+   every phone's push 413'd forever, with no way back but ADMIN_KEY. Same shape
+   as the spend() bug — a limit scoped to the request instead of the resource.
+
+   Only NEW keys are refused when the map is full. An update to a key that is
+   already there must always be allowed, or hitting the ceiling would also mean
+   losing the ability to tick off or delete what is already in the list — and it
+   has to `continue` rather than `break`, or one full map would also discard the
+   legitimate edits sitting behind the offending key in the same body.
+
+   Refusals are counted rather than swallowed. A silently dropped key is its own
+   slow version of the same wedge: the client still holds it, so it re-sends it on
+   every sync for ever and is never told why it never arrives. */
+function mergeByTime(mine, theirs, clean, stats) {
   const out = { ...mine };
   if (!theirs || typeof theirs !== 'object') return out;
-  let budget = MAX_ENTRIES;
+  let n = Object.keys(out).length;
   for (const [k, raw] of Object.entries(theirs)) {
-    if (budget-- <= 0) break;
     if (k.length > MAX_STR) continue;
     const v = clean(raw);
     if (!v) continue;
+    const isNew = !(k in out);
+    if (isNew && n >= MAX_ENTRIES) {
+      if (stats) stats.dropped += 1;
+      continue;
+    }
     const cur = out[k];
-    if (!cur || typeof cur.t !== 'number' || v.t > cur.t) out[k] = v;
+    if (!cur || typeof cur.t !== 'number' || v.t > cur.t) {
+      out[k] = v;
+      if (isNew) n++;
+    }
   }
   return out;
 }
 
-/* Drop unticked items and deleted extras older than 90 days. */
+/* The bytes a phone actually has to PUT: the five synced maps and nothing else.
+   Deliberately NOT the whole stored state — `plan` is by far the largest thing in
+   there and the client never sends it back, so charging it against a request-body
+   limit would refuse writes that fit comfortably. Must stay in step with the body
+   index.html builds in sync(). */
+const syncedWire = (s) => JSON.stringify({
+  ticks: s.ticks, extras: s.extras, pantry: s.pantry, log: s.log, dishes: s.dishes,
+}).length;
+
+/* Drop stale ticks and deleted extras older than 90 days. */
 function prune(state) {
   const cutoff = Date.now() - 90 * 86400000;
   for (const [k, v] of Object.entries(state.ticks)) {
-    if (v.t < cutoff && v.v === false) delete state.ticks[k];
+    /* Ticked and unticked alike. Requiring v.v === false meant a bought item's
+       tick lived forever, so ticks were the one map that could only ever grow.
+       90 days is three times the longest block, so nothing this old belongs to a
+       list anyone is still shopping from. */
+    if (v.t < cutoff) delete state.ticks[k];
   }
   for (const [k, v] of Object.entries(state.extras)) {
     if (v.deleted && v.t < cutoff) delete state.extras[k];
@@ -252,6 +317,17 @@ function prune(state) {
   }
   for (const [k, v] of Object.entries(state.dishes || {})) {
     if (v.deleted && v.t < cutoff) delete state.dishes[k];
+  }
+  /* Pantry had no loop here at all, so it was the one synced map with no way to
+     shrink under any condition — not deletion, not age.
+
+     Only 'ok' is dropped, and only when stale. 'ok' is what pantryOf() already
+     returns for a key that is absent, so removing it discards no information;
+     'low' and 'out' are a standing state that is meant to outlive the week —
+     mark the peanut butter low and it stays low until someone buys it — and
+     ageing those out would silently take the item off the list. */
+  for (const [k, v] of Object.entries(state.pantry || {})) {
+    if (v.t < cutoff && v.s === 'ok') delete state.pantry[k];
   }
   return state;
 }
@@ -421,10 +497,35 @@ function minsOf(t) {
   return h * 60 + Number(m[2]);
 }
 
+/* 'August 2026' -> '2026-08'. The plan's days are keyed by day-of-month alone,
+   so every lookup needs to know which month those numbers belong to. The front
+   end has had this since the strip straddled into September (blockYM, in
+   index.html); the Worker read the same plan and simply assumed August. */
+const BLOCK_MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july',
+                      'august', 'september', 'october', 'november', 'december'];
+function blockYM(plan) {
+  const m = /([A-Za-z]+)\s+(\d{4})/.exec(String((plan && plan.block) || ''));
+  if (!m) return null;
+  const mi = BLOCK_MONTHS.indexOf(m[1].toLowerCase());
+  if (mi < 0) return null;
+  return `${m[2]}-${String(mi + 1).padStart(2, '0')}`;
+}
+
 /* Assemble what the model is allowed to know. Every figure below is arithmetic
-   done here; none of it is left for the model to work out. */
-function coachFacts(state, rides, dayNum, nowMins) {
+   done here; none of it is left for the model to work out.
+
+   Takes the full ISO date, not a day number. Passing the day alone is what let
+   September alias onto August: `2026-09-01` became day 1, and the reply was
+   August 1's Long day — 4,163 kcal, 647 g carb, 1,100 kcal of bottle fuel —
+   stamped `2026-08-01` and set against genuinely fetched September rides, at
+   HTTP 200 with nothing to indicate it. */
+function coachFacts(state, rides, dateISO, nowMins) {
   const plan = state.plan || {};
+  const ym = blockYM(plan);
+  /* Outside the block there is no plan for the day, which is the same answer the
+     callers already handle for a day the plan does not contain. */
+  if (ym && String(dateISO).slice(0, 7) !== ym) return null;
+  const dayNum = Number(String(dateISO).slice(8, 10));
   const day = (plan.days || []).find((d) => d.d === dayNum);
   const train = (plan.training || []).find((t) => t.d === dayNum);
   if (!day) return null;
@@ -444,7 +545,7 @@ function coachFacts(state, rides, dayNum, nowMins) {
   const gap = rides.length ? Math.round(burned - plannedBurn) : 0;
 
   return {
-    date: `2026-08-${String(dayNum).padStart(2, '0')}`,
+    date: dateISO,
     weekday: day.wd,
     day_type: day.kind,
     rider_kg: 67.1,
@@ -819,22 +920,46 @@ export class ListDO extends DurableObject {
     return await this.ctx.blockConcurrencyWhile(async () => {
       const state = await this.load();
       const prev = JSON.parse(JSON.stringify(state));
-      state.ticks = mergeByTime(state.ticks, body.ticks, cleanTick);
-      state.extras = mergeByTime(state.extras, body.extras, cleanExtra);
-      state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry);
-      state.log = mergeByTime(state.log || {}, body.log, cleanLog);
-      state.dishes = mergeByTime(state.dishes || {}, body.dishes, cleanDish);
+      const beforeWire = syncedWire(state);
+      const stats = { dropped: 0 };
+      state.ticks = mergeByTime(state.ticks, body.ticks, cleanTick, stats);
+      state.extras = mergeByTime(state.extras, body.extras, cleanExtra, stats);
+      state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry, stats);
+      state.log = mergeByTime(state.log || {}, body.log, cleanLog, stats);
+      state.dishes = mergeByTime(state.dishes || {}, body.dishes, cleanDish, stats);
       /* One object, so the newer timestamp simply wins. */
       const inProf = cleanProfile(body.profile);
       if (inProf && (!state.profile || inProf.t > (state.profile.t || 0))) state.profile = inProf;
       prune(state);
+      /* Five separately-capped maps can still add up to a body no phone can push
+         back, and a copy the client cannot PUT is unrecoverable from the client:
+         its next PUT is its whole copy, which 413s, forever.
+
+         Price ONLY what the client has to send — the five synced maps. Measuring
+         the whole stored state was a category error with real teeth: `plan` alone
+         is ~77 KB of the 256 KB budget and the client never sends it, so this
+         refused writes whose actual round trip was 77 KB under the limit, and a
+         longer block would have made the very first tick fail against an empty
+         list. That is the same permanent wedge this guard exists to prevent,
+         introduced by the guard.
+
+         Refuse only writes that GROW an already-oversized copy — one that leaves
+         it the same size or smaller always goes through, or landing on the ceiling
+         would itself deny every future write. Nothing is lost on a refusal: this
+         returns before both put()s, so `state` and the `prev` snapshot stay as
+         they were. */
+      const afterWire = syncedWire(state);
+      if (afterWire > MAX_BODY && afterWire > beforeWire) {
+        return { refused: 'the synced part of the list is larger than one request can carry' };
+      }
       /* One-deep undo. Writes are unauthenticated, so keep the previous good
          state to roll back to rather than relying on nobody ever scribbling. */
       await this.ctx.storage.put('prev', prev);
       state.rev = (state.rev || 0) + 1;
       state.updated = new Date().toISOString();
       await this.ctx.storage.put('state', state);
-      return state;
+      /* Reported, not stored: it describes this request, not the list. */
+      return stats.dropped ? { ...state, dropped: stats.dropped } : state;
     });
   }
 
@@ -1076,16 +1201,57 @@ function cleanRide(a) {
 const CTL_K = 1 - Math.exp(-1 / 42);
 const ATL_K = 1 - Math.exp(-1 / 7);
 
-function trainingForm(rides, todayISO) {
+/* Fitness needs 42 days of history to mean anything, and three time constants
+   to settle. One fixed window for every endpoint, so /ask, /coach, /analyze and
+   /ride cannot report different form for the same rider on the same day. */
+const FORM_DAYS = 180;
+/* How much of the window must exist before the numbers are worth quoting. */
+const FORM_MIN_DAYS = 120;
+
+/* Fitness, fatigue and form.
+
+   Two things here used to make the numbers up. The filter was seeded at zero, so
+   CTL was not an average of training load at all but `tss * (1 - e^(-n/42))`
+   where n was however many days had been fetched: at a steady 60 TSS/day, where
+   the truth is fitness 60, fatigue 60, form 0, a 42-day window returned 37.4 /
+   59.8 / -22.4 and invented a +4.1-a-week build on load that had not changed at
+   all. ATL was fine, because 42 days is six of ITS time constants — so almost
+   the whole reported gap was seeding error. formCard read -22.4 as "Tired —
+   carrying real fatigue", and a cold CTL is not a safe direction to be wrong in:
+   it says do not cut food to a rider who is actually fresh.
+
+   And the window was the caller's, so /coach (90 days) and /analyze (42) gave the
+   same rider -7.2 and -22.4 on the same day, while ?weeks=2 — client-supplied —
+   reached -34.9 and "Deep in it". A number a caller can steer is not a
+   measurement. Hence a seed, and a window this function owns. */
+function trainingForm(rides, todayISO, windowStartISO) {
   const load = {};
   for (const r of rides) if (r.date) load[r.date] = (load[r.date] || 0) + (r.load || 0);
 
   const days = Object.keys(load).sort();
   if (!days.length) return null;
-  const start = new Date(days[0] + 'T12:00:00Z');
+  /* Start where the window starts, not at the first ride in it. Starting at the
+     first ride means a rider who has been back a fortnight gets a fortnight-long
+     series however much history was fetched — still cold, just quietly. */
+  const startISO = windowStartISO && windowStartISO < days[0] ? windowStartISO : days[0];
+  const start = new Date(startISO + 'T12:00:00Z');
   const end = new Date(todayISO + 'T12:00:00Z');
 
-  let ctl = 0, atl = 0;
+  /* Warm start. The rider did not spring into existence on day one of the
+     window, so open the filter at the average daily load of its first four weeks
+     — rest days included — which is the best available estimate of the fitness
+     they arrived with. On constant load this is exact from the first day; on any
+     other it decays out of the answer within three time constants, which is what
+     FORM_DAYS is sized for. */
+  const seedEnd = new Date(start); seedEnd.setUTCDate(seedEnd.getUTCDate() + 28);
+  let seedSum = 0, seedDays = 0;
+  for (let d = new Date(start); d < seedEnd && d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    seedSum += load[d.toISOString().slice(0, 10)] || 0;
+    seedDays += 1;
+  }
+  const seed = seedDays ? seedSum / seedDays : 0;
+
+  let ctl = seed, atl = seed;
   const series = [];
   for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
     const iso = d.toISOString().slice(0, 10);
@@ -1098,8 +1264,12 @@ function trainingForm(rides, todayISO) {
   }
 
   const last = series[series.length - 1] || null;
-  const wkAgo = series[series.length - 8] || series[0];
-  const ramp = last && wkAgo ? +(last.ctl - wkAgo.ctl).toFixed(1) : 0;
+  /* Eight entries back is a week ago. Without enough series to reach it this
+     would silently compare against series[0] and report the whole run-up as one
+     week's build, which is the fabricated ramp all over again. */
+  const wkAgo = series.length >= 8 ? series[series.length - 8] : null;
+  const ramp = last && wkAgo ? +(last.ctl - wkAgo.ctl).toFixed(1) : null;
+  const settled = series.length >= FORM_MIN_DAYS;
 
   return {
     fitness_ctl: last ? last.ctl : 0,
@@ -1109,13 +1279,21 @@ function trainingForm(rides, todayISO) {
     what_the_numbers_mean: 'fitness is a 42-day average of training load, fatigue a 7-day one, form the gap. Positive form is fresh, deeply negative is buried.',
     ramp_guidance: 'a rise of more than about 5 to 7 a week is where injury and illness risk climbs; near zero means holding fitness rather than building it',
     days_counted: series.length,
+    /* Say so rather than let a short window read as a real reading. */
+    settled,
+    confidence_note: settled
+      ? `computed over ${series.length} days, enough for fitness to be a measurement`
+      : `only ${series.length} days of history: fitness is still settling, so treat these figures as provisional and do not advise on them`,
     recent: series.slice(-21),
   };
 }
 
 /* Weekly shape of the last N weeks. Every figure here is arithmetic; the model
    is handed the finished table and asked what it means. */
-function trainingStats(rides, plan, todayISO) {
+/* `rides` is the window the weekly table describes, which the caller chooses.
+   `formRides` is the fixed, longer window form is computed over, which it does
+   not — pass both so a ?weeks= value cannot move the fitness numbers. */
+function trainingStats(rides, plan, todayISO, formRides, formStartISO) {
   const wk = new Map();
   const key = (iso) => {
     const d = new Date(iso + 'T12:00:00Z');
@@ -1159,18 +1337,70 @@ function trainingStats(rides, plan, todayISO) {
     : null;
 
   /* Adherence: planned hours in the block against hours actually ridden, for
-     days that have already happened. */
-  const today = Number(todayISO.slice(8, 10));
-  let planH = 0, planDays = 0;
-  for (const t of (plan && plan.training) || []) {
-    if (t.d < today && (t.h || 0) > 0) { planH += t.h; planDays += 1; }
+     days that have already happened.
+
+     Both sides have to be cut from the SAME window, and that window belongs to
+     the block's month rather than to today's. Before this the planned side
+     counted `t.d < today` by day-of-month while the actual side was hardcoded to
+     August, so on 2026-09-05 the plan contributed days 1-4 (5.0 h) and the rides
+     contributed the whole of August (~38 h over ~25 days). ANALYST_SYSTEM keys a
+     rule on precisely that ratio — "he will be over-fed by the difference" — so
+     the model stated the inverse of the truth, in valid JSON, off arithmetic that
+     was internally consistent. Nothing downstream could have caught it. */
+  const ym = blockYM(plan);
+  const tYM = todayISO.slice(0, 7);
+  const lastD = ((plan && plan.training) || []).reduce((a, t) => Math.max(a, t.d || 0), 0);
+  /* The first day not yet ridden. Day lastD+1 may not be a real calendar date —
+     '2026-08-32' — but this is only ever string-compared against 'YYYY-MM-DD'
+     and sorts above every day in the block, which is exactly what is wanted once
+     the month is over. */
+  const cutISO = ym
+    ? (tYM > ym ? `${ym}-${String(lastD + 1).padStart(2, '0')}`
+      : tYM < ym ? `${ym}-01`
+      : todayISO)
+    : null;
+  const blockStart = ym ? `${ym}-01` : null;
+
+  /* The block is judged against the WIDEST set of rides available, never the
+     caller's table window. Filtering `rides` here was the original bug in a new
+     costume: after the month gate the planned side spanned the whole block while
+     the actual side still saw only the `?weeks=` slice, so on ?weeks=2 a rider who
+     had done exactly the plan read as having ridden a fortnight of it. Same
+     asymmetry, same steerable parameter, same rule in ANALYST_SYSTEM keyed to the
+     ratio — it just moved from a hardcoded month to an argument. */
+  const blockRides = formRides || rides;
+
+  /* Adherence needs a block to be adherent to. Without a parseable plan.block
+     there is no window, and reporting zero hours ridden against a full plan would
+     read as "rode nothing" rather than "cannot tell" — the model acts on the
+     first and asks about the second. So say nothing instead of saying zero. */
+  let adherence = {
+    block_planned_hours: null,
+    block_actual_hours: null,
+    block_planned_ride_days: null,
+    block_actual_ride_days: null,
+    longest_ride_kcal: null,
+    block_adherence_note: 'plan.block is missing or unparseable, so there is no block window to compare against - do not comment on adherence',
+  };
+  if (ym) {
+    const cutDay = Number(cutISO.slice(8, 10));
+    let planH = 0, planDays = 0;
+    for (const t of (plan && plan.training) || []) {
+      if (t.d < cutDay && (t.h || 0) > 0) { planH += t.h; planDays += 1; }
+    }
+    const inBlock = blockRides.filter((r) => r.date >= blockStart && r.date < cutISO);
+    adherence = {
+      block_planned_hours: Math.round(planH * 10) / 10,
+      block_actual_hours: Math.round((inBlock.reduce((a, r) => a + (r.secs || 0), 0) / 3600) * 10) / 10,
+      block_planned_ride_days: planDays,
+      block_actual_ride_days: new Set(inBlock.map((r) => r.date)).size,
+      longest_ride_kcal: inBlock.reduce((a, r) => Math.max(a, r.kcal || 0), 0),
+      block_window: `${blockStart} to ${cutISO} (exclusive), both sides cut from it`,
+    };
   }
-  const inBlock = rides.filter((r) => r.date >= '2026-08-01' && r.date < todayISO);
-  const realH = inBlock.reduce((a, r) => a + (r.secs || 0), 0) / 3600;
-  const realDays = new Set(inBlock.map((r) => r.date)).size;
 
   return {
-    form: trainingForm(rides, todayISO),
+    form: trainingForm(formRides || rides, todayISO, formStartISO),
     weeks,
     weeks_counted: weeks.length,
     current_week_partial: true,
@@ -1179,11 +1409,7 @@ function trainingStats(rides, plan, todayISO) {
     last_4_weeks_load: recent.reduce((a, w) => a + w.load, 0),
     efficiency_trend_pct: trend,
     efficiency_note: 'watts_per_bpm rising means more power at the same heart rate',
-    block_planned_hours: Math.round(planH * 10) / 10,
-    block_actual_hours: Math.round(realH * 10) / 10,
-    block_planned_ride_days: planDays,
-    block_actual_ride_days: realDays,
-    longest_ride_kcal: inBlock.reduce((a, r) => Math.max(a, r.kcal || 0), 0),
+    ...adherence,
   };
 }
 
@@ -1191,11 +1417,59 @@ function trainingStats(rides, plan, todayISO) {
    A meal plan must not stop working because a fitness site is having a bad
    day, so every failure here degrades to "no ride data" and the app carries on
    showing the plan. */
-async function fetchRides(env, oldest, newest) {
+/* Ten minutes for a range that is finished, one for a range that reaches up to
+   today. Rides do not change after the fact, so history can be held for as long
+   as you like — but "today" does change: a ride finishes, syncs to intervals.icu,
+   and he opens the app to look at it. A flat ten minutes would mean the ride he
+   just did is not there yet, which is worse than the traffic it saves. One minute
+   still collapses a burst of week-strip taps into a single upstream call.
+
+   "Reaches up to today" is judged with a day of slack in both directions, because
+   the dates come from the phone's local calendar and this comparison is in UTC. */
+const RIDES_TTL_DONE = 600;
+const RIDES_TTL_LIVE = 60;
+function ridesTTL(newest) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return newest >= d.toISOString().slice(0, 10) ? RIDES_TTL_LIVE : RIDES_TTL_DONE;
+}
+const ridesCacheKey = (oldest, newest) => new Request(`https://rides.local/${oldest}/${newest}`);
+
+/* Every call to intervals.icu goes through here, and every call is cached on the
+   date range. It used to be cached at exactly one call site — /rides — while the
+   comment on /ride and SECURITY.md both claimed the caching was general. It was
+   not: /ride's free path (no ?why) hit upstream on the owner's key once per
+   request, and the client short-circuits on a single day, so tapping between two
+   days on the week strip was one live authenticated call per tap, per phone, with
+   only the per-IP limiter in front of it.
+
+   Putting it here rather than at the routes covers the six-week comparison set
+   and the form windows too, and means the next endpoint that needs rides cannot
+   forget to do it. */
+async function fetchRides(env, oldest, newest, ctx) {
   if (!env.INTERVALS_KEY) return { ok: false, why: 'not linked' };
+  const key = ridesCacheKey(oldest, newest);
+  const cache = caches.default;
+  try {
+    const hit = await cache.match(key);
+    if (hit) return await hit.json();
+  } catch {
+    /* A cache miss must never be fatal — fall through to the network. */
+  }
   const athlete = env.INTERVALS_ATHLETE || '0'; // 0 means "whoever owns the key"
   const q = new URLSearchParams({ oldest, newest, fields: ICU_FIELDS });
   const auth = btoa(`API_KEY:${env.INTERVALS_KEY}`);
+  /* Only a good response is stored. Caching {ok:false} would pin a transient
+     upstream 429 in place for the whole TTL. */
+  const keep = (body) => {
+    if (!body.ok) return body;
+    const copy = new Response(JSON.stringify(body), {
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': `max-age=${ridesTTL(newest)}` },
+    });
+    const put = cache.put(key, copy);
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(put); else put.catch(() => {});
+    return body;
+  };
   try {
     const r = await fetch(`${ICU}/athlete/${encodeURIComponent(athlete)}/activities?${q}`, {
       headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
@@ -1206,8 +1480,19 @@ async function fetchRides(env, oldest, newest) {
     if (!r.ok) return { ok: false, why: `upstream ${r.status}` };
     const raw = await r.json();
     if (!Array.isArray(raw)) return { ok: false, why: 'unexpected response' };
-    const rides = raw.filter((a) => a && a.id).slice(0, 200).map(cleanRide);
-    return { ok: true, rides, fetched: new Date().toISOString() };
+    /* The cap is a sanity bound on a hostile or broken upstream, not a budget.
+       It used to be 200, which the 42-to-90-day windows never came near — but the
+       fitness window is FORM_DAYS now, and 180 days of two-a-day riding passes 200
+       easily. Truncating there would silently drop the OLDEST days (this file takes
+       intervals.icu's newest-first ordering as given), which is exactly the data
+       CTL is warmed from: fitness would read low again, by a different route.
+       Reported when it bites, so it can never be silent the way the old one was. */
+    const all = raw.filter((a) => a && a.id);
+    const rides = all.slice(0, MAX_RIDES).map(cleanRide);
+    if (all.length > MAX_RIDES) {
+      return keep({ ok: true, rides, fetched: new Date().toISOString(), truncated: all.length - MAX_RIDES });
+    }
+    return keep({ ok: true, rides, fetched: new Date().toISOString() });
   } catch {
     /* Timeout, DNS, TLS — all the same to the caller. */
     return { ok: false, why: 'unreachable' };
@@ -1276,29 +1561,23 @@ export default {
        access code like everything else — it is the same household — but the
        intervals.icu key itself stays in the Worker and is never returned.
 
-       Cached at the edge for ten minutes. Rides do not change after the fact,
-       and both phones polling `/rev` every four seconds must not turn into
-       traffic against someone else's API. */
+       The edge cache lives in fetchRides now. This route used to hold its own,
+       and served hits by rebuilding a Response from the stored copy — which
+       carried only Content-Type and `max-age=600`, so `no-store`, `nosniff` and
+       `no-referrer` were all dropped and the caching directive inverted. Every
+       call after the first inside the TTL wrote heart rate, power, load and ride
+       names to the phone's on-disk cache, and since `Vary` names only `Origin`,
+       `X-List-Key` was not in the cache key: the browser re-served that data for
+       the rest of the TTL even against a wrong access code. Going back through
+       json() for every response is the fix — one construction, one set of
+       headers, no second place to get it wrong. */
     if (path === '/rides' && request.method === 'GET') {
       const oldest = url.searchParams.get('oldest') || '';
       const newest = url.searchParams.get('newest') || '';
       if (!isDate(oldest) || !isDate(newest))
         return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
 
-      const key = new Request(`https://rides.local/${oldest}/${newest}`);
-      const cache = caches.default;
-      const hit = await cache.match(key);
-      if (hit) return new Response(hit.body, { status: 200, headers: { ...Object.fromEntries(hit.headers), ...corsHeaders(origin) } });
-
-      const body = await fetchRides(env, oldest, newest);
-      const res = json(body, 200, origin);
-      if (body.ok) {
-        const copy = new Response(JSON.stringify(body), {
-          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=600' },
-        });
-        ctx.waitUntil(cache.put(key, copy));
-      }
-      return res;
+      return json(await fetchRides(env, oldest, newest, ctx), 200, origin);
     }
 
     if (path === '/state' && request.method === 'GET') {
@@ -1321,18 +1600,26 @@ export default {
       const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
+      /* One window, FORM_DAYS long, so fitness here matches fitness everywhere
+         else. It is the same single upstream call either way — a wider date range,
+         not more requests. The six-week set below is sliced back out of it. */
       const from = new Date(date + 'T12:00:00Z');
-      from.setUTCDate(from.getUTCDate() - 42);
-      const hist = await fetchRides(env, from.toISOString().slice(0, 10), date);
+      from.setUTCDate(from.getUTCDate() - FORM_DAYS);
+      const formStart = from.toISOString().slice(0, 10);
+      const hist = await fetchRides(env, formStart, date, ctx);
       const state = await listStub(env).read();
       const rides = hist.ok ? hist.rides : [];
-      const today = coachFacts(state, rides.filter((r) => r.date === date), Number(date.slice(8, 10)), 23 * 60);
+      const recentFrom = new Date(date + 'T12:00:00Z');
+      recentFrom.setUTCDate(recentFrom.getUTCDate() - 42);
+      const recentISO = recentFrom.toISOString().slice(0, 10);
+      const recent = rides.filter((r) => r.date >= recentISO);
+      const today = coachFacts(state, rides.filter((r) => r.date === date), date, 23 * 60);
 
       const facts = {
         the_question: q,
         today: today,
-        fitness_and_form: trainingForm(rides, date),
-        recent_riding: trainingStats(rides, state.plan, date),
+        fitness_and_form: trainingForm(rides, date, formStart),
+        recent_riding: trainingStats(recent, state.plan, date, rides, formStart),
         /* Named plainly and flattened, because nested container names get cited
            back at the reader as though they were sources. */
         last_ten_rides: rides.slice(0, 10).map((r) => ({
@@ -1363,18 +1650,34 @@ export default {
       const nowMins = Number(t[1]) * 60 + Number(t[2]);
       if (!(nowMins >= 0 && nowMins < 1440)) return json({ ok: false, why: 'bad now' }, 400, origin);
 
+      /* Establish there is an answer BEFORE spending a slot on it. The month gate
+         made this 404 reachable, and behind spend() it meant that from 1 September
+         every Coach tap would burn one of the shared daily calls to be told there
+         was no plan. The check is a string compare against the stored plan — no
+         upstream call, no model. */
+      const state = await listStub(env).read();
+      const coachYM = blockYM(state.plan);
+      if (coachYM && date.slice(0, 7) !== coachYM) {
+        return json(
+          { ok: false, why: `no plan for ${date} - the plan covers ${(state.plan || {}).block}` },
+          404, origin
+        );
+      }
+
       const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
-      const state = await listStub(env).read();
-      const rideRes = await fetchRides(env, date, date);
-      const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], Number(date.slice(8, 10)), nowMins);
-      /* Six weeks of load, so advice about today knows whether he is buried or
-         fresh. Under-fuelling a deeply negative form is the expensive mistake. */
+      const rideRes = await fetchRides(env, date, date, ctx);
+      const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], date, nowMins);
+      /* Enough load behind it for fitness to have settled, so advice about today
+         knows whether he is buried or fresh. Under-fuelling a deeply negative form
+         is the expensive mistake — which is exactly why this window is FORM_DAYS
+         and not 90: a short one reports a rider as buried when they are level. */
       if (facts) {
-        const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - 90);
-        const hist = await fetchRides(env, back.toISOString().slice(0, 10), date);
-        if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date);
+        const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - FORM_DAYS);
+        const backISO = back.toISOString().slice(0, 10);
+        const hist = await fetchRides(env, backISO, date, ctx);
+        if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date, backISO);
       }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
 
@@ -1394,12 +1697,23 @@ export default {
       const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
-      const rideRes = await fetchRides(env, from.toISOString().slice(0, 10), to);
+      /* Fetch the fixed form window and slice the requested weeks out of it.
+         `weeks` is client-supplied, so before this it set the fitness window too:
+         ?weeks=2 moved the same rider from "Tired" to "Deep in it" and invented a
+         +7.8-a-week build. It now decides only which weeks the table lists. */
+      const formFrom = new Date(to + 'T12:00:00Z');
+      formFrom.setUTCDate(formFrom.getUTCDate() - FORM_DAYS);
+      const formStart = formFrom.toISOString().slice(0, 10);
+      const rideRes = await fetchRides(env, formStart, to, ctx);
       if (!rideRes.ok) return json({ ok: false, why: rideRes.why }, 200, origin);
-      if (!rideRes.rides.length) return json({ ok: false, why: 'no rides in that window' }, 200, origin);
 
+      const tableFrom = from.toISOString().slice(0, 10);
+      const tableRides = rideRes.rides.filter((r) => r.date >= tableFrom);
+      /* Still judged on the requested weeks, as before — a wider fetch should not
+         quietly turn "nothing ridden lately" into an analysis of last spring. */
+      if (!tableRides.length) return json({ ok: false, why: 'no rides in that window' }, 200, origin);
       const state = await listStub(env).read();
-      const stats = trainingStats(rideRes.rides, state.plan, to);
+      const stats = trainingStats(tableRides, state.plan, to, rideRes.rides, formStart);
       const out = await askModel(env, ANALYST_SYSTEM, ANALYST_SCHEMA, 'analysis', stats);
       return json({ ...out, stats, calls_today: budget.n }, 200, origin);
     }
@@ -1412,7 +1726,7 @@ export default {
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
       const want = url.searchParams.get('why') === '1';
 
-      const dayRes = await fetchRides(env, date, date);
+      const dayRes = await fetchRides(env, date, date, ctx);
       if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
       if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
@@ -1423,32 +1737,45 @@ export default {
       /* Six weeks of his own riding is the comparison set. */
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - 42);
-      const hist = await fetchRides(env, from.toISOString().slice(0, 10), date);
+      const hist = await fetchRides(env, from.toISOString().slice(0, 10), date, ctx);
       const state = await listStub(env).read();
+      /* Same month gate as coachFacts: a day-of-month lookup would otherwise
+         read September 3's ride against August 3's plan. No plan for the day is
+         fine here — the analysis just proceeds without one. */
+      const inBlockDay = blockYM(state.plan) === null || date.slice(0, 7) === blockYM(state.plan);
       const dayNum = Number(date.slice(8, 10));
-      const day = ((state.plan || {}).days || []).find((d) => d.d === dayNum);
-      const train = ((state.plan || {}).training || []).find((t) => t.d === dayNum);
+      const day = inBlockDay ? ((state.plan || {}).days || []).find((d) => d.d === dayNum) : undefined;
+      const train = inBlockDay ? ((state.plan || {}).training || []).find((t) => t.d === dayNum) : undefined;
 
       /* Longest ride of the day is the one worth reading; the 5-minute
          commutes either side of it are not the story. */
       const main = dayRes.rides.slice().sort((a, b) => b.secs - a.secs)[0];
-      const ctx = rideContext(
+      /* Named rideCtx, not ctx: `const ctx` here is block-scoped to the whole
+         `if (path === '/ride')` body, so it shadowed the execution context for
+         every line above it too — any ctx.waitUntil() in this branch threw
+         "Cannot access 'ctx' before initialization" on every request. The wire
+         field below stays `context`, which is what the app reads. */
+      const rideCtx = rideContext(
         main, hist.ok ? hist.rides : dayRes.rides,
         day ? { ...day, h: (train && train.h) || day.h } : null,
         (day && day.meals) || [], state.log || {}, date
       );
-      if (train && train.bk) ctx.planned_carb_grams_on_the_bike = train.bk.cb || 0;
-      if (dayRes.rides.length > 1) ctx.other_rides_that_day = dayRes.rides.filter((r) => r !== main).length;
+      if (train && train.bk) rideCtx.planned_carb_grams_on_the_bike = train.bk.cb || 0;
+      if (dayRes.rides.length > 1) rideCtx.other_rides_that_day = dayRes.rides.filter((r) => r !== main).length;
 
-      const out = await askModel(env, RIDE_SYSTEM, ANALYST_SCHEMA, 'ride_read', ctx);
-      return json({ ...out, rides: dayRes.rides, context: ctx, calls_today: budget.n }, 200, origin);
+      const out = await askModel(env, RIDE_SYSTEM, ANALYST_SCHEMA, 'ride_read', rideCtx);
+      return json({ ...out, rides: dayRes.rides, context: rideCtx, calls_today: budget.n }, 200, origin);
     }
 
     if (path === '/state' && request.method === 'PUT') {
       const r = await readJson(request);
       if (r.tooLarge) return json({ error: 'payload too large' }, 413, origin);
       if (r.bad) return json({ error: 'bad json' }, 400, origin);
-      return json(await listStub(env).merge(r.body), 200, origin);
+      const merged = await listStub(env).merge(r.body);
+      /* Nothing was stored. 413 rather than 200 so the client keeps its dirty
+         flag instead of adopting a state the merge declined to write. */
+      if (merged.refused) return json({ error: merged.refused }, 413, origin);
+      return json(merged, 200, origin);
     }
 
     if (path === '/undo' && request.method === 'PUT') {
@@ -1469,6 +1796,17 @@ export default {
          phone that synced it, and the only way back would be /undo. */
       if (!r.body.plan || !Array.isArray(r.body.plan.weeks) || !r.body.plan.weeks.length)
         return json({ error: 'expected { plan: { weeks: [ ...at least one ] } }' }, 400, origin);
+      /* Reject an unparseable block label here, because every month gate reads it
+         and every one of them fails OPEN: with no month to compare against, a
+         September date silently aliases onto the plan's day-of-month again — the
+         defect those gates exist to stop, reintroduced by a typo. Failing at the
+         write is the only place it can be refused without breaking the coach for
+         whoever is holding the phone. */
+      if (!blockYM(r.body.plan))
+        return json(
+          { error: `plan.block must name a month and year, like "August 2026" - got ${JSON.stringify(r.body.plan.block ?? null)}` },
+          400, origin
+        );
       return json(await listStub(env).setPlan(r.body.plan, r.body.resetTicks), 200, origin);
     }
 

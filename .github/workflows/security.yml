@@ -27,6 +27,11 @@ jobs:
         run: |
           node tools/build-csp.mjs --check
           node tools/scan.mjs
+      # Behavioural, not textual: scan.mjs checks the controls are still written a
+      # certain way, these check they still work. Includes a suite that mutates a
+      # copy of the repo to prove scan.mjs actually fails when a defect returns.
+      - name: behavioural tests
+        run: node tools/tests/run.mjs
 
   codeql:
     name: codeql
