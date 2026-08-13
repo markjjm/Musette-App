@@ -730,11 +730,21 @@ footer {
 .rstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; margin-bottom: 4px; }
 .rst > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .rst > i { display: block; font-style: normal; font-size: 9px; letter-spacing: .04em; color: var(--gravel); line-height: 1.3; margin-top: 1px; }
+/* The technical term sits under the plain word, small and grey: readable if you
+   want it, ignorable if you do not, and it teaches the vocabulary either way. */
+.fcard { margin-bottom: 8px; }
+.frow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 14px 14px; text-align: center; }
+.frow > div { padding: 9px 4px; border-radius: 10px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
+.frow b { display: block; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.frow i { display: block; font-style: normal; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+.frow i > u { display: block; text-decoration: none; font-size: 9px; letter-spacing: .06em; color: var(--gravel); }
+.wtrend > b:first-child { color: var(--ink); }
+
 .wks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
 .wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
 .wk > i { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: var(--gravel); }
 .wk > b { display: block; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.wk > span { display: block; font-size: 8px; color: var(--ink-soft); line-height: 1.3; }
+.wk > span { display: block; font-size: 8.5px; color: var(--ink-soft); line-height: 1.35; }
 .wk.part { opacity: .5; }
 .wtrend { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 4px; }
 .wtrend b.dn { color: #B4531F; } .wtrend b.up { color: #2F6B3A; }
@@ -2500,16 +2510,43 @@ async function runAnalyze(){
   look.busy = false; render();
 }
 
+/* Numbers like "form -7" mean nothing to anyone who has not read a coaching
+   book. The plain reading leads and the figure follows, so the term is taught
+   rather than assumed. Nothing is removed — this is a layer, not a dilution. */
+function formWords(f){
+  if (!f) return null;
+  const t = Number(f.form_tsb) || 0, r = Number(f.ctl_change_this_week) || 0;
+  const how = t > 15 ? ['Very fresh', 'rested, maybe under-trained']
+            : t > 5  ? ['Fresh', 'ready for something hard']
+            : t > -10 ? ['Steady', 'training normally']
+            : t > -25 ? ['Tired', 'carrying real fatigue — normal mid-block']
+            : ['Deep in it', 'a lot of work to absorb; do not cut food now'];
+  const dir = r > 3 ? 'building fitness' : r < -3 ? 'losing fitness' : 'holding fitness';
+  return { title: how[0], why: how[1], dir, tsb: t, ctl: Number(f.fitness_ctl) || 0, ramp: r };
+}
+
+function formCard(){
+  const f = formWords((look.stats || {}).form);
+  if (!f) return '';
+  const k = f.tsb > 5 ? 'z1' : f.tsb > -10 ? 'z2' : f.tsb > -25 ? 'z3' : 'z4';
+  return `<div class="hxcode ${k} fcard"><b>${esc(f.title)}</b><span>${esc(f.why)} &middot; ${esc(f.dir)}</span></div>`
+    + `<div class="frow">`
+    + `<div><b>${Math.round(f.ctl)}</b><i>fitness<u>CTL</u></i></div>`
+    + `<div><b>${f.tsb > 0 ? '+' : ''}${Math.round(f.tsb)}</b><i>freshness<u>TSB</u></i></div>`
+    + `<div><b>${f.ramp > 0 ? '+' : ''}${f.ramp.toFixed(1)}</b><i>this week<u>CTL/wk</u></i></div>`
+    + `</div>`;
+}
+
 function analysisCard(){
-  let out = `<div class="sech">How the training is going</div><div class="card coach">`;
+  let out = `<div class="sech">How the training is going</div>` + formCard() + `<div class="card coach">`;
   const st = look.stats;
   if (st && st.weeks && st.weeks.length){
     out += `<div class="wks">` + st.weeks.slice(-6).map(w =>
       `<div class="wk${w.partial ? ' part' : ''}"><i>${esc(w.week.slice(5))}</i>`
-      + `<b>${w.hours}h</b><span>${w.ride_days}d &middot; ${w.watts_per_bpm || '&mdash;'} W/bpm</span></div>`).join('')
+      + `<b>${w.hours}h</b><span>${w.ride_days} days<br>${w.watts_per_bpm || '&mdash;'} W/bpm</span></div>`).join('')
       + `</div>`;
     if (st.efficiency_trend_pct !== null && st.efficiency_trend_pct !== undefined)
-      out += `<p class="wtrend">Watts per heartbeat over the last complete weeks: <b class="${st.efficiency_trend_pct < 0 ? 'dn' : 'up'}">${st.efficiency_trend_pct > 0 ? '+' : ''}${st.efficiency_trend_pct}%</b>. More power at the same heart rate is fitness; the week in progress is left out because it is not finished.</p>`;
+      out += `<p class="wtrend"><b>Efficiency ${st.efficiency_trend_pct > 0 ? 'up' : 'down'} <b class="${st.efficiency_trend_pct < 0 ? 'dn' : 'up'}">${st.efficiency_trend_pct > 0 ? '+' : ''}${st.efficiency_trend_pct}%</b></b> &mdash; that is watts per heartbeat, how much power you make for the same effort. Up is fitter. The week in progress is left out because it is not finished.</p>`;
   }
   out += `<button id="look_go" class="cbtn"${look.busy ? ' disabled' : ''}>${look.busy ? 'Reading the data&hellip;' : (look.data ? 'Look again' : 'Analyse my training')}</button>`;
   if (look.err) out += `<p class="cerr">${esc(look.err)}</p>`;
@@ -2726,7 +2763,7 @@ function fuelDay(){
   const code = dayZone(day, ride);
   return weekStrip() + dayHead(day, tr, sum)
     + `<div class="hxcode ${code.k}"><b>${esc(code.name)}</b><span>${esc(code.why)}</span>`
-    + `<i>${sum.cb}<u>g carb</u></i></div>`
+    + `<i>${sum.cb}<u>g carbs today</u></i></div>`
     + macroRow(day, sum, eaten)
     + `<div class="hxtl">`
     + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal, code)).join('')
