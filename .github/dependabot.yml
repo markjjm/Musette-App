@@ -10,7 +10,20 @@ updates:
       interval: weekly
       day: monday
     labels: [dependencies, ci]
-    open-pull-requests-limit: 5
+    # Deliberately higher than the npm limit, and deliberately WITHOUT the
+    # majors-ignore below.
+    #
+    # Action majors are mostly runner bumps and they are not optional: an action
+    # major is how a retirement arrives. codeql-action v3 -> v4 is the case that
+    # matters here, because security.yml makes codeql a BLOCKING check, so losing
+    # it deadlocks every merge including dependabot's own.
+    #
+    # But majors are not auto-merged, so they accumulate, and a full queue stops
+    # dependabot opening anything else in this ecosystem - including a security
+    # bump. Five majors sat here from 27 July 2026 against a limit of 5, which
+    # meant no Action update of any kind could be proposed. The headroom is so a
+    # stale major cannot block an urgent one; it is not permission to leave them.
+    open-pull-requests-limit: 10
 
   - package-ecosystem: npm
     directory: '/'

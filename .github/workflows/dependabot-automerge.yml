@@ -1,7 +1,13 @@
 name: dependabot auto-merge
 
 # Patch and minor updates merge themselves once the security workflow is green.
-# Majors are excluded in dependabot.yml and never reach this path.
+#
+# Majors DO reach this path, and the "leave majors for review" step below is the
+# only thing that handles them. The npm ecosystem ignores majors in
+# dependabot.yml; github-actions deliberately does not, because an action major
+# is how a retirement arrives. This comment used to claim majors "never reach
+# this path", which was false for actions and is why five of them sat open from
+# 27 July 2026 being told to read the wrangler changelog.
 #
 # Requires, once, in repo Settings:
 #   - General > "Allow auto-merge" enabled
@@ -33,9 +39,21 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Named for what it is: these do not merge themselves and will sit here
+      # until someone looks. A full queue blocks every other update in the same
+      # ecosystem, so leaving one open indefinitely has a cost beyond itself.
       - name: leave majors for review
         if: steps.meta.outputs.update-type == 'version-update:semver-major'
-        run: gh pr comment "$PR_URL" --body "Major update - not auto-merged. Review wrangler changelog before merging."
+        # `>-` and not `|`: a multi-line block scalar bakes its own indentation
+        # into the comment body, and a bare scalar breaks on the "changelog:"
+        # colon, which YAML reads as a nested mapping.
+        run: >-
+          gh pr comment "$PR_URL" --body "Major update of \`$DEP\` - not
+          auto-merged, and it blocks this ecosystem's dependabot queue until
+          merged or closed. Check that dependency's own changelog - an action
+          major is usually a runner bump, an npm major here can change
+          wrangler's config schema or deploy semantics."
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
+          DEP: ${{ steps.meta.outputs.dependency-names }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
