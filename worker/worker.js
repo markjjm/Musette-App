@@ -130,12 +130,29 @@ function cleanPantry(v) {
    than to a week id, and so a key can never collide with a tick key, which is
    'weekId|itemname'. Value is how much of the meal was eaten: 0, a half, or
    all of it. Nothing finer, because nobody is weighing their dinner. */
-const ATE = new Set([0, 0.5, 1]);
+const ATE = new Set([0, 0.25, 0.5, 0.75, 1]);
 function cleanLog(v) {
   if (!v || typeof v !== 'object' || typeof v.t !== 'number' || !Number.isFinite(v.t)) return null;
   const n = Number(v.v);
   if (!ATE.has(n)) return null;
-  return { v: n, t: v.t };
+  const out = { v: n, t: v.t };
+  /* What was eaten INSTEAD of what was planned. The plan is a suggestion and
+     some evenings it loses; recording the substitution is more useful than
+     recording a zero, because a zero says "skipped" when the truth is "ate
+     something else".
+
+     Whitelisted like everything else — and note the failure mode that pattern
+     already caused once here: a validator that lists its fields will silently
+     delete any field a later feature adds. If this grows, grow this too. */
+  if (v.sw && typeof v.sw === 'object') {
+    out.sw = {
+      n:  clamp(v.sw.n),
+      kc: num(v.sw.kc, 0, 5000, 0),
+      cb: num(v.sw.cb, 0, 1000, 0),
+    };
+    if (!out.sw.n) delete out.sw;
+  }
+  return out;
 }
 
 /* A dinner someone built themselves out of the food table. Ingredients are

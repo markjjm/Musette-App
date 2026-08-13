@@ -723,7 +723,50 @@ footer {
 .hxmk { width: 22px; height: 22px; border-radius: 50%; background: var(--card); box-shadow: inset 0 0 0 2px var(--rule); }
 /* Eaten is INK, not a hue — it must never compete with the carbohydrate rail. */
 .hxc.ate > .hxtick > .hxmk { background: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.hxc.half > .hxtick > .hxmk { background: linear-gradient(90deg, var(--ink) 0 50%, transparent 50% 100%); box-shadow: inset 0 0 0 2px var(--ink); }
+/* A part-eaten meal says WHICH part. The ring fills clockwise for a glance and
+   carries the fraction for certainty, because a quarter and a half read alike
+   at arm's length on a phone. */
+.hxc.half > .hxtick > .hxmk {
+  box-shadow: inset 0 0 0 2px var(--ink);
+  font-size: 11px; font-weight: 800; color: var(--ink);
+  display: flex; align-items: center; justify-content: center; line-height: 1;
+}
+.hxmk.q025 { background: conic-gradient(var(--ink) 0 25%, var(--card) 25% 100%); }
+.hxmk.q05  { background: conic-gradient(var(--ink) 0 50%, var(--card) 50% 100%); }
+.hxmk.q075 { background: conic-gradient(var(--ink) 0 75%, var(--card) 75% 100%); }
+/* The glyph sits on top of a filled wedge, so it needs its own ground. */
+.hxc.half > .hxtick > .hxmk { text-shadow: 0 0 3px var(--card), 0 0 3px var(--card), 0 0 2px var(--card); }
+
+/* Second target on the card: I ate something else. Sits under the tick, same
+   44px column, so the thumb finds it without hunting. */
+.hxsw {
+  position: absolute; top: 42px; right: 2px; width: 44px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font-size: 15px; line-height: 1; color: var(--gravel);
+}
+.hxsw:hover { color: var(--ink-soft); }
+.hxswap {
+  display: block; margin-top: 3px; font-size: 11.5px; font-weight: 650;
+  color: var(--mark-ink); font-variant-numeric: tabular-nums;
+}
+/* A swapped meal is not a skipped meal, so it must not read as struck through. */
+.hxc.ate:has(.hxswap) > .hxhd > .hxt, .hxc.half:has(.hxswap) > .hxhd > .hxt { text-decoration: none; opacity: .6; }
+
+/* the swap sheet */
+.swhits { list-style: none; margin: 8px 0 0; padding: 0; max-height: 42vh; overflow-y: auto; }
+.swhits > li + li { border-top: 1px solid var(--rule); }
+.swhits > li > button {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  border: 0; background: none; padding: 9px 2px; cursor: pointer; font: inherit;
+}
+.swhits > li > button > span { font-size: 13.5px; font-weight: 650; color: var(--ink); }
+.swhits > li > button > i { font-style: normal; font-size: 11.5px; color: var(--gravel); font-variant-numeric: tabular-nums; }
+.swhits > li > button:hover { background: var(--card-sunk); }
+.swnone { padding: 10px 2px; font-size: 12.5px; color: var(--gravel); }
+.swman { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.swnum { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+.swnum > input { margin: 0; }
 
 .hxride { padding: 10px 12px; border-radius: 11px; background: var(--pen); color: var(--pen-ink); }
 .hxride > .hxt { display: block; font-size: 14px; font-weight: 700; }
@@ -1217,6 +1260,23 @@ footer {
     <button class="go" id="ai_go">Add Item</button>
   </div>
   <p class="small">Added items sync to every phone on the same key, so whoever is at the store sees them instantly.</p>
+</div></div>
+
+<div class="sheet" id="swapsheet"><div class="panel">
+  <h2>I ate something else</h2>
+  <p class="small" id="sw_for"></p>
+  <input id="sw_q" placeholder="Search a food, or type what you ate" autocapitalize="sentences" autocomplete="off">
+  <ul class="swhits" id="sw_hits"></ul>
+  <div class="swman">
+    <label>Not on the list &mdash; your own numbers</label>
+    <div class="swnum">
+      <input id="sw_kc" type="text" inputmode="numeric" placeholder="kcal">
+      <input id="sw_cb" type="text" inputmode="numeric" placeholder="g carb">
+      <button class="go" id="sw_go">Log it</button>
+    </div>
+  </div>
+  <div class="rowbtn"><button class="cancel" data-close>Cancel</button></div>
+  <p class="small">This replaces the meal's numbers for the day. The plan stays as it was &mdash; next week is still next week.</p>
 </div></div>
 
 <div class="sheet" id="setsheet"><div class="panel">
@@ -2291,7 +2351,7 @@ function carbAdherence(iso, day){
     all += cb;
     if (Object.prototype.hasOwnProperty.call(mealLog, logKey(iso, m.t))){
       any = true;
-      done += cb * ateOf(iso, m.t);
+      done += ateGot(iso, m.t, m).cb;
     }
   });
   if (!any || !all) return null;
@@ -2710,8 +2770,74 @@ const clock = (mm) => String(mm/60|0).padStart(2,'0') + ':' + String(mm%60).padS
 const logKey = (d, t) => d + '|' + t;
 const ateOf  = (d, t) => { const e = mealLog[logKey(d,t)]; return e ? Number(e.v) || 0 : 0; };
 
+const FRAC = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
+/* Paired with FRAC so the class name is a lookup into a fixed map rather than
+   arithmetic on a value stringified into markup. Anything off the grid falls
+   through to empty on both, which is why neither can render "undefined". */
+const QCLS = { 0.25: 'q025', 0.5: 'q05', 0.75: 'q075' };
+
+/* What was actually eaten, which is not always what was planned. A swap
+   replaces the meal's numbers outright; the fraction then applies to the swap.
+   Every consumer of the log goes through here so the four counters, the day's
+   carb adherence and the card all agree on one answer. */
+function ateGot(d, t, m){
+  const e = mealLog[logKey(d, t)];
+  const f = e ? Number(e.v) || 0 : 0;
+  const src = (e && e.sw) || m || {};
+  return { f, kc: (Number(src.kc) || 0) * f, cb: (Number(src.cb) || 0) * f };
+}
+
+let swapFor = null;
+
+function logSwap(sw){
+  if (!swapFor) return;
+  /* Eaten in full by default — you can dial it back to a half afterwards, and
+     the fraction then applies to what you actually ate. */
+  mealLog[logKey(swapFor.day, swapFor.t)] = { v: 1, t: Date.now(), sw };
+  dirty = true; persist(); queue(); triggerHaptic();
+  document.querySelectorAll('.sheet').forEach(x => x.classList.remove('open'));
+  swapFor = null; render();
+}
+
+/* Search finds three kinds of thing: dishes you built, foods from the table,
+   and whatever you type. All three end up as the same three numbers. */
+function paintSwap(){
+  if (!swapFor) return;
+  const lbl = $('#sw_for');
+  if (lbl){
+    const d = new Date(swapFor.day + 'T12:00:00');
+    const nice = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
+               + ' ' + d.getDate();
+    lbl.textContent = 'Replacing the ' + swapFor.t + ' meal on ' + nice + '.';
+  }
+  const box = $('#sw_hits'); if (!box) return;
+  const q = String(swapFor.q || '').trim().toLowerCase();
+  let out = '';
+  if (q.length >= 2){
+    Object.values(dishes).filter(d => String(d.name || '').toLowerCase().indexOf(q) >= 0)
+      .slice(0, 4).forEach(d => {
+        const mm = dishMacros(d.items);
+        out += swRow(d.name, Math.round(mm.kc), Math.round(mm.c), 'your dish');
+      });
+    foodSearch(q).slice(0, 8).forEach(f => f.slice(2).slice(0, 2).forEach(u => {
+      out += swRow(foodCase(f[0]), u[2], u[3], 'per ' + u[0]);
+    }));
+  }
+  box.innerHTML = out || (q.length >= 2
+    ? '<li class="swnone">Nothing matched &mdash; put your own numbers in below.</li>' : '');
+}
+
+function swRow(n, kc, cb, note){
+  const j = JSON.stringify({ n: String(n).slice(0, 80), kc: Math.round(kc), cb: Math.round(cb) });
+  return `<li><button data-swpick='${esc(j)}'><span>${esc(n)}</span>`
+       + `<i>${Math.round(kc)} kcal &middot; ${Math.round(cb)} g carb &middot; ${esc(note)}</i></button></li>`;
+}
+
 function setAte(d, t, v){
-  mealLog[logKey(d,t)] = { v, t: Date.now() };
+  const prev = mealLog[logKey(d,t)] || {};
+  /* Dialling a swapped meal down to a half is still that meal — keep the swap.
+     Dialling it to zero is "I didn't eat it after all", so the swap goes. */
+  mealLog[logKey(d,t)] = v > 0 && prev.sw ? { v, t: Date.now(), sw: prev.sw } : { v, t: Date.now() };
   dirty = true; persist(); queue(); triggerHaptic(); render();
 }
 
@@ -2915,23 +3041,28 @@ function foodCase(n){
 
 function mealRow(m, code){
   const f   = ateOf(selDay, m.t);
-  const st  = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
+  const st  = f === 1 ? ' ate' : f > 0 ? ' half' : '';
   const pct = m.kc ? Math.round(400 * (Number(m.cb) || 0) / m.kc) : 0;
   /* These were bare integers under a header reading "533 kcal · 100 g carb", so
      the column read as grams. They are calories. Said once, in a heading. */
   const items = combineMealItems(m.i || []).map(it =>
       `<li><i>${Number(it.c) || 0}</i><span>${esc(foodCase(it.n))}</span></li>`).join('');
-  const said = f === 1 ? 'eaten' : f === 0.5 ? 'half eaten' : 'not eaten';
+  const said = f === 1 ? 'eaten' : FRAC[f] ? FRAC[f] + ' eaten' : f > 0 ? 'part eaten' : 'not eaten';
+  const swap = (mealLog[logKey(selDay, m.t)] || {}).sw;
   return `<div class="hxr"><time>${clock(mins(m.t))}</time>`
     + `<div class="hxc ${code.k}${st}">`
       + `<div class="hxhd"><span class="hxt">${esc(m.l)}</span>`
-      + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span></div>`
+      + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span>`
+      + (swap ? `<span class="hxswap">ate instead: ${esc(swap.n)} &middot; ${Math.round(swap.kc)} kcal</span>` : '')
+      + `</div>`
       + (items ? `<ul class="hxi"><li class="hxih"><i>kcal</i><span>what is in it</span></li>${items}</ul>` : '')
       /* The day travels on the button, not in a global: a tap must log against
          its own card's date even if the strip moves underneath it. */
       + `<button class="hxtick" data-log="${esc(m.t)}" data-log-day="${esc(selDay)}"`
       + ` aria-pressed="${f > 0 ? 'true' : 'false'}" aria-label="${esc(m.l)}, ${said}">`
-      + `<span class="hxmk"></span></button>`
+      + `<span class="hxmk ${QCLS[f] || ''}">${FRAC[f] || ''}</span></button>`
+      + `<button class="hxsw" data-swap="${esc(m.t)}" data-swap-day="${esc(selDay)}"`
+      + ` aria-label="I ate something else">&#8646;</button>`
     + `</div></div>`;
 }
 
@@ -3000,8 +3131,8 @@ function fuelDay(){
   const sum = day.meals.reduce((a, m) =>
     ({ kc: a.kc + (Number(m.kc) || 0), cb: a.cb + (Number(m.cb) || 0) }), { kc: 0, cb: 0 });
   const eaten = day.meals.reduce((a, m) => {
-    const f = ateOf(selDay, m.t);
-    return { kc: a.kc + (Number(m.kc) || 0) * f, cb: a.cb + (Number(m.cb) || 0) * f };
+    const g = ateGot(selDay, m.t, m);
+    return { kc: a.kc + g.kc, cb: a.cb + g.cb };
   }, { kc: 0, cb: 0 });
 
   const rows = day.meals.map(m => ({ at: mins(m.t), meal: m }));
@@ -3435,10 +3566,35 @@ document.addEventListener('click', e => {
   if (lg){
     /* The card's own day, never the strip's — they can differ mid-render. */
     const d = lg.dataset.logDay || selDay;
-    const cur = ateOf(d, lg.dataset.log);
-    setAte(d, lg.dataset.log, cur === 0 ? 1 : cur === 1 ? 0.5 : 0);
+    /* Ate it all is one tap, because that is the common case. Quarters come
+       after, counting down, so nobody has to walk up through them to say yes. */
+    const NEXT = { 0: 1, 1: 0.75, 0.75: 0.5, 0.5: 0.25, 0.25: 0 };
+    setAte(d, lg.dataset.log, NEXT[ateOf(d, lg.dataset.log)] ?? 0);
     return;
   }
+
+  /* Ate something else. The plan is a suggestion and some evenings it loses. */
+  const sw = e.target.closest('[data-swap]');
+  if (sw){
+    swapFor = { day: sw.dataset.swapDay || selDay, t: sw.dataset.swap, q: '' };
+    /* The sheet lives in the document, not in a render, so its fields survive
+       being closed. Clear them, or the next meal opens on the last one's search. */
+    ['#sw_q', '#sw_kc', '#sw_cb'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+    $('#swapsheet').classList.add('open');
+    setTimeout(() => { try { $('#sw_q').focus(); } catch(_){} }, 150);
+    paintSwap(); return;
+  }
+  if (e.target.id === 'sw_go' && swapFor){
+    const n = String(($('#sw_q') || {}).value || '').trim();
+    if (!n) { $('#sw_q').focus(); return; }
+    /* Bounded here as well as in the Worker. A typo in a number field should
+       land as a bad guess, not as a day with 90,000 calories in it. */
+    const cap = (el, hi) => Math.max(0, Math.min(hi, Math.round(Number((el || {}).value) || 0)));
+    logSwap({ n: n.slice(0, 80), kc: cap($('#sw_kc'), 5000), cb: cap($('#sw_cb'), 1000) });
+    return;
+  }
+  const pick = e.target.closest('[data-swpick]');
+  if (pick && swapFor){ logSwap(JSON.parse(pick.dataset.swpick)); return; }
 
   const sv = e.target.closest('[data-sv]');
   if (sv){ shopView = sv.dataset.sv; LS.set('v2.shopView', shopView); render(); return; }
@@ -3562,6 +3718,7 @@ document.addEventListener('input', e => {
     }
   }
   if (e.target.id === 'bname' && build) build.name = e.target.value;
+  if (e.target.id === 'sw_q' && swapFor){ swapFor.q = e.target.value; paintSwap(); }
 });
 
 document.addEventListener('visibilitychange', () => {
