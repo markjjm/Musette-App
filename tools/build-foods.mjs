@@ -213,6 +213,7 @@ const T = [
   ['Barley, pearled, dry',                 352, 77.7, 9.9, 1.2, 15.6, [['cup', 200], ['oz', OZ]], 'grain'],
   ['Farro, dry',                           340, 71.0, 13.0, 2.0, 10.0, [['cup', 190], ['oz', OZ]], 'grain'],
   ['Grits, dry',                           371, 79.6, 8.8, 1.2, 4.4, [['cup', 156], ['oz', OZ]], 'grain'],
+  ['Honey Bunches of Oats with almonds', 484, 93.5, 9.7, 11.3, 6.5, [['cup', 41], ['serving', 31]], 'grain'],
   ['Cereal, bran flakes',                  330, 80.0, 10.0, 2.0, 18.0, [['cup', 40]], 'grain'],
   ['Cereal, granola',                      471, 64.0, 10.0, 20.0, 7.0, [['cup', 122], ['oz', OZ]], 'grain'],
   ['Cereal, corn flakes',                  357, 84.0, 7.5, 0.4, 3.0, [['cup', 28]], 'grain'],

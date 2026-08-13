@@ -2,7 +2,7 @@
  "version": 1,
  "built": "deterministic — regenerate with node tools/build-foods.mjs",
  "note": "Standard reference values for raw or as-sold food, per 100 g, with common household units derived from those figures. Good enough to plan from; not a measurement of the specific item in your fridge.",
- "count": 237,
+ "count": 238,
  "foods": [
   {
    "id": "alfredo-sauce",
@@ -3688,6 +3688,39 @@
      "p": 0,
      "f": 0,
      "fib": 0
+    }
+   ]
+  },
+  {
+   "id": "honey-bunches-of-oats-with-almonds",
+   "n": "Honey Bunches of Oats with almonds",
+   "tag": "grain",
+   "per100": {
+    "kc": 484,
+    "c": 93.5,
+    "p": 9.7,
+    "f": 11.3,
+    "fib": 6.5,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "cup",
+     "g": 41,
+     "kc": 198,
+     "c": 38.3,
+     "p": 4,
+     "f": 4.6,
+     "fib": 2.7
+    },
+    {
+     "u": "serving",
+     "g": 31,
+     "kc": 150,
+     "c": 29,
+     "p": 3,
+     "f": 3.5,
+     "fib": 2
     }
    ]
   },
