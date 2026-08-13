@@ -785,6 +785,8 @@ footer {
 }
 .swch > button.on { color: var(--ink); border-bottom-color: var(--pen-text); }
 
+.hxih { color: var(--gravel); font-size: 9.5px !important; letter-spacing: .06em; text-transform: uppercase; border-bottom: 1px solid var(--rule); padding-bottom: 3px !important; margin-bottom: 2px; }
+.hxcode.guess { background-image: repeating-linear-gradient(135deg, rgba(128,128,128,.10) 0 5px, transparent 5px 10px); }
 .hxnote { margin: 10px 16px 2px; font-size: 11px; color: var(--gravel); line-height: 1.45; }
 
 /* Today's card: planned above ridden, and the difference between them. */
@@ -1951,7 +1953,7 @@ function builder(){
           + `<span>${esc(it.q)} ${esc(it.u)} &middot; ${esc(it.f)}</span>`
           + `<i>${u ? Math.round(u[2] * (Number(it.q)||0)) : 0}</i></li>`;
       }).join('') + `</ul>` : `<p class="bhint">Search a food below and tap it to add.</p>`)
-    + `<input id="bq" class="binp" type="search" placeholder="Search 116 foods&hellip;" value="${esc(fq)}">`
+    + `<input id="bq" class="binp" type="search" placeholder="Search ${FOODS.length} foods&hellip;" value="${esc(fq)}">`
     + (hits.length ? `<ul class="bhits">` + hits.map(f =>
         f.slice(2).map(u => `<li><button data-badd="${esc(f[0])}" data-bu="${esc(u[0])}">`
           + `<span>${esc(f[0])}</span><i>per ${esc(u[0])} &middot; ${u[2]} kcal</i></button></li>`).join('')
@@ -2692,18 +2694,31 @@ function macroRow(day, sum, eaten){
     ).join('') + `</div>`;
 }
 
+/* BUNDLED carries USDA descriptors verbatim, so every food shouted in capitals.
+   Lower-case the food and keep the leading quantity as written. */
+function foodCase(n){
+  const s = String(n || '');
+  const m = /^([\d/.\s]*[a-zA-Z]*\s)?(.*)$/.exec(s);
+  if (!m || !m[2]) return s;
+  const body = m[2];
+  const low = body === body.toUpperCase() ? body.toLowerCase() : body;
+  return (m[1] || '') + low.charAt(0).toUpperCase() + low.slice(1);
+}
+
 function mealRow(m, code){
   const f   = ateOf(selDay, m.t);
   const st  = f === 1 ? ' ate' : f === 0.5 ? ' half' : '';
   const pct = m.kc ? Math.round(400 * (Number(m.cb) || 0) / m.kc) : 0;
+  /* These were bare integers under a header reading "533 kcal · 100 g carb", so
+     the column read as grams. They are calories. Said once, in a heading. */
   const items = combineMealItems(m.i || []).map(it =>
-      `<li><i>${Number(it.c) || 0}</i><span>${esc(it.n)}</span></li>`).join('');
+      `<li><i>${Number(it.c) || 0}</i><span>${esc(foodCase(it.n))}</span></li>`).join('');
   const said = f === 1 ? 'eaten' : f === 0.5 ? 'half eaten' : 'not eaten';
   return `<div class="hxr"><time>${clock(mins(m.t))}</time>`
     + `<div class="hxc ${code.k}${st}">`
       + `<div class="hxhd"><span class="hxt">${esc(m.l)}</span>`
       + `<span class="hxs">${Number(m.kc) || 0} kcal &middot; ${Number(m.cb) || 0} g carb &middot; ${pct}% carb</span></div>`
-      + (items ? `<ul class="hxi">${items}</ul>` : '')
+      + (items ? `<ul class="hxi"><li class="hxih"><i>kcal</i><span>what is in it</span></li>${items}</ul>` : '')
       /* The day travels on the button, not in a global: a tap must log against
          its own card's date even if the strip moves underneath it. */
       + `<button class="hxtick" data-log="${esc(m.t)}" data-log-day="${esc(selDay)}"`
@@ -2722,7 +2737,7 @@ function rideRow(tr, at){
     + `<div class="hxride"><span class="hxt">${esc(hhm(tr.h))} &middot; ${esc(tr.kind)}</span>`
     + `<span class="hxs">${bkc} g carb on the bike` + (bkk ? ` &middot; ${bkk} kcal` : '')
     + ` &middot; about ${gph} g an hour</span>`
-    + `<span class="hxs">` + (act !== null ? `<b>${act} kcal ridden</b>` : `${Math.round(tr.h * 600)} kcal planned`)
+    + `<span class="hxs">` + (act !== null ? `<b>${act} kcal ridden</b>` : `about ${Math.round(tr.h * 600)} kcal planned`)
     + `</span></div></div>`;
 }
 
@@ -2761,9 +2776,11 @@ function fuelDay(){
   const ride = (selDay === todayKey() && coach.rides && coach.rides[0]) ||
                (block.state === 'ok' && block.by[selDay]) || null;
   const code = dayZone(day, ride);
+  /* A measured zone and a guessed one were drawn identically. Hatch the guess. */
+  const guess = !(ride && Number(ride.intensity) > 0);
   return weekStrip() + dayHead(day, tr, sum)
-    + `<div class="hxcode ${code.k}"><b>${esc(code.name)}</b><span>${esc(code.why)}</span>`
-    + `<i>${sum.cb}<u>g carbs today</u></i></div>`
+    + `<div class="hxcode ${code.k}${guess ? ' guess' : ''}"><b>${esc(code.name)}${guess ? ' planned' : ''}</b><span>${esc(code.why)}</span>`
+    + `<i>${sum.cb}<u>g carbs planned</u></i></div>`
     + macroRow(day, sum, eaten)
     + `<div class="hxtl">`
     + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal, code)).join('')
@@ -2928,7 +2945,7 @@ function render(){
     const hrs = wk.reduce((a, t) => a + (Number(t.h) || 0), 0);
     const rides = wk.filter(t => (Number(t.h) || 0) > 0).length;
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
-    m.innerHTML = `<div class="sech">August &middot; the block at a glance</div>` + monthGrid()
+    m.innerHTML = `<div class="sech">${esc(plan.block || 'The block')} &middot; at a glance</div>` + monthGrid()
       + rideDetail() + analysisCard()
       + (wk.length ? `
       <div class="trainhd">
