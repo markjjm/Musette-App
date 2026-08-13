@@ -159,6 +159,14 @@ const T = [
   ['Casein protein powder',                360, 10.0, 72.0, 3.0, 0, [['scoop', 33], ['oz', OZ]], 'supplement'],
   ['Drink mix, carbohydrate',              380, 95.0, 0, 0, 0,      [['scoop', 40], ['serving', 40]], 'supplement'],
   ['Energy gel',                           310, 77.0, 0, 0, 0,      [['gel', 32]], 'supplement'],
+  /* The gel he actually uses on the bike. 50 g of carbohydrate a packet is the
+     figure off the label; it is essentially pure maltodextrin and fructose, so the
+     200 kcal follows from it at 4 kcal a gram and there is no protein or fat to
+     account for. Same carbohydrate concentration as the generic gel above, which
+     puts the packet at 65 g — that weight is inferred rather than read, and it is
+     the only figure here that is: nothing downstream uses it except to derive the
+     per-100 g column, because the app quotes the per-gel row. */
+  ['Carbs Fuel gel, 50 g carb',            308, 77.0, 0, 0, 0,      [['gel', 65]], 'supplement'],
   ['Energy bar',                           380, 60.0, 10.0, 11.0, 0, [['bar', 55]], 'supplement'],
   ['Sports drink',                          26, 6.5, 0, 0, 0,       [['fl oz', 30], ['bottle', 590]], 'supplement'],
 

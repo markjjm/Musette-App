@@ -2,7 +2,7 @@
  "version": 1,
  "built": "deterministic — regenerate with node tools/build-foods.mjs",
  "note": "Standard reference values for raw or as-sold food, per 100 g, with common household units derived from those figures. Good enough to plan from; not a measurement of the specific item in your fridge.",
- "count": 238,
+ "count": 239,
  "foods": [
   {
    "id": "alfredo-sauce",
@@ -1132,6 +1132,30 @@
      "p": 1.3,
      "f": 0.3,
      "fib": 1.4
+    }
+   ]
+  },
+  {
+   "id": "carbs-fuel-gel-50-g-carb",
+   "n": "Carbs Fuel gel, 50 g carb",
+   "tag": "supplement",
+   "per100": {
+    "kc": 308,
+    "c": 77,
+    "p": 0,
+    "f": 0,
+    "fib": 0,
+    "alc": 0
+   },
+   "units": [
+    {
+     "u": "gel",
+     "g": 65,
+     "kc": 200,
+     "c": 50.1,
+     "p": 0,
+     "f": 0,
+     "fib": 0
     }
    ]
   },
