@@ -807,6 +807,37 @@ footer {
 .brow > .cbtn { flex: 1; margin-top: 0; }
 .bcan { padding: 10px 14px; border: 0; border-radius: 10px; background: var(--card-sunk); font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-soft); cursor: pointer; }
 
+/* The prescription. Coloured by the zone it asks for, so it reads at a glance
+   before a word of it is read. */
+.rx { margin: 0 14px 12px; padding: 12px 14px; border-radius: 12px;
+      background: var(--code-bg); box-shadow: inset 4px 0 0 var(--code), inset 0 0 0 1px var(--rule-soft);
+      --code: var(--z2); --code-bg: var(--z2-bg); --code-ink: var(--z2-ink); }
+.rx.z0 { --code: var(--z0); --code-bg: var(--z0-bg); --code-ink: var(--z0-ink); }
+.rx.z1 { --code: var(--z1); --code-bg: var(--z1-bg); --code-ink: var(--z1-ink); }
+.rx.z2 { --code: var(--z2); --code-bg: var(--z2-bg); --code-ink: var(--z2-ink); }
+.rx.z3 { --code: var(--z3); --code-bg: var(--z3-bg); --code-ink: var(--z3-ink); }
+.rx.z4 { --code: var(--z4); --code-bg: var(--z4-bg); --code-ink: var(--z4-ink); }
+.rx.z5 { --code: var(--z5); --code-bg: var(--z5-bg); --code-ink: var(--z5-ink); }
+.rxh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rxh > b { font-size: 17px; font-weight: 800; color: var(--code-ink); }
+.rxh > i { font-style: normal; font-size: 14px; font-weight: 700; color: var(--code-ink); font-variant-numeric: tabular-nums; }
+.rxz { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); margin: 2px 0 9px; }
+.rxs { list-style: none; margin: 0 0 9px; padding: 0; }
+.rxs > li { position: relative; padding-left: 15px; font-size: 13.5px; line-height: 1.5; color: var(--ink); }
+.rxs > li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--code); }
+.rxf { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+.rxc { font-size: 12px; line-height: 1.5; color: var(--gravel); margin: 7px 0 0; padding-top: 7px; border-top: 1px dashed var(--rule); }
+
+/* The block's weeks, so the month grid is read in context. */
+.wkrow { display: grid; grid-auto-flow: column; gap: 5px; margin: 0 14px 10px; }
+.wkc { text-align: center; padding: 8px 3px; border-radius: 10px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
+.wkc.on { background: var(--pen); color: var(--pen-ink); box-shadow: none; }
+.wkc > i { display: block; font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--gravel); }
+.wkc.on > i { color: var(--pen-mute); }
+.wkc > b { display: block; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wkc > span { display: block; font-size: 9px; color: var(--ink-soft); }
+.wkc.on > span { color: var(--pen-mute); }
+
 .swch { display: flex; gap: 18px; margin: 12px 16px 4px; border-bottom: 1px solid var(--rule); }
 .swch > button {
   padding: 0 0 9px; border: 0; background: none; font: inherit; cursor: pointer;
@@ -2701,6 +2732,93 @@ function weekStrip(){
    Cuts at 7.2 and 5.6 g/kg split this block 12 / 13 / 6, and land where you
    would want them: green takes the long days, the key days and the loading day
    that preloads them; red is only ever a rest day. */
+/* ---- What today's session actually is ---------------------------------
+   "Moderate day" is a label, not a prescription. A coach says what to ride, at
+   what intensity, for how long, and what it should feel like — and the last one
+   matters most, because it is how you know mid-ride whether you have it right.
+
+   Derived from the plan's own kind and hours: twelve distinct combinations
+   across the block, each mapping to a session anyone who rides would recognise. */
+const SESSIONS = [
+  { m: (k, h) => k === 'rest',
+    n: 'Rest', z: 'Off the bike', zk: 'z0',
+    s: ['Nothing. Walking is fine.'],
+    f: 'You should feel restless by evening. That is the point — the adaptation happens today, not yesterday.' },
+
+  { m: (k, h) => h > 0 && h <= 0.6,
+    n: 'Openers', z: 'Zone 2 with short lifts', zk: 'z2',
+    s: ['15 min easy', '3 × 1 min lifting the pace, easy between', '10 min easy'],
+    f: 'Legs woken up, nothing taken out of them. If you finish tired, you rode it too hard.' },
+
+  { m: (k, h) => k === 'loading' && h <= 1,
+    n: 'Activation', z: 'Zone 2 with short lifts', zk: 'z2',
+    s: ['20 min easy', '4 × 1 min lifting the pace', '15 min easy spinning'],
+    f: 'Primed rather than tired. This one exists to make tomorrow good, so leave something.' },
+
+  { m: (k, h) => k === 'key',
+    n: 'Threshold intervals', z: 'Zone 4', zk: 'z4',
+    s: ['20 min building to Zone 2', (h) => `${h >= 2 ? 4 : 3} × 12 min at threshold, 5 min easy between`, '15 min easy'],
+    f: 'Hard, and it should feel it. The last two minutes of each block should be a fight, but you should finish the set — if you cannot, the target was too high.' },
+
+  { m: (k, h) => h >= 3.5,
+    n: 'Big day', z: 'Zone 2', zk: 'z2',
+    s: ['Steady all the way, no heroics', 'Eat every 45 min from the start', 'Ride the last hour honestly'],
+    f: 'Properly tired by the end, not broken. This is the ride the whole block is built around.' },
+
+  { m: (k, h) => h >= 3,
+    n: 'Long endurance', z: 'Zone 2, tempo late', zk: 'z2',
+    s: ['Steady for the first two hours', '2 × 20 min at tempo in the third', 'Easy home'],
+    f: 'Deep, dull fatigue in the last hour rather than sharp effort. Legs heavy, breathing easy.' },
+
+  { m: (k, h) => h >= 1.75,
+    n: 'Extended endurance', z: 'Zone 2', zk: 'z2',
+    s: ['Steady throughout', 'Eat something at the hour'],
+    f: 'Tired but not emptied. You should be able to hold a conversation the whole way.' },
+
+  { m: (k, h) => h >= 1.4,
+    n: 'Endurance with tempo', z: 'Zone 2 into Zone 3', zk: 'z3',
+    s: ['20 min easy', '20 min at tempo — working, still able to talk in sentences', 'Easy to finish'],
+    f: 'Working by the end without ever being desperate.' },
+
+  { m: () => true,
+    n: 'Endurance', z: 'High Zone 2', zk: 'z2',
+    s: ['Steady, one gear harder than recovery', 'Conversational the whole way'],
+    f: 'Comfortable throughout. If you are breathing hard, ease off — this is the day that builds the engine and it only works if it stays easy.' },
+];
+
+function sessionFor(day, tr){
+  const kind = String((day && day.kind) || '').toLowerCase().replace(' day', '');
+  const h = (tr && Number(tr.h)) || 0;
+  const S = SESSIONS.find(x => x.m(kind, h)) || SESSIONS[SESSIONS.length - 1];
+  return { ...S, s: S.s.map(x => typeof x === 'function' ? x(h) : x), h };
+}
+
+/* Week shape read off the block rather than declared. This one runs
+   8.5, 9.25, 10.0, 6.25 hours — three weeks building to a peak, then recovery. */
+function weekShape(){
+  const by = {};
+  for (const t of (plan.training || [])) {
+    const k = t.wk || '?';
+    by[k] = by[k] || { h: 0, d: 0 };
+    by[k].h += Number(t.h) || 0;
+    if ((Number(t.h) || 0) > 0) by[k].d += 1;
+  }
+  const ks = Object.keys(by);
+  const peak = Math.max(...ks.map(k => by[k].h), 1);
+  const out = {};
+  ks.forEach((k, i) => {
+    const h = by[k].h, prev = i > 0 ? by[ks[i - 1]].h : null;
+    const share = h / peak;
+    let name, why;
+    if (share < 0.72)            { name = 'Recovery week'; why = 'load cut on purpose — this is where the fitness actually lands'; }
+    else if (share > 0.97)       { name = 'Peak week';     why = 'the biggest week of the block'; }
+    else if (prev !== null && h > prev) { name = 'Build week'; why = 'more than last week'; }
+    else                         { name = 'Steady week';  why = 'holding the load'; }
+    out[k] = { name, why, hours: Math.round(h * 100) / 100, days: by[k].d };
+  });
+  return out;
+}
+
 /* Training zones by intensity factor — the percentage of threshold a ride was
    actually held at. intervals.icu supplies it per ride and it is the honest
    signal: the plan's own labels do not predict effort at all. Across this block
@@ -2828,6 +2946,40 @@ const restRow = () => `<div class="hxr"><time>&mdash;</time>`
    The timeline could be tapped but showed no food; the day-by-day blocks
    showed the food but could not be tapped and reprinted all seven days every
    time. This is both, once. */
+/* The line that makes it a prescription rather than a label: where this day
+   sits in the week, and what the rider is carrying into it. */
+function sessionContext(day, tr){
+  const wk = weekShape()[tr && tr.wk] || null;
+  const wdIdx = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(String(day.wd || ''));
+  const f = (look.stats || {}).form;
+  const bits = [];
+  if (wk) bits.push(`Day ${wdIdx >= 0 ? wdIdx + 1 : '?'} of a ${wk.name.toLowerCase()} — ${esc(wk.why)}`);
+  if (f){
+    const t = Number(f.form_tsb) || 0;
+    bits.push(t > 5 ? 'you are fresh, so there is no excuse for going easy on the hard bits'
+            : t > -10 ? 'you are training normally, so ride it as written'
+            : t > -25 ? 'you are carrying real fatigue, so expect this to feel harder than the numbers suggest'
+            : 'you are deep in it — if the first interval feels wrong, stop the set and ride easy instead');
+  }
+  return bits.join('. ');
+}
+
+function sessionCard(day, tr){
+  const S = sessionFor(day, tr);
+  if (S.n === 'Rest'){
+    return `<div class="rx z0"><div class="rxh"><b>Rest</b><i>no riding</i></div>`
+      + `<p class="rxf">${esc(S.f)}</p></div>`;
+  }
+  const ctx = sessionContext(day, tr);
+  return `<div class="rx ${S.zk}">`
+    + `<div class="rxh"><b>${esc(S.n)}</b><i>${esc(hhm(S.h))}</i></div>`
+    + `<p class="rxz">${esc(S.z)}</p>`
+    + `<ul class="rxs">` + S.s.map(x => `<li>${esc(x)}</li>`).join('') + `</ul>`
+    + `<p class="rxf">${esc(S.f)}</p>`
+    + (ctx ? `<p class="rxc">${ctx}.</p>` : '')
+    + `</div>`;
+}
+
 function fuelDay(){
   if (!selDay) selDay = todayKey();
   const day = dayOf(selDay);
@@ -2857,7 +3009,7 @@ function fuelDay(){
   const code = dayZone(day, ride);
   /* A measured zone and a guessed one were drawn identically. Hatch the guess. */
   const guess = !(ride && Number(ride.intensity) > 0);
-  return weekStrip() + dayHead(day, tr, sum)
+  return weekStrip() + dayHead(day, tr, sum) + sessionCard(day, tr)
     + `<div class="hxcode ${code.k}${guess ? ' guess' : ''}"><b>${esc(code.name)}${guess ? ' planned' : ''}</b><span>${esc(code.why)}</span>`
     + `<i>${sum.cb}<u>g carbs planned</u></i></div>`
     + macroRow(day, sum, eaten)
@@ -3027,7 +3179,14 @@ function render(){
     const hrs = wk.reduce((a, t) => a + (Number(t.h) || 0), 0);
     const rides = wk.filter(t => (Number(t.h) || 0) > 0).length;
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
-    m.innerHTML = `<div class="sech">${esc(plan.block || 'The block')} &middot; at a glance</div>` + monthGrid()
+    const shapes = weekShape();
+    m.innerHTML = `<div class="sech">${esc(plan.block || 'The block')} &middot; at a glance</div>`
+      + `<div class="wkrow">` + Object.keys(shapes).map(k => {
+          const x = shapes[k], on = k === w.id;
+          return `<div class="wkc${on ? ' on' : ''}"><i>${esc(x.name.replace(' week',''))}</i>`
+            + `<b>${x.hours}h</b><span>${x.days} days</span></div>`;
+        }).join('') + `</div>`
+      + monthGrid()
       + rideDetail() + analysisCard()
       + (wk.length ? `
       <div class="trainhd">
