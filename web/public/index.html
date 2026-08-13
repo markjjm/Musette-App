@@ -740,6 +740,36 @@ footer {
 .frow i > u { display: block; text-decoration: none; font-size: 9px; letter-spacing: .06em; color: var(--gravel); }
 .wtrend > b:first-child { color: var(--ink); }
 
+.inf {
+  display: inline-grid; place-items: center; width: 15px; height: 15px; padding: 0;
+  margin-left: 4px; vertical-align: middle; border: 0; border-radius: 50%;
+  background: var(--rule); color: var(--ink-soft);
+  font: inherit; font-size: 10px; font-weight: 800; line-height: 1; cursor: pointer;
+}
+.infrow { font-size: 11px; color: var(--gravel); margin: -4px 0 10px; }
+.infbdy { font-size: 14px; line-height: 1.55; color: var(--ink-soft); margin: -4px 0 14px; }
+.sech2 { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--pen-text); margin: 14px 0 7px; }
+
+/* Where the time actually went. The plan counts a Wednesday as two hours; half
+   an hour of it is warm-up and cool-down, and that is not two hours of work. */
+.split { display: flex; height: 26px; border-radius: 7px; overflow: hidden; margin-bottom: 2px; }
+.split > span {
+  display: grid; place-items: center; font-size: 10px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; color: var(--pen-ink);
+}
+.split > .sw { background: var(--z1); }
+.split > .sk { background: var(--z3); }
+.split > .sc { background: var(--z0); }
+
+.zbars { display: grid; gap: 4px; }
+.zb { display: grid; grid-template-columns: 74px 1fr 38px; gap: 8px; align-items: center; }
+.zb > i { font-style: normal; font-size: 11px; color: var(--ink-soft); }
+.zb > em { display: block; height: 12px; border-radius: 3px; background: var(--z2); width: 0; transition: width .3s ease; }
+.zb > b { font-size: 11px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.zb > em.bz1 { background: var(--z1); } .zb > em.bz2 { background: var(--z2); }
+.zb > em.bz3 { background: var(--z3); } .zb > em.bz4 { background: var(--z4); }
+.zb > em.bz5 { background: var(--z5); }
+
 .wks { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 12px; }
 .wk { text-align: center; padding: 7px 2px; border-radius: 9px; background: var(--card-sunk); box-shadow: inset 0 0 0 1px var(--rule); }
 .wk > i { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: var(--gravel); }
@@ -1120,6 +1150,12 @@ footer {
 <button class="fab ask" id="bask" aria-label="Ask about your training">?</button>
 
 
+
+<div class="sheet" id="infsheet"><div class="panel">
+  <h2 id="infttl"></h2>
+  <p class="infbdy" id="infbdy"></p>
+  <div class="row2"><button class="primary" data-close>Got it</button></div>
+</div></div>
 
 <div class="sheet" id="asksheet"><div class="panel">
   <h2>Ask about your training</h2>
@@ -2476,6 +2512,47 @@ function sectionsHtml(a){
 }
 
 /* What he actually did that day, whether or not he asks anything about it. */
+/* Garmin-style: a small ? beside a term, tapped for one short paragraph. The
+   term stays on screen — this teaches it rather than replacing it. */
+const INFO = {
+  load:  ['Training load', 'One number for what a ride cost you, time and intensity together. A steady hour is around 50; a hard two hours can pass 150. Fitness and fatigue are both built from it.'],
+  wpb:   ['Watts per heartbeat', 'How much power you make for each beat of your heart. Watch it over weeks, not days: if it rises at the same heart rate, you are getting fitter. A move under about 2% is noise.'],
+  np:    ['Normalised power', 'What the ride would have felt like at one steady wattage. Always higher than your average, and the gap tells you how surgy the ride was.'],
+  ctl:   ['Fitness', 'A 42-day rolling average of your training load. It rises slowly when you train more than you have been and falls slowly when you stop. This is the number that takes months to build.'],
+  tsb:   ['Form', 'Fitness minus fatigue. Positive means fresh; deeply negative means you are carrying a lot of work. Negative is normal mid-block — it only matters if it stays there for weeks.'],
+  carbs: ['Carbohydrate', 'The fuel that matters most for riding, because it is the only one you can burn quickly. Big days need more; rest days need less. Protein and fat move far less.'],
+  pf:    ['Protein and fat', 'Starred because the plan carries them only as day totals, so what you see per meal is shared out by calories. Calories and carbohydrate are exact; these two are estimates.'],
+  zone:  ['Training zones', 'How hard you actually rode, as a share of your threshold. Under 55% is recovery, 55-75 endurance, 75-90 tempo, 90-105 threshold. Green is easy, red is hard.'],
+};
+const infoBtn = (k) => `<button class="inf" data-info="${k}" aria-label="What does this mean?">?</button>`;
+
+function rideBreak(r){
+  if (!r) return '';
+  const mins = (x) => Math.round((x || 0) / 60);
+  const work = Math.max(0, r.secs - (r.warm || 0) - (r.cool || 0));
+  const Z = ['Recovery', 'Endurance', 'Tempo', 'Threshold', 'VO2', 'Anaerobic', 'Sprint'];
+  const pz = (r.pz || []).slice(0, 7);
+  const tot = pz.reduce((a, b) => a + b, 0);
+  let out = '';
+  if ((r.warm || 0) + (r.cool || 0) > 60 && r.secs){
+    /* The plan counts a Wednesday as two hours. Half an hour of that is warm-up
+       and cool-down, and that is not two hours of work. */
+    out += `<div class="sech2">How the time split</div><div class="split">`
+      + `<span class="sw" data-w="${Math.round((r.warm||0)/r.secs*100)}">${mins(r.warm)}m warm-up</span>`
+      + `<span class="sk" data-w="${Math.round(work/r.secs*100)}">${mins(work)}m work</span>`
+      + `<span class="sc" data-w="${Math.round((r.cool||0)/r.secs*100)}">${mins(r.cool)}m cool</span></div>`;
+  }
+  if (tot > 60){
+    out += `<div class="sech2">Time in each zone ${infoBtn('zone')}</div><div class="zbars">`
+      + pz.map((sec, i) => sec < 30 ? '' :
+          `<div class="zb"><i>${esc(Z[i] || ('Zone ' + (i+1)))}</i>`
+          + `<em class="bz${Math.min(5, i+1)}" data-w="${Math.round(sec/tot*100)}"></em>`
+          + `<b>${mins(sec)}m</b></div>`).join('')
+      + `</div>`;
+  }
+  return out;
+}
+
 function rideDetail(){
   if (dayRide.day !== selDay) return '';
   const rs = dayRide.rides;
@@ -2484,17 +2561,19 @@ function rideDetail(){
   const big = rs.slice().sort((a,b) => b.secs - a.secs)[0];
   const stat = (v, l) => v ? `<div class="rst"><b>${v}</b><i>${l}</i></div>` : '';
   let out = `<div class="card coach"><div class="rname">${esc(big.name || big.type)}</div>`
+    + `<p class="infrow">${infoBtn('load')} training load &nbsp; ${infoBtn('wpb')} watts per heartbeat &nbsp; ${infoBtn('np')} normalised power</p>`
     + `<div class="rstats">`
     + stat(hhm(big.secs/3600), 'moving')
     + stat(big.km ? big.km + ' km' : '', 'distance')
     + stat(big.up ? big.up + ' m' : '', 'climbing')
-    + stat(big.kcal ? big.kcal + '' : '', 'kcal ' + (big.trust === 'measured' ? 'measured' : 'estimated'))
-    + stat(big.watts ? big.watts + ' W' : '', big.np ? 'avg &middot; ' + big.np + ' W np' : 'average')
+    + stat(big.kcal ? big.kcal + ' kcal' : '', big.trust === 'measured' ? 'from the power meter' : 'estimated, no power')
+    + stat(big.watts ? big.watts + ' W' : '', big.np ? 'average &middot; ' + big.np + ' normalised' : 'average')
     + stat(big.hr ? big.hr + '' : '', 'avg bpm')
-    + stat(big.load ? big.load + '' : '', 'load')
-    + stat(big.pwhr ? big.pwhr + '' : '', 'W per bpm')
+    + stat(big.load ? big.load + '' : '', 'training load')
+    + stat(big.pwhr ? big.pwhr + '' : '', 'watts per heartbeat')
     + `</div>`;
   if (rs.length > 1) out += `<p class="anone">and ${rs.length - 1} shorter ${rs.length === 2 ? 'ride' : 'rides'} that day</p>`;
+  out += rideBreak(big);
   out += `<button id="ride_go" class="cbtn"${dayRide.busy ? ' disabled' : ''}>${dayRide.busy ? 'Reading it&hellip;' : (dayRide.read ? 'Read it again' : 'What was this ride?')}</button>`;
   if (dayRide.err) out += `<p class="cerr">${esc(dayRide.err)}</p>`;
   if (dayRide.read) out += `<div class="adv">${sectionsHtml(dayRide.read)}</div>`;
@@ -2533,8 +2612,8 @@ function formCard(){
   const k = f.tsb > 5 ? 'z1' : f.tsb > -10 ? 'z2' : f.tsb > -25 ? 'z3' : 'z4';
   return `<div class="hxcode ${k} fcard"><b>${esc(f.title)}</b><span>${esc(f.why)} &middot; ${esc(f.dir)}</span></div>`
     + `<div class="frow">`
-    + `<div><b>${Math.round(f.ctl)}</b><i>fitness<u>CTL</u></i></div>`
-    + `<div><b>${f.tsb > 0 ? '+' : ''}${Math.round(f.tsb)}</b><i>freshness<u>TSB</u></i></div>`
+    + `<div><b>${Math.round(f.ctl)}</b><i>fitness ${infoBtn('ctl')}<u>CTL</u></i></div>`
+    + `<div><b>${f.tsb > 0 ? '+' : ''}${Math.round(f.tsb)}</b><i>form ${infoBtn('tsb')}<u>TSB</u></i></div>`
     + `<div><b>${f.ramp > 0 ? '+' : ''}${f.ramp.toFixed(1)}</b><i>this week<u>CTL/wk</u></i></div>`
     + `</div>`;
 }
@@ -2688,7 +2767,7 @@ function macroRow(day, sum, eaten){
     ['F',    Math.round(ft * share), ft,     'g', fatLow ? 'est low' : 'est'],
   ];
   return `<div class="hxmac">` + tiles.map(([k, v, t, u, cls]) =>
-      `<div class="hxm${cls ? ' ' + cls : ''}"><i>${k}${cls ? '*' : ''}</i>`
+      `<div class="hxm${cls ? ' ' + cls : ''}"><i>${k}${cls ? '*' : ''}${k === 'C' ? infoBtn('carbs') : (k === 'F' ? infoBtn('pf') : '')}</i>`
     + `<b>${v}<s>/${t}${u}</s></b>`
     + `<em><u data-pct="${t ? Math.min(100, Math.round(v / t * 100)) : 0}"></u></em></div>`
     ).join('') + `</div>`;
@@ -2825,6 +2904,9 @@ function coachCard(){
    is hash-only, so style="width:60%" in an innerHTML string is dropped on the
    floor. Assigning .style from script is unaffected. */
 function paintBars(){
+  document.querySelectorAll('.split > span[data-w], .zb > em[data-w]').forEach(el => {
+    el.style.width = (Number(el.dataset.w) || 0) + '%';
+  });
   document.querySelectorAll('.hxm u[data-pct]').forEach(u => {
     u.style.width = (Number(u.dataset.pct) || 0) + '%';
   });
@@ -3210,6 +3292,17 @@ document.addEventListener('click', e => {
     if (!nm || !build.items.length) return;
     dishes[uid()] = { name: nm, items: build.items, t: Date.now() };
     build = null; fq = ''; dirty = true; persist(); queue(); triggerHaptic(); render(); return;
+  }
+
+  const inf = e.target.closest('[data-info]');
+  if (inf){
+    const d = INFO[inf.dataset.info];
+    if (d){
+      $('#infttl').textContent = d[0];
+      $('#infbdy').textContent = d[1];
+      $('#infsheet').classList.add('open');
+    }
+    return;
   }
 
   if (e.target.closest('#bask')){ $('#asksheet').classList.add('open'); paintAsk();
