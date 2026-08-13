@@ -688,6 +688,20 @@ footer {
 .hxc.z4 { --code: var(--z4); --code-bg: var(--z4-bg); --code-ink: var(--z4-ink); }
 .hxc.z5 { --code: var(--z5); --code-bg: var(--z5-bg); --code-ink: var(--z5-ink); }
 .hxc.ate { opacity: .55; }
+/* Off-plan food. Dashed, because the solid rule down the left of every other card
+   means "the plan says so" and this one cannot claim that. Full opacity despite
+   carrying .ate, since an extra only exists once it has been eaten — dimming it
+   like a finished meal would hide the thing you just recorded. */
+.hxc.extra { border-left-style: dashed; --code: var(--gravel); --code-bg: var(--paper); --code-ink: var(--gravel); }
+.hxc.extra.ate { opacity: 1; }
+.hxc.extra > .hxhd > .hxt { text-decoration: none; }
+.hxadd {
+  display: block; width: 100%; margin: 10px 0 2px; padding: 11px 12px;
+  border: 1px dashed var(--rule); border-radius: 10px; background: none;
+  font: inherit; font-size: var(--t-meta); color: var(--gravel);
+  letter-spacing: .02em; cursor: pointer;
+}
+.hxadd:active { background: var(--rule); }
 
 /* The code, said in words directly under the date, so the colour is never the
    only thing carrying it. */
@@ -1263,7 +1277,7 @@ footer {
 </div></div>
 
 <div class="sheet" id="swapsheet"><div class="panel">
-  <h2>I ate something else</h2>
+  <h2 id="sw_h">I ate something else</h2>
   <p class="small" id="sw_for"></p>
   <input id="sw_q" placeholder="Search a food, or type what you ate" autocapitalize="sentences" autocomplete="off">
   <ul class="swhits" id="sw_hits"></ul>
@@ -1276,7 +1290,7 @@ footer {
     </div>
   </div>
   <div class="rowbtn"><button class="cancel" data-close>Cancel</button></div>
-  <p class="small">This replaces the meal's numbers for the day. The plan stays as it was &mdash; next week is still next week.</p>
+  <p class="small" id="sw_note">This replaces the meal's numbers for the day. The plan stays as it was &mdash; next week is still next week.</p>
 </div></div>
 
 <div class="sheet" id="setsheet"><div class="panel">
@@ -2438,6 +2452,10 @@ function carbAdherence(iso, day){
       done += ateGot(iso, m.t, m).cb;
     }
   });
+  /* Carbohydrate eaten off-plan still went in, so it counts towards the day's
+     carb target. It cannot raise the target, so a big enough extra reads as
+     100% — which is true. */
+  extrasOf(iso).forEach((x) => { if (x.got.cb) { any = true; done += x.got.cb; } });
   if (!any || !all) return null;
   return Math.max(0, Math.min(1, done / all));
 }
@@ -2854,6 +2872,40 @@ const clock = (mm) => String(mm/60|0).padStart(2,'0') + ':' + String(mm%60).padS
 const logKey = (d, t) => d + '|' + t;
 const ateOf  = (d, t) => { const e = mealLog[logKey(d,t)]; return e ? Number(e.v) || 0 : 0; };
 
+/* Something eaten that the plan did not include.
+
+   Until now the log had no way to say "and also". A swap REPLACES a meal's
+   numbers, so two pancakes on a morning you also ate your snack could only be
+   recorded by throwing the snack away. Eating more than was planned is at least
+   as common as eating something different, and the day's totals were quietly
+   wrong every time it happened.
+
+   Stored in the same map as the planned meals, under a key those meals can never
+   produce: theirs end in a clock time — '2026-08-13|6:15 am' — and these in
+   '+' plus an id. The value carries the same {n, kc, cb} shape a swap does, which
+   is the point: the Worker's cleanLog already accepts and round-trips that shape,
+   so this needs NO schema change. cleanLog whitelists its fields and silently
+   drops anything it does not know, which has already cost this app one feature
+   (dish.ai), and a field that vanishes on the way to the server is worse than a
+   field that was never added. */
+const EXTRA_MARK = '|+';
+const extraKey = (d) => d + EXTRA_MARK + uid();
+/* An extra dialled down to nothing is a removal, so it stops being rendered and
+   stops counting. The entry stays until prune() ages it out, because a hard
+   delete has nothing to tell the other phone. */
+function extrasOf(d){
+  return Object.keys(mealLog)
+    .filter(k => k.startsWith(d + EXTRA_MARK))
+    .map(k => {
+      const e = mealLog[k] || {}, sw = e.sw || {};
+      const f = Number(e.v) || 0;
+      const kc = Number(sw.kc) || 0, cb = Number(sw.cb) || 0;
+      return { key: k, at: e.t, n: sw.n || '', kc, cb, f, got: { kc: kc * f, cb: cb * f } };
+    })
+    .filter((x) => x.n && x.f > 0)
+    .sort((a, b) => (a.at || 0) - (b.at || 0));
+}
+
 const FRAC = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
 /* Paired with FRAC so the class name is a lookup into a fixed map rather than
    arithmetic on a value stringified into markup. Anything off the grid falls
@@ -2873,8 +2925,17 @@ function ateGot(d, t, m){
 
 let swapFor = null;
 
+/* Something eaten on top of the plan, rather than instead of part of it. */
+function addExtra(day, sw){
+  mealLog[extraKey(day)] = { v: 1, t: Date.now(), sw };
+  dirty = true; persist(); queue(); triggerHaptic();
+  document.querySelectorAll('.sheet').forEach(x => x.classList.remove('open'));
+  swapFor = null; render();
+}
+
 function logSwap(sw){
   if (!swapFor) return;
+  if (swapFor.add) { addExtra(swapFor.day, sw); return; }
   /* Eaten in full by default — you can dial it back to a half afterwards, and
      the fraction then applies to what you actually ate. */
   mealLog[logKey(swapFor.day, swapFor.t)] = { v: 1, t: Date.now(), sw };
@@ -2888,12 +2949,22 @@ function logSwap(sw){
 function paintSwap(){
   if (!swapFor) return;
   const lbl = $('#sw_for');
+  const d = new Date(swapFor.day + 'T12:00:00');
+  const nice = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
+             + ' ' + d.getDate();
+  /* One sheet, two jobs — instead of a meal, or as well as the plan. The wording
+     has to say which, because the difference is the whole point: a swap throws
+     the meal's numbers away and this does not. */
   if (lbl){
-    const d = new Date(swapFor.day + 'T12:00:00');
-    const nice = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
-               + ' ' + d.getDate();
-    lbl.textContent = 'Replacing the ' + swapFor.t + ' meal on ' + nice + '.';
+    lbl.textContent = swapFor.add
+      ? 'Adding to ' + nice + ', on top of the plan.'
+      : 'Replacing the ' + swapFor.t + ' meal on ' + nice + '.';
   }
+  const hd = $('#sw_h'), ft = $('#sw_note');
+  if (hd) hd.textContent = swapFor.add ? 'I ate something extra' : 'I ate something else';
+  if (ft) ft.textContent = swapFor.add
+    ? 'This is added to the day and counts towards what you have eaten. It does not change any meal, and it does not change the plan.'
+    : "This replaces the meal's numbers for the day. The plan stays as it was — next week is still next week.";
   const box = $('#sw_hits'); if (!box) return;
   const q = String(swapFor.q || '').trim().toLowerCase();
   let out = '';
@@ -3166,6 +3237,26 @@ function mealRow(m, code){
     + `</div></div>`;
 }
 
+/* An extra reads like a meal so the day stays one timeline, but it is labelled as
+   off-plan and has no "what is in it" list, because there is no plan behind it.
+   The same tap cycle as a meal, except that reaching zero removes it — for
+   something the plan never asked for, "none of it" and "not there" are the same
+   statement. */
+function extraRow(x, at){
+  const pct = x.kc ? Math.round(400 * x.cb / x.kc) : 0;
+  const said = x.f === 1 ? 'eaten' : (FRAC[x.f] ? FRAC[x.f] + ' eaten' : 'part eaten');
+  return `<div class="hxr"><time>${at >= 0 && at < 24 * 60 ? clock(at) : '&mdash;'}</time>`
+    + `<div class="hxc extra ate">`
+      + `<div class="hxhd"><span class="hxt">${esc(x.n)}</span>`
+      + `<span class="hxs">${Math.round(x.kc)} kcal &middot; ${Math.round(x.cb)} g carb &middot; ${pct}% carb</span>`
+      + `<span class="hxswap">not in the plan &middot; tap round to zero to remove</span>`
+      + `</div>`
+      + `<button class="hxtick" data-xlog="${esc(x.key)}"`
+      + ` aria-pressed="true" aria-label="${esc(x.n)}, ${said}, tap to change how much">`
+      + `<span class="hxmk ${QCLS[x.f] || ''}">${FRAC[x.f] || ''}</span></button>`
+    + `</div></div>`;
+}
+
 function rideRow(tr, at){
   const bkc = (tr.bk && Number(tr.bk.cb)) || 0;
   const bkk = (tr.bk && Number(tr.bk.kc)) || 0;
@@ -3234,8 +3325,19 @@ function fuelDay(){
     const g = ateGot(selDay, m.t, m);
     return { kc: a.kc + g.kc, cb: a.cb + g.cb };
   }, { kc: 0, cb: 0 });
+  /* Unplanned food counts towards what was EATEN and not towards what was
+     planned, so eaten can legitimately exceed the target — which is the whole
+     point of recording it. The tiles already clamp their bars at 100%. */
+  const extras = extrasOf(selDay);
+  extras.forEach((x) => { eaten.kc += x.got.kc; eaten.cb += x.got.cb; });
 
   const rows = day.meals.map(m => ({ at: mins(m.t), meal: m }));
+  /* Placed at the time it was logged, which for something eaten on the day is
+     when it was eaten. */
+  extras.forEach((x) => {
+    const dt = x.at ? new Date(x.at) : null;
+    rows.push({ at: dt ? dt.getHours() * 60 + dt.getMinutes() : 24 * 60, extra: x });
+  });
   if (tr && tr.h){
     /* The ride sits where its on-bike food starts. One riding day has no
        on-bike meal — it gets no clock rather than a fabricated one. */
@@ -3256,7 +3358,9 @@ function fuelDay(){
     + `<i>${sum.cb}<u>g carbs planned</u></i></div>`
     + macroRow(day, sum, eaten)
     + `<div class="hxtl">`
-    + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at) : mealRow(r.meal, code)).join('')
+    + rows.map(r => r.rest ? restRow() : r.ride ? rideRow(r.ride, r.at)
+        : r.extra ? extraRow(r.extra, r.at) : mealRow(r.meal, code)).join('')
+    + `<button class="hxadd" data-addate="${esc(selDay)}">+ Add something you ate</button>`
     + `</div>`
     + `<p class="hxnote">Tap the circle once for eaten, twice for about half. Calories and carbs are exact; protein and fat are marked * because the plan only carries them as day totals and they are shared out here by calories.</p>`;
 }
@@ -3671,6 +3775,30 @@ document.addEventListener('click', e => {
     const NEXT = { 0: 1, 1: 0.75, 0.75: 0.5, 0.5: 0.25, 0.25: 0 };
     setAte(d, lg.dataset.log, NEXT[ateOf(d, lg.dataset.log)] ?? 0);
     return;
+  }
+
+  /* The same cycle on an extra, minus the "none of it" state that a meal keeps:
+     an extra at zero is one the plan never had and you did not eat, so it goes. */
+  const xl = e.target.closest('[data-xlog]');
+  if (xl){
+    const k = xl.dataset.xlog, cur = mealLog[k];
+    if (cur){
+      const DOWN = { 1: 0.75, 0.75: 0.5, 0.5: 0.25, 0.25: 0 };
+      mealLog[k] = { v: DOWN[Number(cur.v)] ?? 0, t: Date.now(), sw: cur.sw };
+      dirty = true; persist(); queue(); triggerHaptic(); render();
+    }
+    return;
+  }
+
+  /* Add something the plan did not include. Same sheet as a swap, because the
+     question it asks — what was it, and what was in it — is the same question. */
+  const ax = e.target.closest('[data-addate]');
+  if (ax){
+    swapFor = { day: ax.dataset.addate || selDay, t: null, add: true, q: '' };
+    $('#sw_q').value = ''; $('#sw_kc').value = ''; $('#sw_cb').value = '';
+    $('#swapsheet').classList.add('open');
+    setTimeout(() => { try { $('#sw_q').focus(); } catch(_){} }, 250);
+    paintSwap(); return;
   }
 
   /* Ate something else. The plan is a suggestion and some evenings it loses. */
