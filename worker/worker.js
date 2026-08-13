@@ -15,12 +15,19 @@ const STORES = new Set(['A', 'M']);
 const ORIGIN_EXACT = new Set(['https://shopping-list-app-9an.pages.dev']);
 const ORIGIN_SUFFIX = '.shopping-list-app-9an.pages.dev'; // Pages preview deploys
 
+/* Flipped to false the moment sessions become credentialed. */
+let env_allow_previews = true;
+
 function allowedOrigin(origin) {
   if (!origin) return null;
   if (ORIGIN_EXACT.has(origin)) return origin;
   try {
     const u = new URL(origin);
-    if (u.protocol === 'https:' && u.hostname.endsWith(ORIGIN_SUFFIX)) return origin;
+    /* Pages preview deploys. Any branch can create one, so this is a wide door:
+       fine while auth is a header the page must already hold, and NOT fine the
+       moment a cookie or a credentialed request exists. Gate it on a var so
+       turning it off is one deploy, and so the decision is visible here. */
+    if (env_allow_previews && u.protocol === 'https:' && u.hostname.endsWith(ORIGIN_SUFFIX)) return origin;
     /* Local development. Without this `npm run dev:web` cannot talk to the
        deployed Worker at all. The access code is still required, so this only
        widens who may READ a response they were already entitled to. */
@@ -55,19 +62,26 @@ const json = (obj, status = 200, origin = null) =>
     },
   });
 
-/* Double-HMAC comparison: the digests are compared, so the loop runs over
-   fixed-length data and reveals nothing about where the inputs diverged. */
+/* Constant-time comparison. Both sides are hashed to a fixed 32 bytes first —
+   which is what makes the comparison safe when the inputs differ in length —
+   then compared with Cloudflare's timingSafeEqual.
+
+   The previous version generated a fresh HMAC key on EVERY auth check. That is
+   the textbook double-HMAC construction and it is not wrong, but generateKey is
+   the most expensive call in the function and the free plan allows 10 ms of CPU
+   per request. Digest-then-timingSafeEqual gives the same guarantee for a
+   fraction of the budget. */
 async function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   const enc = new TextEncoder();
-  const k = await crypto.subtle.generateKey({ name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const [da, db] = await Promise.all([
-    crypto.subtle.sign('HMAC', k, enc.encode(a)),
-    crypto.subtle.sign('HMAC', k, enc.encode(b)),
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
   ]);
-  const va = new Uint8Array(da);
-  const vb = new Uint8Array(db);
-  let diff = va.length ^ vb.length;
+  /* Cloudflare's own; throws if the lengths differ, which digests never do. */
+  if (crypto.subtle.timingSafeEqual) return crypto.subtle.timingSafeEqual(da, db);
+  const va = new Uint8Array(da), vb = new Uint8Array(db);
+  let diff = 0;
   for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
   return diff === 0;
 }
