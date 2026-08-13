@@ -206,10 +206,19 @@ non-dev package, `package.json` to declare no `dependencies`, and every dev pin 
 be an exact version, since `socket.yml` makes Socket the review step for
 dependency changes and it can only review what arrives as a pull request.
 
-Two checks are deliberately `warn()` rather than `err()`, because they fail
-today: `4·pr + 9·ft + 4·cb` is more than 3% from `kc` on 16 of 31 days, and
-`plan.json` has drifted from the `BUNDLED` copy in `index.html`. Promote both to
-`err()` once the plan data is regenerated.
+One check is deliberately `warn()` rather than `err()`: `4·pr + 9·ft + 4·cb` is
+more than 3% from `kc` on 16 of 31 days, because `days[].pr` and `days[].ft` are
+day-type templates rather than sums of the meals. It is safe to leave as a warning
+only because the app no longer trusts those figures — `macroRow()` reads the same
+reconciliation and shows a `?` instead of a verdict, so an unreconciled fat number
+can neither raise the low-fat warning nor clear it. Before that it could only
+clear it, which is the wrong direction to be wrong in. Computing `pr`/`ft` from
+the items needs a name-to-food mapping for the plan's item strings plus label
+figures for the dozen foods absent from `data/foods.json`; when that exists,
+promote this to `err()`.
+
+The `plan.json` ↔ `BUNDLED` comparison **is** an `err()`, as of the commit that
+made the two copies agree.
 
 The scan is itself tested by breaking things: reintroduce any of these defects in
 a scratch copy and it must fail, with the right message. That test found a real

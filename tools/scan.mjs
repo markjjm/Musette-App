@@ -191,15 +191,19 @@ for (const [name, p] of [['plan.json', plan], ['index.html BUNDLED', bundled]]) 
   }
 }
 
-/* Fails on 16 of 31 days today, worst 12.8%, so it is a warning rather than an
-   error until the data is regenerated — promote it to err() then.
+/* Fails on 16 of 31 days, worst 12.8%. A warning rather than an error, and the
+   reason it is safe to leave as a warning is that the app no longer trusts these
+   figures: macroRow() now reads the same reconciliation and shows a ? instead of
+   a verdict, so an unreconciled fat number can neither raise the low-fat warning
+   nor clear it. Before that it could only clear it — day 28 displayed 21.1%
+   against a real 16.9%, and nine other days cleared on the same overstatement.
 
-   It matters because macroRow() computes `9*ft/kc < 0.20` to raise the only
-   low-fat warning the app has. day.pr and day.ft are day-type templates rather
-   than sums of the meals — days 3, 24 and 31 share pr=152 ft=71 across three
-   different meal sets — so an overstated fat figure lets a day clear a warning
-   that exists precisely to catch it. Day 28 displays 21.1% against a real
-   16.9%. An estimate must not be able to clear a check meant for a measurement. */
+   day.pr and day.ft are day-type templates rather than sums of the meals: days
+   3, 24 and 31 share pr=152 ft=71 across three entirely different meal sets.
+   Computing them from the items needs per-item protein and fat, which needs a
+   name-to-food mapping for the plan's item strings AND label figures for the
+   dozen foods that are not in data/foods.json. Once that exists and these days
+   reconcile, promote this to err() and delete the ? branch in macroRow. */
 {
   const off = [];
   for (const d of (plan && plan.days) || []) {
@@ -211,17 +215,24 @@ for (const [name, p] of [['plan.json', plan], ['index.html BUNDLED', bundled]]) 
   if (off.length) {
     warn(
       `plan.json: 4*pr + 9*ft + 4*cb is more than 3% from kc on ${off.length} day(s): ${off.join(', ')}` +
-      ' - pr/ft are templates, not sums, and macroRow() gates the low-fat warning on ft'
+      ' - pr/ft are day-type templates, not sums; macroRow() shows ? on these days rather than judging them'
     );
+  }
+  /* The check that keeps that promise. macroRow must decide on the reconciliation
+     and not on ft alone, or the false clear comes straight back. */
+  if (!/const reconciles\s*=/.test(html) || !/reconciles && \(9 \* ft\)/.test(html)) {
+    err('index.html macroRow() no longer gates the low-fat warning on whether pr/ft reconcile - an overstated estimate can clear it again');
   }
 }
 
-/* The two copies must be the same plan. They are not, today: "Bacon on the
-   burgers" edited BUNDLED and _headers and left plan.json behind, so the
-   deployed app shows day 1 at 4249 kcal while plan.json - the copy
-   tools/publish-plan.py sends to the Worker - still says 4163. Publishing would
-   silently undo the bacon. Warning rather than error only because it is already
-   broken; it should be an error the moment they agree. */
+/* The two copies must be the same plan, and this is now an ERROR because they
+   agree. It was a warning for one commit, while they did not: "Bacon on the
+   burgers" edited BUNDLED and _headers and left plan.json behind, so the deployed
+   app showed day 1 at 4249 kcal while plan.json — the copy tools/publish-plan.py
+   sends to the Worker — still said 4163, and publishing would have silently
+   undone the bacon. Two hand-maintained copies of the same figures will drift
+   again the moment nothing is watching, and the whole cost of that is one
+   comparison. */
 if (plan && bundled) {
   const a = JSON.stringify(plan), b = JSON.stringify(bundled);
   if (a !== b) {
@@ -234,10 +245,10 @@ if (plan && bundled) {
       const o = (bundled.days || []).find((x) => x.d === d.d);
       if (o && JSON.stringify(o) !== JSON.stringify(d)) days.push(d.d);
     }
-    warn(
+    err(
       `plan.json and index.html BUNDLED have drifted: ${where.join(', ')} differ` +
       (days.length ? ` (days ${days.join(', ')})` : '') +
-      ' - two hand-maintained copies of the same figures, so decide which is right and make them equal'
+      ' - they are two copies of one plan; edit both or neither'
     );
   }
 }

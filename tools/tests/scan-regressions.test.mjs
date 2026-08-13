@@ -184,6 +184,26 @@ const CASES = [
     warnOnly: true,
   },
   {
+    /* Now an err() rather than a warn(), because the two copies agree. */
+    name: 'plan.json drifts from the BUNDLED copy again',
+    mutate: (d) => {
+      const p = join(d, 'plan.json');
+      const j = JSON.parse(readFileSync(p, 'utf8'));
+      j.plan.days[0].kc += 86;                    // the bacon, removed from one copy only
+      writeFileSync(p, JSON.stringify(j));
+    },
+    expect: /plan\.json and index\.html BUNDLED have drifted/,
+  },
+  {
+    /* The false clear the audit found: an overstated ft must never be able to
+       answer the low-fat question. */
+    name: 'macroRow goes back to gating the low-fat warning on ft alone',
+    mutate: (d) => edit(d, 'web/public/index.html',
+      'const fatLow = reconciles && (9 * ft) / sum.kc < 0.20;',
+      'const fatLow = (9 * ft) / sum.kc < 0.20;'),
+    expect: /no longer gates the low-fat warning on whether pr\/ft reconcile/,
+  },
+  {
     name: 'the esc() escaper is weakened (pre-existing control)',
     mutate: (d) => edit(d, 'web/public/index.html',
       "const esc = s => String(s).replace(/[&<>\"']/g,", "const esc = s => String(s).replace(/[&<>]/g,"),
