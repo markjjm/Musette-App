@@ -78,6 +78,25 @@ not stop working because a fitness site is having a bad day.** Responses are
 edge-cached for ten minutes so that two phones polling `/rev` every four seconds
 cannot turn into traffic against someone else's API.
 
+That caching lives in `fetchRides()`, which is the only function in the Worker
+that calls intervals.icu, so no route can be added that forgets it. It did not
+always: the cache was at one call site (`/rides`) while this paragraph and the
+comment on `/ride` both described it as general. It was not — `/ride` without
+`?why` went straight upstream on the owner's key, and because the app keeps only
+one day of ride data at a time, tapping between two days on the week strip was
+one live authenticated call per tap, per phone, with nothing in front of it but
+the per-IP limiter. `tools/scan.mjs` fails if a second call site appears or if the
+cache leaves `fetchRides()`.
+
+Ten minutes applies to a date range that has finished. A range reaching up to
+today is held for one minute instead, because "today" does change: a ride ends,
+syncs, and he opens the app to look at it. Holding that for ten minutes would
+show him an empty day right after a ride, which is a worse outcome than the
+traffic it saves — the old uncached `/ride` was at least always current, and a
+fix that quietly took that away would not be a fix. One minute still collapses a
+burst of week-strip taps into a single upstream call. Only successful responses
+are stored, so a transient 429 is not pinned in place for the rest of the TTL.
+
 Rotate the key from intervals.icu → Settings → Developer Settings, then:
 
 ```sh
@@ -117,14 +136,87 @@ Worker:
   binding is missing, so a limiter outage cannot lock the family out.
 - **Writes are serialised** through the Durable Object, so two phones syncing in
   the same second cannot lose each other's changes. The previous KV design lost
-  60-85% of concurrent writes, silently.
+  60-85% of concurrent writes, silently. The per-key merge this relies on only
+  helps if the client lets the write reach it: `sync()` used to adopt a response
+  wholesale, so a tap made while a request was in flight was reverted on screen,
+  persisted, and then pushed — losing it on both phones under a "Synced" dot. It
+  now snapshots the five maps before the request and carries forward whatever was
+  written during it, then re-queues the push.
 - **256 KB body cap** (413), rejected on both `Content-Length` and actual length.
+- **Two ceilings on stored state, both on the resource rather than the request.**
+  `MAX_ENTRIES` (5000) caps each map's *result*, refusing only new keys so a full
+  list can still be ticked off, edited and deleted; refusals are counted and
+  returned as `dropped` rather than swallowed. Then the merged state is priced
+  against `MAX_BODY` before it is written, because five capped maps can still add
+  up to something no phone can push back — and a stored state larger than the body
+  cap cannot be recovered from a client, whose next PUT is its whole copy. A write
+  that would cross that line is refused whole (413, nothing stored); a write that
+  does not grow an already-large state is always allowed, since otherwise landing
+  on the ceiling would itself deny every future write.
+  This is the one control in this file that was pure prose. `MAX_ENTRIES` was a
+  per-request loop counter, not a per-map ceiling, so a single 79 KB `PUT` of 5000
+  keys built a map whose round trip was 329 KB and wedged sync for both phones
+  permanently, recoverable only with `ADMIN_KEY`. `tools/scan.mjs` now fails if
+  either ceiling stops measuring the result.
+- **Entry timestamps are clamped to now** (plus five minutes for clock skew). A
+  timestamp in the future would otherwise win every merge for ever and never age
+  out of `prune()` — one field acting as both a write-lock and an unprunable row.
+- **Every synced map can shrink.** `prune()` drops stale ticks and log entries and
+  tombstoned extras and dishes after 90 days, and stale `ok` pantry rows — `low`
+  and `out` are a standing state and are kept. `pantry` had no prune loop at all,
+  so it was the one map that could only ever grow; the scan now asserts a loop per
+  map, scoped to `prune()`'s own body.
 - **Schema-validated writes**: only `name/qty/cost/store/week/t/deleted` are kept,
   strings capped at 200 chars, `cost` coerced to a finite number, `store`
-  constrained, unknown fields dropped. Caps writes at 5000 entries per map.
+  constrained, unknown fields dropped.
 - **CORS pinned** to `shopping-list-app-9an.pages.dev` and its Pages previews,
   with `Vary: Origin`. Not the primary control — auth is by header, not cookie —
   but it stops a hostile page from reading responses.
+- **Cache hits go back through `json()`.** `/rides` used to serve a hit by
+  rebuilding a response from the stored copy, which carries only `Content-Type`
+  and `max-age=600` — so `no-store`, `nosniff` and `no-referrer` were dropped and
+  the caching directive inverted. Since `Vary` names only `Origin`, `X-List-Key`
+  is not part of the cache key, so the browser then re-served heart rate, power,
+  load and ride names for the rest of the TTL even against a wrong access code.
+  One construction, one set of headers.
+
+## Why these are tests and not just paragraphs
+
+A full audit of this app in August 2026 found eight distinct defects. **Four of
+them were this file, or a comment, describing a control that was not in the
+code** — the 5000-entry cap that was a loop counter, the ride caching that
+existed at one call site out of two, an estimate allowed to clear a check meant
+for a measurement. In each case the prose was the specification, and the prose
+was the only thing enforcing it.
+
+That is worse than having no control, because a documented control is what stops
+you looking. So every claim above that can be checked mechanically now is, in
+`tools/scan.mjs` §6 to §8: the entry cap must measure the result map, `prune()`
+must have a loop per synced map, every intervals.icu call must go through the one
+cached function, every route that calls a model must pass a budget gate first, the
+Worker must hold no hardcoded calendar dates, the fitness window must be a
+constant rather than a client parameter, and a day's meals must sum exactly to the
+day's own totals.
+
+§8 checks the claim this file makes furthest up: **zero third-party runtime
+dependencies**. Five `undici` CVEs arrived on 10 August 2026 and the whole triage
+came down to "dev-only, nothing from npm is deployed" — an answer worth only as
+much as the thing that verifies it. So the lockfile is asserted to contain no
+non-dev package, `package.json` to declare no `dependencies`, and every dev pin to
+be an exact version, since `socket.yml` makes Socket the review step for
+dependency changes and it can only review what arrives as a pull request.
+
+Two checks are deliberately `warn()` rather than `err()`, because they fail
+today: `4·pr + 9·ft + 4·cb` is more than 3% from `kc` on 16 of 31 days, and
+`plan.json` has drifted from the `BUNDLED` copy in `index.html`. Promote both to
+`err()` once the plan data is regenerated.
+
+The scan is itself tested by breaking things: reintroduce any of these defects in
+a scratch copy and it must fail, with the right message. That test found a real
+hole in the first draft of these checks — a whole-file grep for the pantry prune
+loop was satisfied by an unrelated line in `coachFacts`, so the check reported a
+control that was not there. Assume the same of any new check until you have
+watched it fail.
 
 ## Known and accepted
 

@@ -12,3 +12,10 @@ if git diff --cached --name-only | grep -q '^web/public/index.html$'; then
 fi
 
 node tools/scan.mjs
+
+# The behavioural suite. scan.mjs checks that the controls are still WRITTEN a
+# particular way; these run the real code and check it BEHAVES - a 5000-key PUT
+# cannot wedge sync, September is not answered from August, fitness is not seeded
+# at zero, a tap mid-sync survives, and scan.mjs itself still fails when any of it
+# is put back. Node built-ins only, so there is nothing to install.
+node tools/tests/run.mjs

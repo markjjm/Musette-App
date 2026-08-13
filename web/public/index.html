@@ -1356,6 +1356,13 @@ let cfg    = jget('v2.cfg', null) || {url: SYNC_URL, key: ''};
 if (!cfg.url) cfg.url = SYNC_URL;
 let dirty  = jget('v2.dirty', false);
 let lastSync = LS.get('v2.lastSync') || '';
+/* Set when the Worker refuses a push, so the next sync pulls instead of retrying
+   the same rejected body. Not persisted: a fresh start should try once. */
+let pushRefused = false;
+/* Anything the dot needs to say that is not one of its normal states. #s_stat
+   lives inside the settings sheet, which is closed, and opening it overwrites the
+   text with "Last synced ..." — so a failure written only there is invisible. */
+let syncNote = '';
 
 let wi = Number(LS.get('v2.week') || 1);
 let weekWasStored = LS.get('v2.week') !== null;
@@ -1499,6 +1506,10 @@ function setDot(){
   } else if (!cfg.key || needCode) {
     d.className = 'dot err';
     txt.textContent = 'Tap to enter code';
+  } else if (syncNote) {
+    /* Beside the dot, where it is actually read. */
+    d.className = 'dot err';
+    txt.textContent = syncNote;
   } else if (syncing) {
     d.className = 'dot pend';
     txt.textContent = 'Syncing...';
@@ -1522,23 +1533,86 @@ async function sync(push){
     const base = cfg.url.replace(/\/+$/,'');
     const h = {'Content-Type':'application/json'};
     if (cfg.key) h['X-List-Key'] = cfg.key;
+    /* A tap made while this request is in flight has to survive it. The reply
+       predates the tap, and adopting it wholesale — which this did — repainted
+       the row un-ticked under his finger, cleared dirty, persisted the reverted
+       map and then PUT it; the server's per-key merge then kept its own
+       newer-or-equal value and the tap was gone on both phones, under a "Synced"
+       dot. The shop with two phones in it is the case this app exists for.
+
+       So snapshot the five maps first. Every write handler replaces an ENTRY with
+       a fresh object and never mutates one in place, so a shallow copy is enough:
+       comparing entries by identity afterwards finds exactly the keys written
+       during the flight. Carrying only those is the point — a blanket local-wins
+       merge would also resurrect keys the server had pruned, and prune() drops
+       old log entries outright rather than tombstoning them. */
+    const snap = {
+      ticks: {...ticks}, extras: {...extras}, pantry: {...pantryState},
+      log: {...mealLog}, dishes: {...dishes},
+    };
+    const liveTicks = ticks, liveExtras = extras, livePantry = pantryState,
+          liveLog = mealLog, liveDishes = dishes;
     let r;
-    if (push || dirty){
+    /* After a refused push, take one GET before trying again. `dirty` stays set on
+       a failure — deliberately, so an unsaved write is never silently dropped —
+       but that means `push || dirty` would choose PUT on every subsequent sync
+       for ever, and the GET branch would become unreachable: the phone would stop
+       receiving the other phone's changes entirely while showing "Saving...".
+       Alternating keeps the list flowing in at least one direction. */
+    const doPush = (push || dirty) && !pushRefused;
+    pushRefused = false;
+    if (doPush){
       r = await fetch(base + '/state', {method:'PUT', headers:h, body: JSON.stringify({ticks, extras, pantry: pantryState, log: mealLog, dishes})});
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
     if (r.status === 401){ needCode = true; openSettings(); throw new Error('Access code not accepted'); }
     if (r.status === 429) throw new Error('Too many attempts — wait a minute');
+    /* The Worker declines a merge whose synced maps would not fit in one request.
+       Do NOT advise deleting items: a delete is a tombstone, which makes the copy
+       bigger, so that advice cannot clear the condition. Old entries age out of
+       prune() on their own; anything sooner needs ADMIN_KEY. */
+    if (r.status === 413) {
+      pushRefused = true;
+      syncNote = 'List too large to save';
+      throw new Error('The list is too big to save, so recent changes are not being kept. Old items clear themselves after 90 days; deleting now would make it larger, not smaller.');
+    }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const s = await r.json();
-    const was = stateSig();
-    ticks  = s.ticks  || {};
-    extras = s.extras || {};
-    pantryState = s.pantry || pantryState;
-    mealLog = s.log || mealLog;
-    dishes = s.dishes || dishes;
-    let changed = stateSig() !== was;
+    /* What the screen is showing right now, mid-flight writes included. `changed`
+       has to be measured against THIS and not against the pre-fetch signature:
+       when adopt() discards a mid-flight write because the other phone wrote
+       later, the state returns to its pre-fetch value byte-for-byte, so comparing
+       with the pre-fetch signature says "nothing changed" and skips the repaint —
+       leaving the row painted as the finger left it while the state says
+       otherwise. The tick handler paints optimistically, so the DOM is only
+       correct again once something repaints it. */
+    const sigOnScreen = stateSig();
+    /* Take the server's map, then put back whatever this phone wrote while the
+       request was in the air — by exactly the rule the Worker's mergeByTime uses,
+       so the two cannot disagree. A mid-flight write wins only if it is strictly
+       newer than what came back; if the other phone wrote later, the server's
+       value is kept, because pushing ours would lose that merge anyway and we
+       would only be showing something that was about to vanish. `carried` is
+       therefore the count of writes the server will actually accept, which is the
+       right condition for re-arming the push. */
+    let carried = 0;
+    const adopt = (server, live, was) => {
+      for (const k of Object.keys(live)) {
+        if (live[k] === was[k]) continue;              // untouched during the flight
+        const cur = server[k], mine = live[k];
+        if (cur && typeof cur.t === 'number' && !(typeof mine.t === 'number' && mine.t > cur.t)) continue;
+        server[k] = mine;
+        carried++;
+      }
+      return server;
+    };
+    ticks  = adopt(s.ticks  || {}, liveTicks,  snap.ticks);
+    extras = adopt(s.extras || {}, liveExtras, snap.extras);
+    pantryState = adopt(s.pantry || livePantry, livePantry, snap.pantry);
+    mealLog = adopt(s.log || liveLog, liveLog, snap.log);
+    dishes = adopt(s.dishes || liveDishes, liveDishes, snap.dishes);
+    let changed = stateSig() !== sigOnScreen;
     /* A plan with no weeks blanks the whole app — no current week, nothing to
        render. Never adopt one; keep whatever is already loaded. */
     if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) {
@@ -1546,10 +1620,21 @@ async function sync(push){
       if (sig !== planSig) { planSig = sig; plan = fillPlan(s.plan); jset('v2.plan', plan); changed = true; }
     }
     lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
-    dirty = false;
+    /* Only a successful PUSH clears the warning. The pull after a refusal adopts
+       the server's copy, which means the write that could not be saved is gone —
+       so if a pull cleared this, the loss would be silent and the dot would read
+       "Synced" over a list that had just dropped a change. It stays up until
+       something actually saves. */
+    if (doPush) syncNote = '';
     lastSync = new Date().toISOString();
     LS.set('v2.lastSync', lastSync);
-    persist();
+    /* Only clear dirty when nothing was written mid-flight; otherwise re-arm the
+       push, because the 1200 ms debounce that fired during it returned at the
+       `syncing` guard and its timer is already spent. Clearing dirty
+       unconditionally is what made that second window silent: the write stayed on
+       the phone with nothing left to send it, until a visibilitychange happened
+       to come along. queue() sets dirty and persists on its own. */
+    if (carried) { queue(); } else { dirty = false; persist(); }
     /* Only repaint when something actually came back different. Every tap
        queues a push 1200 ms later, and that push returns our own state; an
        unconditional render() here rebuilt #main from innerHTML a beat after

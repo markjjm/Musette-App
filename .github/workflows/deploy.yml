@@ -26,11 +26,13 @@ jobs:
         with:
           node-version: '22'
 
-      # Gate: never deploy a stale CSP or a source-invariant regression.
+      # Gate: never deploy a stale CSP, a source-invariant regression, or a
+      # behavioural regression in the sync, date and fitness logic.
       - name: security gate
         run: |
           node tools/build-csp.mjs --check
           node tools/scan.mjs
+          node tools/tests/run.mjs
 
       - name: deploy worker
         uses: cloudflare/wrangler-action@v3
