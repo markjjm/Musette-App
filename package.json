@@ -16,6 +16,6 @@
     "foods": "node tools/build-foods.mjs"
   },
   "devDependencies": {
-    "wrangler": "4.122.0"
+    "wrangler": "4.123.0"
   }
 }
