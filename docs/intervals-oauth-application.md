@@ -4,7 +4,8 @@
 
 # intervals.icu OAuth application
 
-**Status:** ready to send once the four blanks below are filled. Approval is a human
+**Status:** two blanks left — a logo URL and your intervals.icu id — plus one real blocker,
+the privacy policy, which has to be live at the URL this email claims. Approval is a human
 reading an email; expect days, not minutes.
 
 ---
@@ -35,40 +36,40 @@ the partner agreements that are not available to us. One integration, every devi
 
 ## Blanks to fill before sending
 
-| Placeholder | Where it comes from |
+| Field | Status |
 |---|---|
-| `[APP NAME]` | Working name is **Musette**. Whatever is chosen ends up on the consent screen users see. |
-| `[WEBSITE URL]` | Does not exist yet. Needs the domain from build-order step 2. |
-| `[PRIVACY POLICY URL]` | Does not exist yet. `/privacy` from the website spec, steps 1–2. |
-| `[LOGO URL]` | Square, at least 128×128, publicly reachable. Can live on the Pages site. |
-| `[REDIRECT URI]` | `https://api.<domain>/auth/intervals/callback` once the domain exists. |
-| `[INTERVALS ID]` | Own athlete id from `intervals.icu/settings`. |
+| App name | **Musette** — settled. |
+| Website URL | `https://musetteapp.com` — **domain bought 2026-08-17**, needs the public site actually serving there. |
+| Privacy policy URL | `https://musetteapp.com/privacy` — **does not exist yet.** |
+| `[LOGO URL]` | Square, at least 128×128, publicly reachable. Serve it off Pages once the site is up. |
+| Redirect URI | `https://api.musetteapp.com/auth/intervals/callback` — hostname configured in `worker/wrangler.toml`. |
+| `[INTERVALS ID]` | Own athlete id from `intervals.icu/settings`. Five-minute job. |
 
-**Two of these are hard blockers.** The application cannot be sent without a live website URL
-and a live privacy policy URL, which means **steps 1–2 of [website-spec.md](website-spec.md)
-now gate device sync**, not just the sign-in page. Build them first.
+**One hard blocker left: the privacy policy must be live before this can be sent.** That makes
+**steps 1–2 of [website-spec.md](website-spec.md) the gate on device sync**, not just on the
+sign-in page. Build them first; everything else here is now filled in or trivial.
 
 ---
 
 ## The email
 
 > **To:** david@intervals.icu
-> **Subject:** OAuth application request — [APP NAME]
+> **Subject:** OAuth application request — Musette
 >
 > Hi David,
 >
 > I'd like to register an OAuth application against the intervals.icu API.
 >
-> **App name:** [APP NAME]
+> **App name:** Musette
 > **Description:** A nutrition planner that fuels a training week. It reads a rider's
 > completed activities and uses measured work (`icu_joules`), training load and the
 > zone-time breakdown to compute CTL/ATL/TSB, then sets that day's calorie and carbohydrate
 > targets against it — so an easy Tuesday and a five-hour Saturday are not fed the same way.
 > The training data is read-only; nothing is written back to intervals.icu.
-> **Website:** [WEBSITE URL]
+> **Website:** https://musetteapp.com
 > **Logo:** [LOGO URL] (square, 256×256)
-> **Privacy policy:** [PRIVACY POLICY URL]
-> **Redirect URI:** [REDIRECT URI]
+> **Privacy policy:** https://musetteapp.com/privacy
+> **Redirect URI:** https://api.musetteapp.com/auth/intervals/callback
 > **My intervals.icu id:** [INTERVALS ID]
 >
 > **Scopes requested: `ACTIVITY:READ` only.** No write scope, no wellness, no calendar —
