@@ -3,6 +3,22 @@ main = "worker.js"
 compatibility_date = "2026-07-01"
 account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
 
+# NOT optional, and not a default. The moment a [[routes]] block exists, wrangler
+# turns workers.dev OFF unless this line says otherwise - it warns, deploys, and
+# the old hostname starts answering 1042. Every phone carries that hostname in
+# localStorage (v2.cfg), so dropping it is an outage for everyone who has not
+# reopened the app since the cutover, which is the whole point of doing this
+# gradually. It comes out only when no phone is left on the old URL.
+#
+# These two are top-level on purpose: in TOML any key written after a [[routes]]
+# header belongs to that table, where they are not valid options and the deploy
+# is rejected. They have to sit above every section.
+workers_dev = true
+
+# Left off deliberately. Preview URLs would put the same authenticated Worker on
+# a third hostname that nothing needs and CORS does not name.
+preview_urls = false
+
 # The Worker answers on its own hostname under the app's domain, so the page and
 # the API are the same SITE and not merely the same account. workers.dev and
 # pages.dev are both on the Public Suffix List, which makes every cookie between
