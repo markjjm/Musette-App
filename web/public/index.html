@@ -1377,8 +1377,35 @@ let pushRefused = false;
    text with "Last synced ..." — so a failure written only there is invisible. */
 let syncNote = '';
 
-let wi = Number(LS.get('v2.week') || 1);
-let weekWasStored = LS.get('v2.week') !== null;
+/* Which week is showing, remembered WITH the day it was chosen and the block it
+   belongs to. A bare index was a promise the app could not keep: it was written
+   once, on the first run of the block, and then honoured forever - so the list
+   opened on whichever week you last tapped and never moved on again. Week 1's
+   shopping list in week 3 is not a stale preference, it is the wrong list, and
+   nothing on screen says so.
+
+   The rule now: a week you pick is yours for the rest of that day, so looking
+   ahead at Saturday's shop survives a reload while you are standing in the aisle;
+   tomorrow the app is back on the week you are actually living. */
+/* Built by concatenation rather than a template literal on purpose: scan.mjs
+   reviews every ${} in this file as a possible HTML interpolation, and three
+   date parts that never touch the DOM are not worth spending on that budget.
+   Local, not toISOString() - UTC would roll this over at 8pm in New York and
+   show tomorrow's week to somebody standing in a shop tonight. */
+function localISO(d){
+  d = d || new Date();
+  const m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+}
+/* A bare number is the old format. Deliberately not migrated - outliving the day
+   it was made is the whole defect, so the old value is treated as absent and the
+   next open lands on today. */
+const weekPick = jget('v2.week', null);
+function weekPickIsFresh(pick, today, block){
+  return !!pick && typeof pick === 'object'
+    && pick.on === today && pick.block === block;
+}
+let wi = (weekPick && typeof weekPick === 'object' && Number(weekPick.i)) || 0;
 let tab = LS.get('v2.tab') || 'A';
 let hideChecked = jget('v2.hideChecked', false); // Store check-off filter mode
 
@@ -1479,6 +1506,11 @@ function fillPlan(p){
 function weeks(){ return ((plan && plan.weeks) || []).filter(w => HIDE_WEEKS.indexOf(w.id) < 0); }
 const weekLabel = w => (w && (w.dates || w.label)) || '';
 function curWeek(){ const w = weeks(); return w[Math.min(wi, w.length-1)] || w[0]; }
+/* Stamped with the day and the block, so tomorrow's open re-decides rather than
+   inheriting. Every write of v2.week goes through here. */
+function rememberWeek(){
+  jset('v2.week', { i: wi, on: localISO(), block: String((plan && plan.block) || '') });
+}
 
 /* Dynamic Header Height Calculation for Perfect Sticky Positioning on Safari */
 function updateHeaderHeight(){
@@ -3641,7 +3673,7 @@ document.addEventListener('click', e => {
   const chip = e.target.closest('.chip');
   if (chip){
     wi = Number(chip.dataset.w);
-    LS.set('v2.week', wi);
+    rememberWeek();
     chips();
     render();
     window.scrollTo(0,0);
@@ -3955,12 +3987,17 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('online', () => { pollFails = 0; sync(dirty); startPolling(); });
 
 /* Init */
-/* First run of the block: land on the week that contains today. This has to
-   happen before the first render, not after, or the app draws the wrong week
-   and never redraws. */
-if (!weekWasStored){
+/* Land on the week that contains today, unless the showing week was picked today
+   and in this block. This has to happen before the first render, not after, or
+   the app draws the wrong week and never redraws.
+
+   Outside the block the stored index is left alone rather than reset: a month
+   that has ended has no current week, and moving the list somewhere arbitrary
+   would be its own kind of wrong. That case wants a new block published, which
+   is not something the app can do for itself. */
+if (!weekPickIsFresh(weekPick, localISO(), String((plan && plan.block) || ''))){
   const wt = weekIndexOfToday();
-  if (wt >= 0) { wi = wt; LS.set('v2.week', String(wi)); }
+  if (wt >= 0) { wi = wt; rememberWeek(); }
 }
 
 chips();
