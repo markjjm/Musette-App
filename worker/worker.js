@@ -15,7 +15,11 @@ const STORES = new Set(['A', 'M']);
 
 /* Only the deployed app may read responses cross-origin. Auth is by header,
    not cookie, so CORS is defence in depth rather than the primary control. */
-const ORIGIN_EXACT = new Set(['https://shopping-list-app-9an.pages.dev']);
+const ORIGIN_EXACT = new Set([
+  'https://app.musetteapp.com',              // the app
+  'https://musetteapp.com',                  // the public site, for sign-in
+  'https://shopping-list-app-9an.pages.dev', // TODO: remove after the cutover
+]);
 const ORIGIN_SUFFIX = '.shopping-list-app-9an.pages.dev'; // Pages preview deploys
 
 /* Flipped to false the moment sessions become credentialed. */

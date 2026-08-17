@@ -18,8 +18,21 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = join(root, 'web/public/index.html');
 const HEADERS = join(root, 'web/public/_headers');
 
-/* Origins the page is allowed to reach. Update if the Worker is renamed. */
-const SYNC_ORIGIN = 'https://shopping-list-sync.markpjacobs1.workers.dev';
+/* Origins the page is allowed to reach.
+ *
+ * Two of them, on purpose and only for now. The Worker is moving from its
+ * workers.dev hostname to api.musetteapp.com, and phones carry the old URL in
+ * localStorage (v2.cfg), so a copy of the app that has not been reopened yet is
+ * still talking to the old host. Naming both means the move does not depend on
+ * every phone updating in the same hour.
+ *
+ * Drop the workers.dev entry once no phone is using it - it is the last thing
+ * keeping a *.workers.dev origin in the policy, and leaving it is exactly the
+ * kind of "temporary" that becomes permanent. */
+const SYNC_ORIGINS = [
+  'https://api.musetteapp.com',
+  'https://shopping-list-sync.markpjacobs1.workers.dev', // TODO: remove after the cutover
+];
 
 const sha256 = (s) => `'sha256-${createHash('sha256').update(s, 'utf8').digest('base64')}'`;
 
@@ -48,7 +61,7 @@ const csp = [
   `script-src ${scripts.join(' ')}`,
   `style-src ${styles.join(' ') || "'none'"}`,
   'img-src data:',
-  `connect-src ${SYNC_ORIGIN}`,
+  `connect-src ${SYNC_ORIGINS.join(' ')}`,
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",
@@ -88,5 +101,5 @@ if (check) {
   console.log(`build-csp: wrote _headers`);
   console.log(`  script-src ${scripts.join(' ')}`);
   console.log(`  style-src  ${styles.join(' ')}`);
-  console.log(`  connect-src ${SYNC_ORIGIN}`);
+  console.log(`  connect-src ${SYNC_ORIGINS.join(' ')}`);
 }
