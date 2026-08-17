@@ -38,9 +38,13 @@ globalThis.fetch = async (url, init) => {
   return realFetch(url, init);
 };
 
-const { fetchRides } = await loadWorker(['fetchRides']);
+const { fetchRides, ownerLink } = await loadWorker(['fetchRides', 'ownerLink']);
 
-const env = { INTERVALS_KEY: 'secret-key', INTERVALS_ATHELETE: '0' };
+/* This said INTERVALS_ATHELETE for a long time. The misspelling was invisible
+   because the code fell back to athlete '0' anyway, which is what the test wanted
+   - so the athlete path was never actually under test. It is now, and there is no
+   fallback left to hide behind. */
+const env = { INTERVALS_KEY: 'secret-key', INTERVALS_ATHLETE: '0' };
 /* The real runtime keeps the isolate alive until waitUntil's promise settles.
    Collect them and drain, so the test measures caching rather than a race with
    its own stub. */
@@ -49,7 +53,7 @@ const ctx = { waitUntil: (p) => { pending.push(p); return p; } };
 const settle = async () => { await Promise.all(pending.splice(0)); };
 
 /* One request, with its background cache write finished before the next. */
-const get = async (a, b) => { const r = await fetchRides(env, a, b, ctx); await settle(); return r; };
+const get = async (a, b, e = env) => { const r = await fetchRides(ownerLink(e), a, b, ctx); await settle(); return r; };
 
 let pass = 0, failn = 0;
 const ok = (c, m) => { if (c) { pass++; console.log(`  ok   ${m}`); } else { failn++; console.log(`  FAIL ${m}`); } };
@@ -116,8 +120,8 @@ globalThis.fetch = async (url, init) => {
 };
 const today = new Date().toISOString().slice(0, 10);
 const ago = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
-const maxAge = (a, b) => {
-  const h = store.get(`https://rides.local/${a}/${b}`);
+const maxAge = (a, b, athlete = '0') => {
+  const h = store.get(`https://rides.local/${athlete}/${a}/${b}`);
   const m = /max-age=(\d+)/.exec((h && h.headers['cache-control']) || '');
   return m ? Number(m[1]) : null;
 };
@@ -128,6 +132,63 @@ console.log(`   today's range: max-age=${live}   a finished range: max-age=${don
 ok(live !== null && live <= 60, `a range reaching today is held briefly (${live}s)`);
 ok(done !== null && done >= 600, `a finished range is held for the full ten minutes (${done}s)`);
 ok(live < done, 'freshness where it matters, caching where it does not');
+
+console.log('\n7. Two athletes are two different cached things');
+/* The cache key was the date range alone. One athlete made that invisible; two
+   would have made it a cross-tenant read, served from the edge with no upstream
+   call to notice it happening. */
+store.clear();
+upstreamCalls = 0;
+let lastUrl = null;
+globalThis.fetch = async (url, init) => {
+  if (String(url).includes('intervals.icu')) {
+    upstreamCalls += 1;
+    lastUrl = String(url);
+    lastAuthHeader = init && init.headers && init.headers.Authorization;
+    return new Response(JSON.stringify([
+      { id: 'a1', start_date_local: '2026-08-13T07:00:00', name: 'Morning ride',
+        moving_time: 3600, distance: 30000, calories: 600, icu_training_load: 60,
+        icu_average_watts: 180 },
+    ]), { status: 200, headers: { 'Content-Type': 'application/json', 'X-RateLimit-Remaining': '4321' } });
+  }
+  return realFetch(url, init);
+};
+
+const other = { INTERVALS_KEY: 'secret-key', INTERVALS_ATHLETE: 'i98765' };
+const mine = await get('2026-08-13', '2026-08-13');
+ok(upstreamCalls === 1, 'the owner fetches once');
+ok(/\/athlete\/0\/activities/.test(lastUrl || ''), 'and asks upstream for athlete 0');
+await get('2026-08-13', '2026-08-13', other);
+ok(upstreamCalls === 2, 'a second athlete over the same dates does NOT get served the first one from cache');
+ok(/\/athlete\/i98765\/activities/.test(lastUrl || ''), 'it asks upstream for its own athlete');
+ok(store.size === 2, `two athletes, two cache entries (${store.size})`);
+const again = await get('2026-08-13', '2026-08-13');
+ok(upstreamCalls === 2, "and the owner's entry is still cached separately");
+
+console.log('\n   the remaining allowance is fresh-only, never served stale');
+ok(mine.remaining === 4321, `a live fetch reports what upstream said is left (${mine.remaining})`);
+ok(again.remaining === undefined, 'a cache hit reports nothing rather than a ten-minute-old number');
+
+console.log('\n8. No link means no rides - never somebody else\'s');
+/* athlete=0 means "whoever owns the key". Defaulting to it meant an unlinked
+   person would have been quietly handed the owner's rides. There is no default. */
+const unlinked = await fetchRides(ownerLink({}), '2026-08-13', '2026-08-13', ctx);
+ok(unlinked.ok === false && unlinked.why === 'not linked', 'no key configured is "not linked"');
+const before = upstreamCalls;
+const junk = await fetchRides(
+  ownerLink({ INTERVALS_KEY: 'secret-key', INTERVALS_ATHLETE: '0/../i12345' }), '2026-08-13', '2026-08-13', ctx);
+ok(junk.ok === false && junk.why === 'not linked', 'a malformed athlete id is refused rather than sent upstream');
+ok(upstreamCalls === before, 'and nothing about that reached intervals.icu');
+
+console.log('\n9. A 429 carries the wait upstream asked for');
+globalThis.fetch = async (url) => {
+  if (String(url).includes('intervals.icu')) {
+    return new Response('', { status: 429, headers: { 'Retry-After': '120' } });
+  }
+  return realFetch(url);
+};
+const limited = await get('2026-07-01', '2026-07-01');
+ok(limited.why === 'rate limited' && limited.retry === 120, `Retry-After is surfaced, not discarded (${limited.retry})`);
 
 console.log(`\n${pass} passed, ${failn} failed`);
 process.exit(failn ? 1 : 0);

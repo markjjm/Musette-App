@@ -123,10 +123,10 @@ const CASES = [
   {
     name: 'a cache hit is served by spreading the stored headers',
     mutate: (d) => edit(d, 'worker/worker.js',
-      '      return json(await fetchRides(env, oldest, newest, ctx), 200, origin);',
+      '      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);',
       '      const hit = await caches.default.match(new Request("https://rides.local/x"));\n' +
       '      if (hit) return new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers) } });\n' +
-      '      return json(await fetchRides(env, oldest, newest, ctx), 200, origin);'),
+      '      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);'),
     expect: /spreading a cached copy's headers/,
   },
   {

@@ -1433,7 +1433,37 @@ function ridesTTL(newest) {
   d.setUTCDate(d.getUTCDate() - 1);
   return newest >= d.toISOString().slice(0, 10) ? RIDES_TTL_LIVE : RIDES_TTL_DONE;
 }
-const ridesCacheKey = (oldest, newest) => new Request(`https://rides.local/${oldest}/${newest}`);
+/* ---- Whose rides these are ---------------------------------------------
+   `athlete=0` means "whoever owns this key". That is exactly right for one
+   household and a data leak for two: a second person who has not linked their
+   own account would silently be served the owner's rides, on the owner's key,
+   and nothing in the response would say so.
+
+   So the athlete is resolved by the CALLER and passed in, and fetchRides has no
+   default left to fall back on. No link, no rides. When per-user intervals.icu
+   OAuth lands this function becomes a lookup keyed on the session's uid and
+   everything downstream of it is unchanged - the auth header is built here and
+   only here, so a Bearer token slots in beside the Basic key without touching
+   the fetch path.
+
+   The id is validated before it can reach a URL path. intervals.icu ids are
+   numeric with an optional `i` prefix, so a link can never be turned into an
+   arbitrary probe of someone else's athlete number. */
+const ATHLETE_ID = /^(?:0|i?\d{1,12})$/;
+
+function ownerLink(env) {
+  if (!env.INTERVALS_KEY) return null;
+  const athlete = String(env.INTERVALS_ATHLETE || '0');
+  if (!ATHLETE_ID.test(athlete)) return null;
+  return { athlete, auth: `Basic ${btoa(`API_KEY:${env.INTERVALS_KEY}`)}` };
+}
+
+/* The athlete is part of the key, not just the date range. It was not, which was
+   harmless while exactly one athlete existed and a cross-tenant read the moment a
+   second one did: B's request for a range A had already fetched would have been
+   served A's rides straight from the edge, without an upstream call to notice. */
+const ridesCacheKey = (athlete, oldest, newest) =>
+  new Request(`https://rides.local/${encodeURIComponent(athlete)}/${oldest}/${newest}`);
 
 /* Every call to intervals.icu goes through here, and every call is cached on the
    date range. It used to be cached at exactly one call site — /rides — while the
@@ -1446,9 +1476,10 @@ const ridesCacheKey = (oldest, newest) => new Request(`https://rides.local/${old
    Putting it here rather than at the routes covers the six-week comparison set
    and the form windows too, and means the next endpoint that needs rides cannot
    forget to do it. */
-async function fetchRides(env, oldest, newest, ctx) {
-  if (!env.INTERVALS_KEY) return { ok: false, why: 'not linked' };
-  const key = ridesCacheKey(oldest, newest);
+async function fetchRides(link, oldest, newest, ctx) {
+  if (!link) return { ok: false, why: 'not linked' };
+  const { athlete, auth } = link;
+  const key = ridesCacheKey(athlete, oldest, newest);
   const cache = caches.default;
   try {
     const hit = await cache.match(key);
@@ -1456,9 +1487,7 @@ async function fetchRides(env, oldest, newest, ctx) {
   } catch {
     /* A cache miss must never be fatal — fall through to the network. */
   }
-  const athlete = env.INTERVALS_ATHLETE || '0'; // 0 means "whoever owns the key"
   const q = new URLSearchParams({ oldest, newest, fields: ICU_FIELDS });
-  const auth = btoa(`API_KEY:${env.INTERVALS_KEY}`);
   /* Only a good response is stored. Caching {ok:false} would pin a transient
      upstream 429 in place for the whole TTL. */
   const keep = (body) => {
@@ -1472,11 +1501,18 @@ async function fetchRides(env, oldest, newest, ctx) {
   };
   try {
     const r = await fetch(`${ICU}/athlete/${encodeURIComponent(athlete)}/activities?${q}`, {
-      headers: { Authorization: `Basic ${auth}`, Accept: 'application/json' },
+      headers: { Authorization: auth, Accept: 'application/json' },
       signal: AbortSignal.timeout(8000),
     });
     if (r.status === 401 || r.status === 403) return { ok: false, why: 'key rejected' };
-    if (r.status === 429) return { ok: false, why: 'rate limited' };
+    /* intervals.icu says how long to wait and how much budget is left; both were
+       thrown away here. The daily allowance is shared across everyone this Worker
+       fetches for, so `retry` is the difference between backing off once and
+       every phone in the household hammering a closed door until midnight UTC. */
+    if (r.status === 429) {
+      const retry = Number(r.headers.get('Retry-After'));
+      return { ok: false, why: 'rate limited', retry: Number.isFinite(retry) && retry > 0 ? retry : null };
+    }
     if (!r.ok) return { ok: false, why: `upstream ${r.status}` };
     const raw = await r.json();
     if (!Array.isArray(raw)) return { ok: false, why: 'unexpected response' };
@@ -1489,10 +1525,14 @@ async function fetchRides(env, oldest, newest, ctx) {
        Reported when it bites, so it can never be silent the way the old one was. */
     const all = raw.filter((a) => a && a.id);
     const rides = all.slice(0, MAX_RIDES).map(cleanRide);
-    if (all.length > MAX_RIDES) {
-      return keep({ ok: true, rides, fetched: new Date().toISOString(), truncated: all.length - MAX_RIDES });
-    }
-    return keep({ ok: true, rides, fetched: new Date().toISOString() });
+    const body = { ok: true, rides, fetched: new Date().toISOString() };
+    if (all.length > MAX_RIDES) body.truncated = all.length - MAX_RIDES;
+    keep(body);
+    /* Attached after the copy that went into the cache, deliberately. How much of
+       the daily allowance is left is true at this instant and a lie ten minutes
+       later, so it must never come back on a cache hit. */
+    const left = Number(r.headers.get('X-RateLimit-Remaining'));
+    return Number.isFinite(left) ? { ...body, remaining: left } : body;
   } catch {
     /* Timeout, DNS, TLS — all the same to the caller. */
     return { ok: false, why: 'unreachable' };
@@ -1577,7 +1617,7 @@ export default {
       if (!isDate(oldest) || !isDate(newest))
         return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
 
-      return json(await fetchRides(env, oldest, newest, ctx), 200, origin);
+      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);
     }
 
     if (path === '/state' && request.method === 'GET') {
@@ -1606,7 +1646,7 @@ export default {
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - FORM_DAYS);
       const formStart = from.toISOString().slice(0, 10);
-      const hist = await fetchRides(env, formStart, date, ctx);
+      const hist = await fetchRides(ownerLink(env), formStart, date, ctx);
       const state = await listStub(env).read();
       const rides = hist.ok ? hist.rides : [];
       const recentFrom = new Date(date + 'T12:00:00Z');
@@ -1667,7 +1707,7 @@ export default {
       const budget = await listStub(env).spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
-      const rideRes = await fetchRides(env, date, date, ctx);
+      const rideRes = await fetchRides(ownerLink(env), date, date, ctx);
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], date, nowMins);
       /* Enough load behind it for fitness to have settled, so advice about today
          knows whether he is buried or fresh. Under-fuelling a deeply negative form
@@ -1676,7 +1716,7 @@ export default {
       if (facts) {
         const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - FORM_DAYS);
         const backISO = back.toISOString().slice(0, 10);
-        const hist = await fetchRides(env, backISO, date, ctx);
+        const hist = await fetchRides(ownerLink(env), backISO, date, ctx);
         if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date, backISO);
       }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
@@ -1704,7 +1744,7 @@ export default {
       const formFrom = new Date(to + 'T12:00:00Z');
       formFrom.setUTCDate(formFrom.getUTCDate() - FORM_DAYS);
       const formStart = formFrom.toISOString().slice(0, 10);
-      const rideRes = await fetchRides(env, formStart, to, ctx);
+      const rideRes = await fetchRides(ownerLink(env), formStart, to, ctx);
       if (!rideRes.ok) return json({ ok: false, why: rideRes.why }, 200, origin);
 
       const tableFrom = from.toISOString().slice(0, 10);
@@ -1726,7 +1766,7 @@ export default {
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
       const want = url.searchParams.get('why') === '1';
 
-      const dayRes = await fetchRides(env, date, date, ctx);
+      const dayRes = await fetchRides(ownerLink(env), date, date, ctx);
       if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
       if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
@@ -1737,7 +1777,7 @@ export default {
       /* Six weeks of his own riding is the comparison set. */
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - 42);
-      const hist = await fetchRides(env, from.toISOString().slice(0, 10), date, ctx);
+      const hist = await fetchRides(ownerLink(env), from.toISOString().slice(0, 10), date, ctx);
       const state = await listStub(env).read();
       /* Same month gate as coachFacts: a day-of-month lookup would otherwise
          read September 3's ride against August 3's plan. No plan for the day is
