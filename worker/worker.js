@@ -93,7 +93,8 @@ async function safeEqual(a, b) {
   return diff === 0;
 }
 
-const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {}, profile: null, dishes: {} });
+const empty = () => ({ rev: 0, updated: null, plan: null, extras: {}, ticks: {}, pantry: {}, log: {},
+  profile: null, dishes: {}, weights: {} });
 
 /* Length was the only check. Model-supplied names reach the DOM beside a
    "looked up" badge, and a bidi override or a zero-width character can reorder
@@ -231,6 +232,19 @@ const num = (v, lo, hi, dflt) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
 };
+/* One weigh-in: '2026-08-17' -> {w, t}. Kept apart from profile.weight_lb
+   because that field is "what I weigh now" and this is "what I weighed then" -
+   a scalar cannot carry a slope, and the slope is the part worth planning a
+   month from. Clamped to the same range a body can be. */
+function cleanWeight(v) {
+  if (!v || typeof v !== 'object') return null;
+  const t = stamp(v.t);
+  if (t === null) return null;
+  const w = Number(v.w);
+  if (!Number.isFinite(w) || w < 70 || w > 400) return null;
+  return { w: Math.round(w * 10) / 10, t };
+}
+
 function cleanProfile(v) {
   if (!v || typeof v !== 'object') return null;
   const t = stamp(v.t);
@@ -298,7 +312,7 @@ function mergeByTime(mine, theirs, clean, stats) {
    limit would refuse writes that fit comfortably. Must stay in step with the body
    index.html builds in sync(). */
 const syncedWire = (s) => JSON.stringify({
-  ticks: s.ticks, extras: s.extras, pantry: s.pantry, log: s.log, dishes: s.dishes,
+  ticks: s.ticks, extras: s.extras, pantry: s.pantry, log: s.log, dishes: s.dishes, weights: s.weights,
 }).length;
 
 /* Drop stale ticks and deleted extras older than 90 days. */
@@ -318,6 +332,13 @@ function prune(state) {
      pass MAX_ENTRIES on its own. Nothing reads a meal log from three months ago. */
   for (const [k, v] of Object.entries(state.log || {})) {
     if (v.t < cutoff) delete state.log[k];
+  }
+  /* Weigh-ins outlive the food log by a long way. One number a day is tiny, and
+     the whole point of keeping them is to read a slope across blocks - a 90-day
+     window would forget the previous build every time a new one started. */
+  const weightCutoff = Date.now() - 730 * 86400000;
+  for (const [k, v] of Object.entries(state.weights || {})) {
+    if (v.t < weightCutoff) delete state.weights[k];
   }
   for (const [k, v] of Object.entries(state.dishes || {})) {
     if (v.deleted && v.t < cutoff) delete state.dishes[k];
@@ -350,8 +371,108 @@ const COACH_MODEL = 'gpt-5-mini';
 const COACH_EFFORT = 'low';   // minimal cannot do the sums; medium buys nothing here
 const COACH_MAX_DAY = 40;     // hard ceiling on calls per UTC day
 
-const COACH_SYSTEM = [
-  'You advise one cyclist: 67.1 kg, riding to hold weight steady — neither gaining nor losing.',
+/* ---- Who is being advised ----------------------------------------------
+   cleanProfile() has clamped and stored this since the profile existed, the
+   app has synced it, and nothing has ever read it. Every prompt said "67.1 kg,
+   riding to hold weight steady" as a literal, and coachFacts sent rider_kg:
+   67.1 the same way - so a rider who changed weight, set a goal of losing, or
+   entered an FTP was still advised as a 67.1 kg rider holding steady. The
+   figures were right in storage and fictional at the point of use.
+
+   Two depths, because the two jobs want different things:
+
+   riderNow()   goes on every ride read and every coach call. Who this is
+                TODAY: mass, goal, power-to-weight. Small, because it rides
+                along with facts that are already assembled.
+
+   riderTrend() goes on the monthly build only. Where the body and the load
+                have been GOING - weight slope, fitness ramp, how much of the
+                planned week actually got ridden. Costs more tokens and earns
+                them once a month rather than forty times a day. */
+
+const LB_KG = 0.45359237;
+const kgOf = (lb) => Math.round(lb * LB_KG * 10) / 10;
+
+const GOAL_PHRASE = {
+  hold: 'holding weight steady — neither gaining nor losing',
+  lose: 'losing weight slowly while training',
+  gain: 'gaining weight deliberately',
+};
+
+/* The default is the rider this app was built for, so an account with no
+   profile yet behaves exactly as it did before rather than advising nobody. */
+const RIDER_DEFAULT = { weight_lb: 148, height_in: 70, age: 40, goal: 'hold', rate_lb_wk: 0, hours_wk: 9, ftp: 0 };
+
+function riderNow(profile) {
+  const p = profile && typeof profile === 'object' ? { ...RIDER_DEFAULT, ...profile } : RIDER_DEFAULT;
+  const kg = kgOf(p.weight_lb);
+  const r = {
+    kg,
+    goal: GOAL_PHRASE[p.goal] || GOAL_PHRASE.hold,
+    age: Math.round(p.age),
+    height_in: Math.round(p.height_in),
+    target_hours_wk: p.hours_wk,
+  };
+  /* Only when it is real. An FTP of 0 means "not entered", and 0 W/kg is a
+     number that reads as a measurement rather than as an absence. */
+  if (p.ftp > 0) {
+    r.ftp_w = Math.round(p.ftp);
+    r.w_per_kg = Math.round((p.ftp / kg) * 100) / 100;
+  }
+  if (p.goal !== 'hold' && p.rate_lb_wk > 0) r.target_rate_lb_wk = p.rate_lb_wk;
+  if (p.avoid) r.will_not_eat = p.avoid;
+  if (p.notes) r.rider_notes = p.notes;
+  return r;
+}
+
+/* One sentence, at the top of every system prompt, replacing the constant.
+   Kept to a sentence deliberately: the payload carries the figures, and the
+   system prompt only has to say whose body they describe. */
+function riderLine(profile) {
+  const r = riderNow(profile);
+  const power = r.w_per_kg ? `, ${r.ftp_w} W FTP (${r.w_per_kg} W/kg)` : '';
+  return `You advise one cyclist: ${r.kg} kg, ${r.age}, ${r.goal}${power}.`;
+}
+
+/* Weight over time, oldest first, at most one point a day.
+   A body is a slow signal: a single reading is noise (hydration, salt, the
+   time of day), and the slope over weeks is the thing worth acting on. This
+   returns both, and says how confident the slope is rather than implying a
+   trend from three points. */
+function weightTrend(weights, days) {
+  const cutoff = Date.now() - days * 86400000;
+  const pts = Object.entries(weights || {})
+    .map(([d, v]) => [Date.parse(d + 'T12:00:00Z'), Number(v && v.w !== undefined ? v.w : v)])
+    .filter(([t, w]) => Number.isFinite(t) && t >= cutoff && Number.isFinite(w) && w >= 70 && w <= 400)
+    .sort((a, b) => a[0] - b[0]);
+  if (pts.length < 2) return { points: pts.length, note: 'not enough weigh-ins to read a trend' };
+
+  /* Ordinary least squares on days since the first point. */
+  const t0 = pts[0][0];
+  const xs = pts.map(([t]) => (t - t0) / 86400000);
+  const ys = pts.map(([, w]) => w);
+  const n = xs.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  const perDay = den > 0 ? num / den : 0;
+  const span = xs[n - 1] - xs[0];
+  return {
+    points: n,
+    span_days: Math.round(span),
+    first_lb: Math.round(ys[0] * 10) / 10,
+    last_lb: Math.round(ys[n - 1] * 10) / 10,
+    change_lb: Math.round((ys[n - 1] - ys[0]) * 10) / 10,
+    rate_lb_wk: Math.round(perDay * 7 * 100) / 100,
+    /* Under a fortnight of weigh-ins a slope is arithmetic on noise. Say so
+       rather than letting a month of meals be planned from it. */
+    settled: span >= 21 && n >= 6,
+  };
+}
+
+const COACH_SYSTEM = (rider) => [
+  rider,
   '',
   'Every number in the payload has already been computed and verified. Treat each as settled fact.',
   'Never recalculate one, never contradict one, and never introduce a number that is not derivable',
@@ -376,9 +497,9 @@ const COACH_SYSTEM = [
   'You are not a clinician: no medical advice, no diagnosis, nothing about disordered eating.',
 ].join('\n');
 
-const ANALYST_SYSTEM = [
-  'You read training data for one cyclist: 67.1 kg, riding to hold weight steady, on a 31-day',
-  'August block. He has a power meter, so the power figures are measured rather than estimated.',
+const ANALYST_SYSTEM = (rider) => [
+  rider,
+  'He has a power meter, so the power figures are measured rather than estimated.',
   '',
   'Every number below is already computed. Never recalculate one and never invent one.',
   '',
@@ -437,8 +558,8 @@ const ANALYST_SCHEMA = {
 /* One ride, read against every other ride he has done. The point of difference
    from a tracking site is the last two blocks of this prompt: it knows what the
    day was supposed to be, and it knows what he ate. */
-const RIDE_SYSTEM = [
-  'You read a single ride for one cyclist: 67.1 kg, riding to hold weight steady, mid-block.',
+const RIDE_SYSTEM = (rider) => [
+  rider,
   'He has a power meter, so power is measured rather than estimated.',
   '',
   'Every number is already computed, including the percentiles that place this ride against his',
@@ -552,8 +673,7 @@ function coachFacts(state, rides, dateISO, nowMins) {
     date: dateISO,
     weekday: day.wd,
     day_type: day.kind,
-    rider_kg: 67.1,
-    goal: 'hold weight steady',
+    rider: riderNow(state.profile),
 
     planned_ride_h: train ? train.h : 0,
     actual_ride_h: Math.round(ridden * 100) / 100,
@@ -726,9 +846,9 @@ async function askModel(env, system, schema, name, facts) {
    more today. It gets the same treatment as everything else here — every
    number in the payload is computed in code first, and the model is asked only
    to read them and answer in plain language. */
-const ASK_SYSTEM = [
+const ASK_SYSTEM = (rider) => [
   'You answer questions from one cyclist about his own training and eating.',
-  'He is 67.1 kg and riding to hold his weight steady across a 31-day August block.',
+  rider,
   '',
   'Everything in the payload is already computed and correct. Never recalculate a figure,',
   'never contradict one, and never introduce a number you cannot derive from what is given.',
@@ -930,6 +1050,7 @@ export class ListDO extends DurableObject {
       state.extras = mergeByTime(state.extras, body.extras, cleanExtra, stats);
       state.pantry = mergeByTime(state.pantry, body.pantry, cleanPantry, stats);
       state.log = mergeByTime(state.log || {}, body.log, cleanLog, stats);
+      state.weights = mergeByTime(state.weights || {}, body.weights, cleanWeight, stats);
       state.dishes = mergeByTime(state.dishes || {}, body.dishes, cleanDish, stats);
       /* One object, so the newer timestamp simply wins. */
       const inProf = cleanProfile(body.profile);
@@ -1788,7 +1909,7 @@ export default {
         ride_data_available: hist.ok,
       };
 
-      const out = await askModel(env, ASK_SYSTEM, ASK_SCHEMA, 'answer', facts);
+      const out = await askModel(env, ASK_SYSTEM(riderLine(state.profile)), ASK_SCHEMA, 'answer', facts);
       return json({ ...out, calls_today: budget.n }, 200, origin);
     }
 
@@ -1839,7 +1960,7 @@ export default {
       }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
 
-      const out = await askModel(env, COACH_SYSTEM, COACH_SCHEMA, 'advice', facts);
+      const out = await askModel(env, COACH_SYSTEM(riderLine(state.profile)), COACH_SCHEMA, 'advice', facts);
       return json({ ...out, facts, rides_ok: rideRes.ok, calls_today: budget.n }, 200, origin);
     }
 
@@ -1872,7 +1993,11 @@ export default {
       if (!tableRides.length) return json({ ok: false, why: 'no rides in that window' }, 200, origin);
       const state = await listStub(env).read();
       const stats = trainingStats(tableRides, state.plan, to, rideRes.rides, formStart);
-      const out = await askModel(env, ANALYST_SYSTEM, ANALYST_SCHEMA, 'analysis', stats);
+      /* The trend read is the one that plans a month, so it gets the deeper
+         rider block: where the body has been going, not just where it is. */
+      stats.rider = riderNow(state.profile);
+      stats.weight_trend = weightTrend(state.weights, FORM_DAYS);
+      const out = await askModel(env, ANALYST_SYSTEM(riderLine(state.profile)), ANALYST_SCHEMA, 'analysis', stats);
       return json({ ...out, stats, calls_today: budget.n }, 200, origin);
     }
 
@@ -1918,10 +2043,11 @@ export default {
         day ? { ...day, h: (train && train.h) || day.h } : null,
         (day && day.meals) || [], state.log || {}, date
       );
+      rideCtx.rider = riderNow(state.profile);
       if (train && train.bk) rideCtx.planned_carb_grams_on_the_bike = train.bk.cb || 0;
       if (dayRes.rides.length > 1) rideCtx.other_rides_that_day = dayRes.rides.filter((r) => r !== main).length;
 
-      const out = await askModel(env, RIDE_SYSTEM, ANALYST_SCHEMA, 'ride_read', rideCtx);
+      const out = await askModel(env, RIDE_SYSTEM(riderLine(state.profile)), ANALYST_SCHEMA, 'ride_read', rideCtx);
       return json({ ...out, rides: dayRes.rides, context: rideCtx, calls_today: budget.n }, 200, origin);
     }
 
