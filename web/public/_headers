@@ -2,7 +2,7 @@
 # Re-run `npm run build` after changing index.html, or the script hash goes stale
 # and the browser will refuse to execute the app.
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-osEeQbUTds0EPFGO4+JUXEXUAq6NoA8CUNtLBSmYrSA='; style-src 'sha256-JUUuJFjcAhxzAfeB+6ILzCCn+hGRW/5MmRpRQuyf4V0='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-SUp4LoJj+vGnaZbHSkekdPjZZYlDGTxBuwX2IitLze8='; style-src 'sha256-JUUuJFjcAhxzAfeB+6ILzCCn+hGRW/5MmRpRQuyf4V0='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
