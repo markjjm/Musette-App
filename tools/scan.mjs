@@ -407,8 +407,8 @@ if (/\.\.\.Object\.fromEntries\(\s*\w+\.headers\s*\)/.test(worker)) {
   }
   /* A new askModel() call site is worth a look even when it is gated. */
   const sites = [...worker.matchAll(/await askModel\(/g)].length;
-  if (sites !== 5) {
-    warn(`worker.js has ${sites} askModel() call sites, expected 5 (/ask, /coach, /analyze, /ride?why, /food) - confirm the new one is behind a budget`);
+  if (sites !== 6) {
+    warn(`worker.js has ${sites} askModel() call sites, expected 6 (/ask, /coach, /analyze, /ride?why, /food, /summary) - confirm the new one is behind a budget`);
   }
 }
 

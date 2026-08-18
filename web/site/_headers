@@ -11,10 +11,10 @@
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-Sx2lUAEJ/JwnifzosT3d8OnWuSDaabEc1XGN4E+rs/8='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /signin
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-91mKTjbsDztWItKDhljdDRUaCVDxEn3OYhTJxOni5y4='; style-src 'sha256-gs7T0cVje5DUzCSjwACSALewdP9K0h8iNpd7QEXyxCE='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-PXg/2snDpCuJrXh/t494NRSrvmdygPoiCZ0B+RZ2mDg='; style-src 'sha256-gs7T0cVje5DUzCSjwACSALewdP9K0h8iNpd7QEXyxCE='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /signin.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-91mKTjbsDztWItKDhljdDRUaCVDxEn3OYhTJxOni5y4='; style-src 'sha256-gs7T0cVje5DUzCSjwACSALewdP9K0h8iNpd7QEXyxCE='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-PXg/2snDpCuJrXh/t494NRSrvmdygPoiCZ0B+RZ2mDg='; style-src 'sha256-gs7T0cVje5DUzCSjwACSALewdP9K0h8iNpd7QEXyxCE='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /terms
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-bL8cesabo+5nyh0eES4ioim3KE0G2fB4vhexbOdSJrQ='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'

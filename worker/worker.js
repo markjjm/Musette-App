@@ -816,6 +816,40 @@ async function sendCode(env, to, code) {
   }
 }
 
+/* Regenerating the three-month read, in one place so the route and the weekly
+   cron cannot drift apart. Returns a plain result rather than a Response,
+   because one caller has a request to answer and the other has nobody to tell. */
+async function regenerateSummary(env, ctx) {
+  const stub = listStub(env);
+  const budget = await stub.spend();
+  if (!budget.ok) return { ok: false, why: `daily limit reached (${COACH_MAX_DAY})` };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const from = new Date();
+  from.setUTCDate(from.getUTCDate() - DIGEST_WINDOW_DAYS);
+  const fromISO = from.toISOString().slice(0, 10);
+
+  /* Stored rides first; upstream only when there are too few to be worth
+     summarising. This is what keeps a regeneration to at most one intervals.icu
+     call rather than one per question. */
+  let rides = await stub.ridesBetween(fromISO, today);
+  if (rides.length < 5) {
+    const up = await fetchRides(ownerLink(env), fromISO, today, ctx);
+    if (up.ok) rides = up.rides;
+  }
+  if (!rides.length) return { ok: false, why: 'no rides in the last three months to summarise' };
+
+  const state = await stub.read();
+  const facts = digestFacts(rides, state.weights, state.plan, riderNow(state.profile));
+  const out = await askModel(env, SUMMARY_SYSTEM(riderLine(state.profile)), SUMMARY_SCHEMA, 'summary', facts);
+  if (!out.ok) return out;
+  await stub.putDigest({
+    summary: out.advice, model: out.model, cost: out.cost,
+    basis: { rides: rides.length, window_days: DIGEST_WINDOW_DAYS, from: fromISO, to: today },
+  });
+  return { ok: true, ...(await stub.getDigest()), calls_today: budget.n };
+}
+
 /* ---- The three-month read ---------------------------------------------
    One model call, made on a schedule rather than on a question, stored, and
    read back instantly by everything that needs context. This is the layer that
@@ -2570,6 +2604,17 @@ async function fetchRides(link, oldest, newest, ctx) {
 }
 
 export default {
+  /* Weekly, so the standing three-month read is never more than seven days old
+     without anybody having to remember to ask for it. Deliberately not daily:
+     a quarter's shape does not move in 24 hours, and every run is a model call.
+
+     Failure here is silent by design - there is no user waiting on it, the
+     previous summary stays served with its age attached, and the next run tries
+     again. */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(regenerateSummary(env, ctx).catch(() => {}));
+  },
+
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin');
 
@@ -2620,33 +2665,8 @@ export default {
         if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
         if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
           return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
-        const budget = await stub.spend();
-        if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
-
-        const today = new Date().toISOString().slice(0, 10);
-        const from = new Date();
-        from.setUTCDate(from.getUTCDate() - DIGEST_WINDOW_DAYS);
-        const fromISO = from.toISOString().slice(0, 10);
-
-        /* Read stored rides first; only reach upstream for what is missing.
-           This is the whole point of keeping them - a regeneration costs one
-           upstream call at most, not one per question. */
-        let rides = await stub.ridesBetween(fromISO, today);
-        if (rides.length < 5) {
-          const up = await fetchRides(ownerLink(env), fromISO, today, ctx);
-          if (up.ok) rides = up.rides;
-        }
-        if (!rides.length) return json({ ok: false, why: 'no rides in the last three months to summarise' }, 200, origin);
-
-        const state = await stub.read();
-        const facts = digestFacts(rides, state.weights, state.plan, riderNow(state.profile));
-        const out = await askModel(env, SUMMARY_SYSTEM(riderLine(state.profile)), SUMMARY_SCHEMA, 'summary', facts);
-        if (!out.ok) return json(out, 200, origin);
-        await stub.putDigest({
-          summary: out.advice, model: out.model, cost: out.cost,
-          basis: { rides: rides.length, window_days: DIGEST_WINDOW_DAYS, from: fromISO, to: today },
-        });
-        return json({ ok: true, ...(await stub.getDigest()), calls_today: budget.n }, 200, origin);
+        const out = await regenerateSummary(env, ctx);
+        return json(out, out.ok ? 200 : 200, origin);
       }
       return json({ error: 'not found' }, 404, origin);
     }

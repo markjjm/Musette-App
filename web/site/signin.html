@@ -190,6 +190,15 @@ text-decoration:underline;text-underline-offset:3px}
   <p class="alt">Got an invite code? <button id="haveCode" type="button">Use it instead</button></p>
 </div>
 
+<div id="paneVerify" class="hidden">
+  <p class="lede" style="font-size:16px;margin-bottom:20px">We sent a six-digit code to <b id="sentTo"></b>. It is good for 15 minutes.</p>
+  <div class="field"><label for="vc">Verification code</label>
+    <input id="vc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
+      style="font:650 24px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
+  <button id="goVerify" class="btn primary" type="button">Verify and finish</button>
+  <p class="alt">Nothing arrived? Check spam, then <button id="again" type="button">start again</button></p>
+</div>
+
 <div id="paneCode" class="hidden">
   <div class="field"><label for="code">Invite code</label>
     <input id="code" autocapitalize="characters" spellcheck="false" placeholder="ABCD1234" maxlength="16"></div>
@@ -268,6 +277,7 @@ text-decoration:underline;text-underline-offset:3px}
     var isNew = which === 'new';
     $('paneNew').className = isNew ? '' : 'hidden';
     $('paneCode').className = 'hidden';
+    $('paneVerify').className = 'hidden';
     $('paneSignin').className = isNew ? 'hidden' : '';
     $('tNew').setAttribute('aria-selected', String(isNew));
     $('tSignin').setAttribute('aria-selected', String(!isNew));
@@ -290,6 +300,8 @@ text-decoration:underline;text-underline-offset:3px}
     finally { busy($('goIn'), false, 'Sign in'); }
   });
 
+  var pendingEmail = null;
+
   async function createWith(emailEl, passEl, btn, label, extra) {
     var mail = ($(emailEl).value || '').trim().toLowerCase();
     var p = $(passEl).value || '';
@@ -305,7 +317,15 @@ text-decoration:underline;text-underline-offset:3px}
       var out = await post(extra ? '/auth/password/register' : '/auth/signup',
         extra ? Object.assign(body, extra) : body);
       if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
-      land(out);
+      /* An invite redemption is already trusted and lands straight in. An open
+         signup does not: it has only created a pending record, and the account
+         does not exist until the code comes back. */
+      if (extra) { land(out); return; }
+      pendingEmail = mail;
+      $('sentTo').textContent = out.sent_to || mail;
+      $('paneNew').className = 'hidden';
+      $('paneVerify').className = '';
+      say('ok', 'Code sent. Enter it below to finish.');
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
     finally { busy($(btn), false, label); }
   }
@@ -318,6 +338,22 @@ text-decoration:underline;text-underline-offset:3px}
     if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
     createWith('cu', 'cp', 'goCode', 'Redeem invite', { code: code });
   });
+  $('goVerify').addEventListener('click', async function () {
+    var code = ($('vc').value || '').trim();
+    if (!/^\d{6}$/.test(code)) { say('bad', 'The code is six digits.'); return; }
+    busy($('goVerify'), true, 'Verify and finish');
+    try {
+      var out = await post('/auth/signup/verify', { email: pendingEmail, code: code });
+      if (!out.ok) { say('bad', out.why || 'That code did not work.'); return; }
+      land(out);
+      $('paneVerify').className = 'hidden';
+    } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
+    finally { busy($('goVerify'), false, 'Verify and finish'); }
+  });
+  $('again').addEventListener('click', function () {
+    $('paneVerify').className = 'hidden'; $('paneNew').className = ''; msg.className = 'msg hidden';
+  });
+
   $('haveCode').addEventListener('click', function () {
     $('paneNew').className = 'hidden'; $('paneCode').className = ''; msg.className = 'msg hidden';
   });

@@ -1699,7 +1699,15 @@ async function sync(push){
    endpoint while the screen is on, and pull the full list only when the number
    moves. Polling rather than a socket on purpose: this gets used in a shop on
    patchy signal, where a WebSocket spends its life reconnecting. */
-const POLL_MS = 4000;
+/* Four seconds was free-tier thinking: it cost nothing but a request count that
+   never billed. On Workers Paid every poll is a Durable Object request against
+   1M a month, and a single tab left open on a laptop at 4s is 0.65M of them -
+   two thirds of the allowance from one forgotten window.
+
+   Twenty seconds is 5x less traffic and, for a shopping list two people tick
+   items off in a shop, indistinguishable in use: the other phone's change
+   arrives within a glance either way. */
+const POLL_MS = 20000;
 let lastRev = Number(LS.get('v2.rev') || 0);
 let pollTimer = null;
 let pollFails = 0;

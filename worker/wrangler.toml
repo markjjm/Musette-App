@@ -34,6 +34,12 @@ preview_urls = false
 #   npx wrangler email sending enable musetteapp.com
 # Without this binding, signup refuses rather than creating accounts whose email
 # was never proved - sendCode() checks for it and fails closed.
+# Sunday 05:00 UTC: rebuild the standing three-month read. Weekly rather than
+# daily because a quarter's shape does not move overnight and every run costs a
+# model call.
+[triggers]
+crons = ["0 5 * * SUN"]
+
 [[send_email]]
 name = "EMAIL"
 
