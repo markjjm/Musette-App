@@ -1,112 +1,219 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign in — Musette</title><style>:root{--ground:#F7F8FA;--surface:#fff;--line:#E1E5EB;--ink:#0F1620;--ink-2:#4A5666;--navy:#12305C;--navy-ink:#F2F5FA;--accent:#F0B429;--train:#1F6B4A;--fuel:#7A3E86}
-@media(prefers-color-scheme:dark){:root{--ground:#0C1118;--surface:#141B25;--line:#232C39;--ink:#E8ECF2;--ink-2:#A3AEBD;--navy:#0A1626;--navy-ink:#E8ECF2;--train:#6BC79B;--fuel:#C79BD2}}
+<title>Sign in — Musette</title><style>:root{
+--ink:#0E1116;--ink-2:#59616E;--ink-3:#8A93A1;
+--paper:#FBFAF8;--card:#fff;--line:#E7E4DE;
+--navy:#101C2E;--navy-2:#1B2C45;--cream:#F4F1EA;
+--amber:#E8A33D;--amber-deep:#C97F14;
+--moss:#2E6B4F;--plum:#6B3A63;--clay:#B4543A;
+--sh-1:0 1px 2px rgba(16,28,46,.06),0 4px 12px rgba(16,28,46,.05);
+--sh-2:0 2px 6px rgba(16,28,46,.08),0 18px 44px rgba(16,28,46,.10);
+--r:14px}
+@media(prefers-color-scheme:dark){:root{
+--ink:#ECEFF3;--ink-2:#A6AEBB;--ink-3:#727B89;
+--paper:#0B0F15;--card:#141A22;--line:#232C38;
+--navy:#080D14;--navy-2:#121C2A;--cream:#161D26;
+--sh-1:0 1px 2px rgba(0,0,0,.4);--sh-2:0 2px 8px rgba(0,0,0,.5),0 20px 50px rgba(0,0,0,.4)}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-h1,h2,h3{letter-spacing:-.025em;font-weight:700;line-height:1.15;margin:0}
-h1{font-size:clamp(32px,5vw,52px)}h2{font-size:clamp(24px,3vw,38px)}h3{font-size:18px;font-weight:650}
-p{margin:0 0 16px;max-width:68ch}
-a{color:inherit}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-header.mast{background:var(--navy);color:var(--navy-ink)}
-.mast .wrap{display:flex;align-items:center;gap:28px;height:64px}
-.mark{font-weight:700;font-size:18px;letter-spacing:-.02em;text-decoration:none}
-.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.mast nav a{font-size:14px;text-decoration:none;opacity:.85}
-.mast nav a:hover,.mast nav a:focus{opacity:1;text-decoration:underline}
-.btn{display:inline-block;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:650;text-decoration:none;border:1px solid transparent;cursor:pointer}
-.btn.primary{background:var(--accent);color:#1a1200;border-color:var(--accent)}
-.btn.quiet{border-color:currentColor;opacity:.9}
-section{padding:clamp(48px,7vw,96px) 0}
-section+section{border-top:1px solid var(--line)}
-.lede{font-size:clamp(18px,2vw,22px);color:var(--ink-2);max-width:60ch}
-.grid{display:grid;gap:24px;grid-template-columns:1fr}
-@media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px}
-.card h3{margin-bottom:8px}
-.card p{font-size:15px;color:var(--ink-2);margin-bottom:0}
-.surface{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.surface .hd{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.surface .bd{padding:18px}
-.row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
-.row:last-child{border-bottom:0}
-.row b{font-weight:650}
-.num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
-.train{color:var(--train)}.fuel{color:var(--fuel)}
-ul.plain{list-style:none;padding:0;margin:0}
-ul.plain li{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink-2)}
-ul.plain li:last-child{border-bottom:0}
-ul.plain b{color:var(--ink);font-weight:650}
-footer{background:var(--navy);color:var(--navy-ink);padding:40px 0;font-size:14px}
-footer a{opacity:.85}
-footer .fl{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px}
-footer p{opacity:.7;font-size:13px;max-width:none;margin:0}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+font:17px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1140px;margin:0 auto;padding:0 28px}
+.narrow{max-width:760px}
+h1,h2,h3,h4{margin:0;letter-spacing:-.03em;line-height:1.08;font-weight:760}
+h1{font-size:clamp(40px,6.2vw,72px)}
+h2{font-size:clamp(27px,3.4vw,42px);letter-spacing:-.028em}
+h3{font-size:20px;letter-spacing:-.018em;font-weight:700;line-height:1.25}
+p{margin:0 0 18px;max-width:64ch}
+a{color:inherit;text-underline-offset:3px}
+.eyebrow{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;
+text-transform:uppercase;color:var(--amber-deep);margin:0 0 20px;display:flex;align-items:center;gap:10px}
+.eyebrow:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent);max-width:120px}
+.lede{font-size:clamp(18px,2.1vw,21px);line-height:1.55;color:var(--ink-2);max-width:56ch;font-weight:420}
+/* masthead */
+.mast{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.86);
+backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+@media(prefers-color-scheme:dark){.mast{background:rgba(11,15,21,.86)}}
+.mast .wrap{display:flex;align-items:center;gap:30px;height:70px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:780;font-size:19px;
+letter-spacing:-.03em;text-decoration:none}
+.mark i{width:26px;height:26px;border-radius:8px;flex:0 0 26px;
+background:linear-gradient(145deg,var(--amber),var(--amber-deep));display:block;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.mast nav{margin-left:auto;display:flex;gap:26px;align-items:center}
+.mast nav a{font-size:15px;font-weight:520;text-decoration:none;color:var(--ink-2)}
+.mast nav a:hover{color:var(--ink)}
+@media(max-width:720px){.mast nav a.hide-sm{display:none}}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:11px;
+font:650 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:transform .12s ease,box-shadow .12s ease}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber-deep));
+color:#22160A;box-shadow:var(--sh-1),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.primary:hover{box-shadow:var(--sh-2),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.ghost{border-color:var(--line);background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
+.btn.onnavy{background:rgba(255,255,255,.1);color:var(--cream);border-color:rgba(255,255,255,.22)}
+/* sections */
+section{padding:clamp(64px,8vw,116px) 0;position:relative}
+.rule{border-top:1px solid var(--line)}
+.dark{background:var(--navy);color:var(--cream)}
+.dark h2,.dark h3{color:#fff}
+.dark .lede,.dark p{color:#B9C4D4}
+.dark .eyebrow{color:var(--amber)}
+/* hero */
+.hero{padding-top:clamp(56px,7vw,92px);padding-bottom:clamp(48px,6vw,84px);overflow:hidden}
+.hero-grid{display:grid;gap:clamp(36px,5vw,64px);align-items:center;grid-template-columns:1fr}
+@media(min-width:940px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+.hero h1 em{font-style:normal;background:linear-gradient(180deg,transparent 62%,rgba(232,163,61,.34) 62%)}
+.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.trust{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-3)}
+.trust span{display:flex;align-items:center;gap:7px}
+.tick{width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:var(--moss);
+position:relative;opacity:.9}
+.tick:after{content:"";position:absolute;left:4.5px;top:2.5px;width:4px;height:7px;
+border:solid #fff;border-width:0 1.7px 1.7px 0;transform:rotate(45deg)}
+/* the ride/plate panel */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+box-shadow:var(--sh-2);overflow:hidden}
+.panel-hd{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;
+border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.015),transparent)}
+.panel-hd b{font-size:15px;letter-spacing:-.01em}
+.chip{font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;
+padding:6px 10px;border-radius:99px;background:var(--cream);color:var(--ink-2)}
+.chip.train{background:rgba(46,107,79,.12);color:var(--moss)}
+.chip.fuel{background:rgba(107,58,99,.12);color:var(--plum)}
+.panel-bd{padding:6px 20px 18px}
+.dl{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+padding:13px 0;border-bottom:1px dashed var(--line)}
+.dl:last-child{border-bottom:0}
+.dl dt{color:var(--ink-2);font-size:15px}
+.dl dd{margin:0;font:650 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big{font-size:26px!important;letter-spacing:-.03em}
+.arrow{display:grid;place-items:center;padding:14px 0}
+.arrow span{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);
+display:grid;place-items:center;color:var(--ink-3);box-shadow:var(--sh-1);font-size:15px}
+@media(min-width:940px){.stack{display:grid;gap:0}}
+/* cards */
+.grid{display:grid;gap:22px;grid-template-columns:1fr}
+@media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+padding:28px;box-shadow:var(--sh-1);position:relative}
+.dark .card{background:var(--navy-2);border-color:rgba(255,255,255,.09)}
+.card p{font-size:15.5px;color:var(--ink-2);margin:0}
+.card h3{margin-bottom:9px}
+.num{width:32px;height:32px;border-radius:9px;background:var(--cream);color:var(--ink-2);
+display:grid;place-items:center;font:700 14px/1 ui-monospace,Menlo,monospace;margin-bottom:16px}
+.dark .num{background:rgba(255,255,255,.09);color:var(--amber)}
+/* denial list */
+.nope{display:grid;gap:0;margin:34px 0 0;padding:0;list-style:none;
+border-top:1px solid var(--line)}
+.nope li{padding:20px 0 20px 38px;border-bottom:1px solid var(--line);position:relative;
+font-size:16.5px;color:var(--ink-2);max-width:70ch}
+.nope li b{color:var(--ink);font-weight:680}
+.nope li:before{content:"";position:absolute;left:6px;top:27px;width:15px;height:1.5px;
+background:var(--clay);opacity:.65}
+.dark .nope{border-color:rgba(255,255,255,.12)}
+.dark .nope li{border-color:rgba(255,255,255,.12);color:#B9C4D4}
+.dark .nope li b{color:#fff}
+/* quote */
+.pull{font-size:clamp(21px,2.6vw,29px);line-height:1.35;letter-spacing:-.02em;
+font-weight:600;max-width:22ch}
+/* footer */
+footer{background:var(--navy);color:#93A1B5;padding:56px 0 40px;font-size:14.5px}
+footer a{color:#C6D0DE;text-decoration:none}
+footer a:hover{color:#fff;text-decoration:underline}
+.fcols{display:grid;gap:28px;grid-template-columns:1fr;margin-bottom:34px}
+@media(min-width:720px){.fcols{grid-template-columns:2fr 1fr 1fr}}
+.fcols h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6B7A8F;
+margin-bottom:14px;font-weight:640}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid rgba(255,255,255,.1);padding-top:22px;font-size:13px;
+color:#6B7A8F;max-width:78ch;line-height:1.6}
+:focus-visible{outline:2.5px solid var(--amber);outline-offset:3px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-
-.pane{max-width:460px;margin:0 auto}
-.opt{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:16px}
-.opt h3{margin-bottom:6px}
-.opt p{font-size:14px;color:var(--ink-2);margin:0 0 16px}
-label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);font-weight:650;margin-bottom:6px}
-input{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--line);border-radius:6px;background:var(--ground);color:var(--ink);font-family:inherit}
-input:focus{outline:2px solid var(--accent);outline-offset:1px}
-.btn{width:100%;text-align:center}
-.note{font-size:13px;color:var(--ink-2);margin-top:20px}
-.msg{border-radius:6px;padding:12px 14px;font-size:14px;margin-bottom:16px;border:1px solid var(--line)}
-.msg.bad{border-left:3px solid #B4433B}
-.msg.ok{border-left:3px solid var(--train)}
+.auth{max-width:440px;margin:0 auto}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--cream);padding:6px;
+border-radius:12px;margin-bottom:26px}
+.tabs button{padding:11px;border:0;border-radius:8px;background:transparent;cursor:pointer;
+font:640 15px/1 inherit;color:var(--ink-2)}
+.tabs button[aria-selected=true]{background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
+label{display:block;font-size:13.5px;font-weight:620;margin:0 0 7px;color:var(--ink-2)}
+input{width:100%;padding:13px 15px;font-size:16px;border:1px solid var(--line);border-radius:11px;
+background:var(--card);color:var(--ink);font-family:inherit}
+input:focus{outline:2.5px solid var(--amber);outline-offset:1px;border-color:transparent}
+.field{margin-bottom:18px}
+.btn{width:100%;justify-content:center}
+.msg{border-radius:11px;padding:13px 15px;font-size:15px;margin-bottom:20px;
+border:1px solid var(--line);background:var(--card);box-shadow:var(--sh-1)}
+.msg.bad{border-left:4px solid var(--clay)}
+.msg.ok{border-left:4px solid var(--moss)}
 .hidden{display:none}
-.sep{text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:22px 0}</style></head><body>
+.alt{text-align:center;margin-top:24px;font-size:14.5px;color:var(--ink-2)}
+.alt button{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;
+text-decoration:underline;text-underline-offset:3px}
+.hint{font-size:13.5px;color:var(--ink-3);margin:-8px 0 18px}
+</style></head><body>
 <header class="mast"><div class="wrap">
-<a class="mark" href="/">Musette</a>
-<nav><a href="/how">How it works</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+<a class="mark" href="/"><i></i>Musette</a>
+<nav><a class="hide-sm" href="/how">How it works</a><a class="hide-sm" href="/privacy">Privacy</a></nav>
 </div></header>
-<main><section><div class="wrap"><div class="pane">
-<h1 style="font-size:32px">Sign in</h1>
-<p class="lede" style="font-size:17px;margin-bottom:28px">Use your face, fingerprint or screen lock. There's no password to make up or forget.</p>
+<main><section><div class="wrap"><div class="auth">
+
+<h1 style="font-size:36px;margin-bottom:10px">Welcome back</h1>
+<p class="lede" style="font-size:17px;margin-bottom:30px">Sign in to see today's plan.</p>
 
 <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
-<div class="opt">
-  <h3>Sign in</h3>
-  <p>You've been here before on this device.</p>
-  <button id="pk" class="btn primary" type="button">Sign in</button>
-  <p id="pkno" class="note hidden">This browser can't do passkeys. Try Safari or Chrome on your phone.</p>
+<div class="tabs" role="tablist">
+  <button id="tSignin" role="tab" aria-selected="true">Sign in</button>
+  <button id="tNew" role="tab" aria-selected="false">I have an invite</button>
 </div>
 
-<div class="sep">first time?</div>
-
-<div class="opt">
-  <h3>Create your account</h3>
-  <p>You'll need the code from whoever invited you. It takes about ten seconds.</p>
-  <label for="name">Your name</label>
-  <input id="name" autocomplete="name" maxlength="40" placeholder="Alex">
-  <div style="height:14px"></div>
-  <label for="code">Invite code</label>
-  <input id="code" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" spellcheck="false" placeholder="ABCD1234" maxlength="16">
-  <div style="height:14px"></div>
-  <button id="go" class="btn primary" type="button">Create account</button>
+<div id="paneSignin">
+  <div class="field"><label for="u">Username</label>
+    <input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="alex"></div>
+  <div class="field"><label for="p">Password</label>
+    <input id="p" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+  <button id="goIn" class="btn primary" type="button">Sign in</button>
+  <p class="alt">or <button id="usePk" type="button">use a passkey instead</button></p>
 </div>
 
-<p class="note">Signing in means you're happy with the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>.</p>
+<div id="paneNew" class="hidden">
+  <div class="field"><label for="code">Invite code</label>
+    <input id="code" autocapitalize="characters" spellcheck="false" placeholder="ABCD1234" maxlength="16"></div>
+  <div class="field"><label for="nu">Choose a username</label>
+    <input id="nu" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="alex"></div>
+  <p class="hint">Letters, numbers, dots and dashes. Three characters or more.</p>
+  <div class="field"><label for="np">Choose a password</label>
+    <input id="np" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
+  <p class="hint">Long beats complicated. Three or four words you'll remember is plenty.</p>
+  <button id="goNew" class="btn primary" type="button">Create account</button>
+  <p class="alt">or <button id="newPk" type="button">set up a passkey instead</button></p>
+</div>
+
+<p class="alt" style="margin-top:30px;font-size:13.5px;color:var(--ink-3)">By continuing you agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.</p>
 </div></div></section></main>
 <footer><div class="wrap">
-<div class="fl"><a href="/how">How it works</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:hello@musetteapp.com">Contact</a></div>
-<p>Musette plans food around training. It isn't a medical device and doesn't give medical advice.</p>
+<div class="fcols"><div><a class="mark" href="/" style="color:#fff"><i></i>Musette</a></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div></div>
+<p class="fine">Musette plans food around training. It is not a medical device and does not give medical advice.</p>
 </div></footer>
 <script>
 (function () {
   var API = 'https://api.musetteapp.com';
-  var msg = document.getElementById('msg');
-  var pk = document.getElementById('pk'), go = document.getElementById('go');
+  /* Where the app lives. app.musetteapp.com is the intended home; until that
+     custom domain is attached it resolves to nothing, and sending someone there
+     stranded them on a browser error holding a valid session. */
+  var APP = 'https://shopping-list-app-9an.pages.dev';
+  var $ = function (id) { return document.getElementById(id); };
+  var msg = $('msg');
 
   function say(kind, text) { msg.className = 'msg ' + kind; msg.textContent = text; }
-  function busy(b, el, label) { el.disabled = b; el.textContent = b ? 'One moment…' : label; }
+  function busy(el, on, label) { el.disabled = on; el.textContent = on ? 'One moment…' : label; }
 
-  /* base64url both ways. WebAuthn hands out ArrayBuffers and wants them back
-     as BufferSources, and JSON in between can only carry strings. */
   function enc(buf) {
     var b = new Uint8Array(buf), s = '';
     for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
@@ -119,94 +226,122 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
     for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
   }
-  async function post(p, body, token) {
-    var h = { 'Content-Type': 'application/json' };
-    if (token) h.Authorization = 'Bearer ' + token;
-    var r = await fetch(API + p, { method: 'POST', headers: h, body: JSON.stringify(body || {}) });
+  async function post(p, body) {
+    var r = await fetch(API + p, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}) });
     return await r.json();
   }
+
+  /* The work factor lives HERE, in the browser. The Worker gets 10 ms of CPU on
+     the free plan and 600k PBKDF2 rounds is 150-350 ms, so the stretching that
+     protects the password against offline cracking is done on the device that
+     can afford it. The Worker only ever sees the derived key. */
+  async function derive(password, saltB64, iters) {
+    var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password),
+      'PBKDF2', false, ['deriveBits']);
+    var bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: dec(saltB64), iterations: iters, hash: 'SHA-256' }, base, 256);
+    return enc(bits);
+  }
+
   function land(out) {
-    /* The token is the account. sessionStorage rather than localStorage: it
-       dies with the tab, which is the right default on a machine that might
-       not be yours. The app picks it up from here. */
     try { sessionStorage.setItem('musette.token', out.token); } catch (e) {}
-    say('ok', 'Signed in as ' + out.name + '. Taking you to the app…');
-    setTimeout(function () { location.href = 'https://app.musetteapp.com/#t=' + encodeURIComponent(out.token); }, 900);
+    msg.className = 'msg ok';
+    msg.textContent = '';
+    var b = document.createElement('b');
+    b.textContent = 'Signed in as ' + out.name + '. ';
+    var a = document.createElement('a');
+    a.href = APP; a.textContent = 'Open the app →';
+    msg.appendChild(b); msg.appendChild(a);
   }
 
-  if (!window.PublicKeyCredential) {
-    document.getElementById('pkno').className = 'note';
-    pk.disabled = true;
+  /* tabs */
+  function show(which) {
+    var isNew = which === 'new';
+    $('paneNew').className = isNew ? '' : 'hidden';
+    $('paneSignin').className = isNew ? 'hidden' : '';
+    $('tNew').setAttribute('aria-selected', String(isNew));
+    $('tSignin').setAttribute('aria-selected', String(!isNew));
+    msg.className = 'msg hidden';
   }
+  $('tNew').addEventListener('click', function () { show('new'); });
+  $('tSignin').addEventListener('click', function () { show('in'); });
 
-  pk.addEventListener('click', async function () {
-    busy(true, pk, 'Sign in');
+  $('goIn').addEventListener('click', async function () {
+    var u = ($('u').value || '').trim().toLowerCase(), p = $('p').value || '';
+    if (!u || !p) { say('bad', 'Username and password, please.'); return; }
+    busy($('goIn'), true, 'Sign in');
     try {
-      var opt = await post('/auth/login/options');
-      if (!opt.ok) { say('bad', opt.why || 'Could not start sign-in.'); return; }
-      var cred = await navigator.credentials.get({
-        publicKey: {
-          challenge: dec(opt.challenge),
-          rpId: opt.rp_id,
-          userVerification: 'preferred',
-          timeout: 60000,
-        },
-      });
-      var out = await post('/auth/login/verify', {
-        challenge: opt.challenge,
-        credId: cred.id,
-        authData: enc(cred.response.authenticatorData),
-        clientData: enc(cred.response.clientDataJSON),
-        signature: enc(cred.response.signature),
-      });
+      var opt = await post('/auth/password/options', { username: u });
+      var out = await post('/auth/password/verify',
+        { username: u, verifier: await derive(p, opt.salt, opt.iterations) });
       if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
       land(out);
-    } catch (e) {
-      /* A cancelled prompt is not an error worth shouting about. */
-      say('bad', e && e.name === 'NotAllowedError'
-        ? 'Cancelled — nothing happened. Try again when ready.'
-        : 'No passkey for this site on this device yet. Create an account below.');
-    } finally { busy(false, pk, 'Sign in'); }
+    } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
+    finally { busy($('goIn'), false, 'Sign in'); }
   });
 
-  go.addEventListener('click', async function () {
-    var name = (document.getElementById('name').value || '').trim();
-    var code = (document.getElementById('code').value || '').trim().toUpperCase();
-    if (!name) { say('bad', 'What should we call you?'); return; }
+  $('goNew').addEventListener('click', async function () {
+    var code = ($('code').value || '').trim().toUpperCase();
+    var u = ($('nu').value || '').trim().toLowerCase(), p = $('np').value || '';
     if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
-    busy(true, go, 'Create account');
+    if (!/^[a-z0-9._-]{3,40}$/.test(u)) { say('bad', 'Usernames are 3+ characters: letters, numbers, dot, dash or underscore.'); return; }
+    if (p.length < 10) { say('bad', 'Make the password at least 10 characters — a few words you will remember is ideal.'); return; }
+    busy($('goNew'), true, 'Create account');
+    try {
+      var opt = await post('/auth/password/options', { username: u });
+      var out = await post('/auth/password/register',
+        { code: code, username: u, salt: opt.salt, verifier: await derive(p, opt.salt, opt.iterations) });
+      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      land(out);
+    } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
+    finally { busy($('goNew'), false, 'Create account'); }
+  });
+
+  /* Passkeys stay available for anyone who wants one - they are better - but
+     nobody is required to have a compatible device to get in. */
+  async function passkeyLogin() {
+    if (!window.PublicKeyCredential) { say('bad', 'This browser cannot do passkeys. Use a password.'); return; }
+    try {
+      var opt = await post('/auth/login/options');
+      var cred = await navigator.credentials.get({ publicKey: {
+        challenge: dec(opt.challenge), rpId: opt.rp_id, userVerification: 'preferred', timeout: 60000 } });
+      var out = await post('/auth/login/verify', { challenge: opt.challenge, credId: cred.id,
+        authData: enc(cred.response.authenticatorData), clientData: enc(cred.response.clientDataJSON),
+        signature: enc(cred.response.signature) });
+      if (!out.ok) { say('bad', out.why || 'That passkey did not work.'); return; }
+      land(out);
+    } catch (e) {
+      say('bad', e && e.name === 'NotAllowedError' ? 'Cancelled — nothing happened.'
+        : 'No passkey for this site on this device. Use a password.');
+    }
+  }
+  $('usePk').addEventListener('click', passkeyLogin);
+
+  $('newPk').addEventListener('click', async function () {
+    var code = ($('code').value || '').trim().toUpperCase();
+    var u = ($('nu').value || '').trim();
+    if (code.length < 4) { say('bad', 'Enter your invite code first.'); return; }
+    if (!u) { say('bad', 'Choose a username first.'); return; }
+    if (!window.PublicKeyCredential) { say('bad', 'This browser cannot do passkeys. Use a password.'); return; }
     try {
       var opt = await post('/auth/register/options', { code: code });
       if (!opt.ok) { say('bad', opt.why || 'That invite did not work.'); return; }
-      var cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: dec(opt.challenge),
-          rp: { id: opt.rp.id, name: opt.rp.name },
-          user: { id: dec(opt.uid), name: name, displayName: name },
-          /* ES256 only. It is what WebCrypto can verify natively, which is what
-             keeps a CBOR decoder out of the Worker. */
-          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-          authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
-          attestation: 'none',
-          timeout: 60000,
-        },
-      });
+      var cred = await navigator.credentials.create({ publicKey: {
+        challenge: dec(opt.challenge), rp: { id: opt.rp.id, name: opt.rp.name },
+        user: { id: dec(opt.uid), name: u, displayName: u },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+        attestation: 'none', timeout: 60000 } });
       var spki = cred.response.getPublicKey && cred.response.getPublicKey();
-      if (!spki) { say('bad', 'That device offered a key we cannot read. Try another device.'); return; }
-      var out = await post('/auth/register/verify', {
-        challenge: opt.challenge,
-        name: name,
-        credId: cred.id,
-        publicKey: enc(spki),
-        clientData: enc(cred.response.clientDataJSON),
-      });
+      if (!spki) { say('bad', 'That device offered a key we cannot read. Use a password.'); return; }
+      var out = await post('/auth/register/verify', { challenge: opt.challenge, name: u,
+        credId: cred.id, publicKey: enc(spki), clientData: enc(cred.response.clientDataJSON) });
       if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
       land(out);
     } catch (e) {
-      say('bad', e && e.name === 'NotAllowedError'
-        ? 'Cancelled — nothing was created. Try again when ready.'
-        : 'Something went wrong setting up the passkey. Try again.');
-    } finally { busy(false, go, 'Create account'); }
+      say('bad', e && e.name === 'NotAllowedError' ? 'Cancelled — nothing was created.' : 'Passkey setup failed. Use a password.');
+    }
   });
 })();
 </script>

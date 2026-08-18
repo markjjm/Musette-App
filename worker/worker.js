@@ -1028,6 +1028,9 @@ const RP_NAME = 'Musette';
 const CHALLENGE_TTL = 5 * 60 * 1000;      // long enough to pick a finger, short enough not to bank
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const INVITE_TTL = 24 * 3600 * 1000;
+/* Spent in the BROWSER, not here. 600k is the OWASP figure; a phone does it in
+   well under a second and the Worker never pays it. */
+const PBKDF2_ITERS = 600000;
 
 const b64u = {
   enc(buf) {
@@ -1326,6 +1329,119 @@ export class ListDO extends DurableObject {
     await this.ctx.storage.put('auth:cred:' + credId, uid);
     await this.ctx.storage.put(ch.code, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
     return { ok: true, ...(await this.issue(uid)), name: acct.name };
+  }
+
+
+  /* ---- Passwords ------------------------------------------------------
+     Passkeys are better and stay the default, but requiring one means anybody
+     without a compatible device is simply locked out, and "my wife cannot get
+     in" is a worse outcome than any threat model this defends against.
+
+     The reason passwords were rejected originally still stands: WebCrypto's
+     only KDF is PBKDF2, OWASP wants 600k iterations of it, and that is 150-350
+     ms of CPU against a 10 ms free-plan budget. The way out is that the work
+     factor does not have to be spent HERE. The browser runs the 600k
+     iterations against a salt this object issued, and sends the derived key;
+     the Worker stores a salted SHA-256 of that, which is microseconds.
+
+     What that does and does not buy, plainly:
+       - The raw password never leaves the device. Good.
+       - An attacker who dumps this storage still has to run 600k iterations
+         per guess to get from a candidate password to the stored value, so the
+         work factor survives where it matters, against offline cracking.
+       - The derived key is password-equivalent in transit. TLS carries it, and
+         nothing else does.
+       - Nobody can skip the KDF to log in: without the password there is no
+         way to produce the right derived key.
+     Rate limiting does the rest - RL_AUTH is 10 a minute on a wrong code. */
+
+  async passwordRegister(code, username, verifier, salt) {
+    const key = 'auth:invite:' + String(code || '').toUpperCase().slice(0, 16);
+    const inv = await this.ctx.storage.get(key);
+    if (!inv) return { ok: false, why: 'that invite code is not one we issued' };
+    if (inv.used) return { ok: false, why: 'that invite has already been used' };
+    if (inv.exp < Date.now()) return { ok: false, why: 'that invite has expired - ask for a new one' };
+
+    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    if (!/^[a-z0-9._-]{3,40}$/.test(uname)) {
+      return { ok: false, why: 'usernames are 3-40 characters: letters, numbers, dot, dash or underscore' };
+    }
+    if (await this.ctx.storage.get('auth:user:' + uname)) {
+      return { ok: false, why: 'that username is taken' };
+    }
+    if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
+      return { ok: false, why: 'the browser did not derive a key correctly' };
+    }
+
+    const uid = randomB64(16);
+    const pepper = randomB64(16);
+    const acct = {
+      uid,
+      name: uname,
+      created: new Date().toISOString(),
+      /* Two salts, two jobs, and they are NOT interchangeable:
+           salt   - what the browser stretched the password with. It must be
+                    handed back unchanged at every login or the derived key
+                    differs and nobody can ever sign in.
+           pepper - what this object hashes the derived key with before storing
+                    it, so the stored value is useless if lifted. */
+      pw: { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS },
+    };
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    await this.ctx.storage.put('auth:user:' + uname, uid);
+    await this.ctx.storage.put(key, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
+    return { ok: true, ...(await this.issue(uid)), name: uname };
+  }
+
+  /* The salt has to be handed out BEFORE the password is checked, which is the
+     one place a username could be enumerated. An unknown user therefore gets a
+     salt too - derived from the name so it is stable across attempts, and from
+     a per-object secret so it cannot be computed off-site. It looks exactly
+     like a real one and fails at the next step, same as a wrong password. */
+  async passwordOptions(username) {
+    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    const uid = uname ? await this.ctx.storage.get('auth:user:' + uname) : null;
+    if (uid) {
+      const acct = await this.ctx.storage.get('auth:acct:' + uid);
+      if (acct && acct.pw) return { ok: true, salt: acct.pw.salt, iterations: acct.pw.iters };
+    }
+    let decoy = await this.ctx.storage.get('auth:decoy');
+    if (!decoy) { decoy = randomB64(32); await this.ctx.storage.put('auth:decoy', decoy); }
+    return { ok: true, salt: await sha256B64(decoy + ':' + uname), iterations: PBKDF2_ITERS };
+  }
+
+  async passwordVerify(username, verifier) {
+    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    const uid = uname ? await this.ctx.storage.get('auth:user:' + uname) : null;
+    const acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
+    if (!acct || !acct.pw) return { ok: false, why: 'wrong username or password' };
+    const got = await sha256B64(acct.pw.pepper + ':' + String(verifier || ''));
+    if (!(await safeEqual(got, acct.pw.hash))) return { ok: false, why: 'wrong username or password' };
+    acct.last = new Date().toISOString();
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    return { ok: true, ...(await this.issue(uid)), name: acct.name };
+  }
+
+  /* Adding a password to an account that signs in with a passkey, or the other
+     way round. One account, either door. */
+  async addPassword(token, username, verifier, salt) {
+    const s = await this.session(token);
+    if (!s) return { ok: false, why: 'sign in first' };
+    return await this.passwordRegisterFor(s.uid, username, verifier, salt);
+  }
+
+  async passwordRegisterFor(uid, username, verifier, salt) {
+    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    if (!/^[a-z0-9._-]{3,40}$/.test(uname)) return { ok: false, why: 'that username will not do' };
+    const taken = await this.ctx.storage.get('auth:user:' + uname);
+    if (taken && taken !== uid) return { ok: false, why: 'that username is taken' };
+    const acct = await this.ctx.storage.get('auth:acct:' + uid);
+    if (!acct) return { ok: false, why: 'no such account' };
+    const pepper = randomB64(16);
+    acct.pw = { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS };
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    await this.ctx.storage.put('auth:user:' + uname, uid);
+    return { ok: true, name: acct.name };
   }
 
   async loginBegin() {
@@ -2055,6 +2171,21 @@ export default {
         const out = await stub.registerFinish(
           String(b.challenge || ''), b.name, String(b.credId || ''),
           String(b.publicKey || ''), String(b.clientData || ''), AUTH_ORIGINS);
+        return json(out, out.ok ? 200 : 400, origin);
+      }
+      if (path === '/auth/password/register') {
+        const out = await stub.passwordRegister(b.code, b.username, String(b.verifier || ''), String(b.salt || ''));
+        return json(out, out.ok ? 200 : 400, origin);
+      }
+      if (path === '/auth/password/options') {
+        return json(await stub.passwordOptions(b.username), 200, origin);
+      }
+      if (path === '/auth/password/verify') {
+        const out = await stub.passwordVerify(b.username, String(b.verifier || ''));
+        return json(out, out.ok ? 200 : 401, origin);
+      }
+      if (path === '/auth/password/add') {
+        const out = await stub.addPassword(bearer, b.username, String(b.verifier || ''), String(b.salt || ''));
         return json(out, out.ok ? 200 : 400, origin);
       }
       if (path === '/auth/login/options') {
