@@ -1980,6 +1980,200 @@ export class ListDO extends DurableObject {
   }
 }
 
+/* ---- Generating the next block ----------------------------------------
+   The hard constraint shapes everything: scan.mjs and validatePlan both refuse
+   a plan whose meals do not sum EXACTLY to their day's own totals. That is 31
+   days of exact addition, and no model does it reliably.
+
+   So the model does not write days. Days are REUSED: each generated day is a
+   real day from the block before it, re-dated. Its meals, its ingredients and
+   its arithmetic come along unchanged, so the sums are exact by construction
+   and nothing about the food is invented. What gets decided is WHICH day goes
+   where, and that is chosen by matching the training.
+
+   The alternative - asking a model for meals and then repairing the arithmetic
+   - was considered and rejected: repairing means silently altering what someone
+   is told to eat until the numbers agree, which is a worse failure than not
+   generating at all.  */
+
+/* Fitted from the block being carried forward rather than hardcoded, so a rider
+   whose targets are nothing like this one's still gets their own relationship.
+   Falls back to the August figures when there is too little to fit. */
+function fitTargets(days, training) {
+  const tr = {};
+  for (const t of training || []) tr[t.d] = t;
+  const pts = (days || []).filter((d) => tr[d.d]).map((d) => [Number(tr[d.d].h) || 0, d.kc, d.cb]);
+  if (pts.length < 8) return { kcBase: 2133, kcRate: 648, cbBase: 292, cbRate: 123, fitted: false };
+  const n = pts.length;
+  const mx = pts.reduce((a, p) => a + p[0], 0) / n;
+  const fit = (i) => {
+    const my = pts.reduce((a, p) => a + p[i], 0) / n;
+    let num = 0, den = 0;
+    for (const p of pts) { num += (p[0] - mx) * (p[i] - my); den += (p[0] - mx) ** 2; }
+    const rate = den > 0 ? num / den : 0;
+    return { rate, base: my - rate * mx };
+  };
+  const k = fit(1), c = fit(2);
+  return { kcBase: k.base, kcRate: k.rate, cbBase: c.base, cbRate: c.rate, fitted: true };
+}
+
+/* August's weekly shape, projected onto the target month's calendar.
+   Taken from the block being carried forward rather than assumed, so it follows
+   whatever week the rider actually rides. */
+function weeklyShape(training) {
+  const byDay = {};
+  for (const t of training || []) {
+    const k = t.wd;
+    if (!k) continue;
+    byDay[k] = byDay[k] || [];
+    byDay[k].push({ kind: t.kind, h: Number(t.h) || 0 });
+  }
+  const shape = {};
+  for (const [wd, list] of Object.entries(byDay)) {
+    /* The most common kind for that weekday, and the median of its hours - so
+       one unusual Saturday does not redefine every Saturday. */
+    const counts = {};
+    for (const x of list) counts[x.kind] = (counts[x.kind] || 0) + 1;
+    const kind = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    const hs = list.filter((x) => x.kind === kind).map((x) => x.h).sort((a, b) => a - b);
+    shape[wd] = { kind, h: hs[Math.floor(hs.length / 2)] };
+  }
+  return shape;
+}
+
+const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December'];
+
+/* Build the month's training from the weekly shape, with a ramp and a recovery
+   week. The ramp is deliberately modest and the recovery week deliberately
+   deep: the cost of ramping too fast is an injured rider, and the cost of
+   ramping too slowly is a slightly easy month. */
+function rampTraining(ym, shape, rampPct, recoverWeek) {
+  const [y, m] = ym.split('-').map(Number);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const out = [];
+  for (let d = 1; d <= days; d++) {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    const wd = WD[dt.getUTCDay()];
+    const base = shape[wd] || { kind: 'Rest day', h: 0 };
+    const weekIdx = Math.floor((d - 1) / 7);
+    const factor = weekIdx === recoverWeek ? 0.65 : 1 + (rampPct / 100) * weekIdx;
+    const h = base.h > 0 ? Math.round(base.h * factor * 4) / 4 : 0;
+    out.push({ d, wd, kind: base.h > 0 ? base.kind : 'Rest day', h, wk: `week-${weekIdx + 1}` });
+  }
+  return out;
+}
+
+/* The day whose real target is nearest the one we want, from the same kind
+   where possible. Reusing a whole day is what makes the arithmetic exact and
+   the ingredients honest - the alternative is inventing food. */
+function nearestDay(templates, kind, targetKc) {
+  const sameKind = templates.filter((t) => t.kind === kind);
+  const pool = sameKind.length ? sameKind : templates;
+  return pool.reduce((best, t) =>
+    Math.abs(t.kc - targetKc) < Math.abs(best.kc - targetKc) ? t : best, pool[0]);
+}
+
+function generateBlock(prev, ym, opts) {
+  const o = opts || {};
+  const rampPct = Number.isFinite(o.rampPct) ? o.rampPct : 4;
+  const recoverWeek = Number.isFinite(o.recoverWeek) ? o.recoverWeek : 3;
+  if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return { ok: false, why: 'month must look like 2026-09' };
+  if (!prev || !Array.isArray(prev.days) || prev.days.length < 7) {
+    return { ok: false, why: 'the current block has too few days to carry forward' };
+  }
+
+  const tr = {};
+  for (const t of prev.training || []) tr[t.d] = t;
+  const templates = prev.days
+    .filter((d) => Array.isArray(d.meals) && d.meals.length)
+    .map((d) => ({ ...d, kind: (tr[d.d] || {}).kind || 'Moderate day' }));
+
+  const fitv = fitTargets(prev.days, prev.training);
+  const training = rampTraining(ym, weeklyShape(prev.training), rampPct, recoverWeek);
+  const [y, m] = ym.split('-').map(Number);
+
+  /* Spread the reuse so the same day does not land three times in a week. */
+  const usedRecently = [];
+  const days = training.map((t) => {
+    const targetKc = Math.round(fitv.kcBase + fitv.kcRate * t.h);
+    let pick = nearestDay(templates, t.kind, targetKc);
+    const candidates = templates
+      .filter((x) => x.kind === t.kind && !usedRecently.slice(-4).includes(x.d))
+      .sort((a, b) => Math.abs(a.kc - targetKc) - Math.abs(b.kc - targetKc));
+    if (candidates.length) pick = candidates[0];
+    usedRecently.push(pick.d);
+
+    /* The day's totals are the TEMPLATE's, not the target's. That is the whole
+       trick: the meals are copied unchanged, so their sums are already right,
+       and forcing them to a different total is what would break them. The
+       target only chooses which day to reuse. */
+    return {
+      d: t.d,
+      wd: t.wd,
+      kind: t.kind,
+      dish: pick.dish,
+      cook: pick.cook,
+      meals: JSON.parse(JSON.stringify(pick.meals)),
+      kc: pick.kc,
+      cb: pick.cb,
+      pr: pick.pr,
+      ft: pick.ft,
+      from: pick.d,
+    };
+  });
+
+  /* Training kcal follows the day it was matched to, so the two agree. */
+  const byDay = {};
+  for (const d of days) byDay[d.d] = d;
+  const trainingOut = training.map((t) => {
+    const src = tr[byDay[t.d].from] || {};
+    return {
+      d: t.d, wd: t.wd, kind: t.kind, h: t.h,
+      kc: Math.round(fitv.kcBase + fitv.kcRate * t.h),
+      cb: Math.round(fitv.cbBase + fitv.cbRate * t.h),
+      bk: src.bk ? { ...src.bk } : null,
+      wk: t.wk,
+    };
+  });
+
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const weeks = [];
+  for (let i = 0; i * 7 < daysInMonth; i++) {
+    const from = i * 7 + 1;
+    const to = Math.min(daysInMonth, from + 6);
+    weeks.push({
+      id: `week-${i + 1}`,
+      label: `Week ${i + 1}`,
+      dates: `${MONTHS[m - 1]} ${from}–${to}`,
+      days: Array.from({ length: to - from + 1 }, (_, k) => from + k),
+      cooks: days.slice(from - 1, to).filter((d) => d.cook).length,
+      lists: { A: [], M: [] },
+      note: 'Shopping list not built yet - dinners are carried forward from the previous block.',
+    });
+  }
+
+  return {
+    ok: true,
+    plan: {
+      block: `${MONTHS[m - 1]} ${y}`,
+      weeks,
+      fuel: prev.fuel || [],
+      training: trainingOut,
+      days,
+    },
+    basis: {
+      carried_from: prev.block || null,
+      targets_fitted: fitv.fitted,
+      kcal_model: `${Math.round(fitv.kcBase)} + ${Math.round(fitv.kcRate)} per hour`,
+      ramp_percent_per_week: rampPct,
+      recovery_week: recoverWeek + 1,
+      total_hours: Math.round(trainingOut.reduce((a, t) => a + t.h, 0) * 10) / 10,
+    },
+  };
+}
+
 /* ---- What a plan is allowed to be --------------------------------------
    setPlan stored whatever it was handed. That was defensible while the only
    writer was a person running publish-plan.py against a file they had read
@@ -2649,6 +2843,43 @@ export default {
        Split in two on purpose. A summary that regenerated itself on read would
        put a model call in front of every question, which is the exact cost
        shape COACH_MAX_DAY exists to prevent. */
+    /* Draft the next block. Returns it and does NOT store it: publishing is a
+       separate, deliberate act through PUT /plan, which validates again. A
+       generator that wrote straight to storage would put a month of somebody's
+       food one request away from a typo. */
+    if (path === '/plan/generate' && request.method === 'POST') {
+      if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+      if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+        return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+      const r = await readJson(request);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const b = r.body || {};
+      const state = await listStub(env).read();
+      if (!state.plan) return json({ ok: false, why: 'there is no current block to carry forward' }, 400, origin);
+
+      /* Default to the month after the one currently loaded, which is what
+         "generate next month" means nine times out of ten. */
+      let ym = String(b.month || '');
+      if (!/^\d{4}-\d{2}$/.test(ym)) {
+        const cur = blockYM(state.plan);
+        if (!cur) return json({ ok: false, why: 'cannot tell what month the current block is' }, 400, origin);
+        const [cy, cm] = cur.split('-').map(Number);
+        const nd = new Date(Date.UTC(cy, cm, 1));
+        ym = `${nd.getUTCFullYear()}-${String(nd.getUTCMonth() + 1).padStart(2, '0')}`;
+      }
+
+      const out = generateBlock(state.plan, ym, {
+        rampPct: Number(b.ramp_percent),
+        recoverWeek: Number(b.recovery_week) - 1,
+      });
+      if (!out.ok) return json(out, 400, origin);
+      /* Checked here as well as at the write, so a draft that could never be
+         published fails now rather than after somebody has read it. */
+      const invalid = validatePlan(out.plan);
+      if (invalid) return json({ ok: false, why: `generated plan is not valid: ${invalid}` }, 500, origin);
+      return json(out, 200, origin);
+    }
+
     if (path === '/summary') {
       const stub = listStub(env);
       if (request.method === 'GET') {
