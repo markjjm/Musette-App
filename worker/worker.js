@@ -1077,6 +1077,120 @@ export class ListDO extends DurableObject {
   }
 }
 
+/* ---- What a plan is allowed to be --------------------------------------
+   setPlan stored whatever it was handed. That was defensible while the only
+   writer was a person running publish-plan.py against a file they had read
+   first. It stops being defensible the moment a model writes plans: the output
+   becomes stored nutrition data, the coach reads those totals back as settled
+   fact and advises on them, and the plan is also the largest thing that flows
+   into a prompt - so a bad one is a wrong dinner AND a cost amplifier.
+
+   The arithmetic check is the one that earns its place. tools/scan.mjs already
+   refuses a REPO whose meals do not sum to their own day's totals. Nothing
+   refused it at the WRITE, so a generated month could be published straight
+   past the control that exists to catch exactly that. */
+const PLAN_MAX_WEEKS = 8;
+const PLAN_MAX_DAYS = 31;
+const PLAN_MAX_MEALS = 12;
+const PLAN_MAX_ING = 24;
+const PLAN_MAX_ITEMS = 1500;  // shopping items across every week and store
+const PLAN_MAX_KC = 8000;     // for one day. The biggest real one here is 4,591
+
+const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+const isNum = (v, lo, hi) => Number.isFinite(v) && v >= lo && v <= hi;
+const isStr = (v, max) => typeof v === 'string' && v.length <= max;
+
+function validatePlan(plan) {
+  if (!plan || typeof plan !== 'object') return 'plan is not an object';
+  if (!isStr(plan.block, 80)) return 'block must be a string under 80 characters';
+
+  const weeks = plan.weeks;
+  if (!Array.isArray(weeks) || !weeks.length || weeks.length > PLAN_MAX_WEEKS)
+    return `weeks must be 1 to ${PLAN_MAX_WEEKS} entries`;
+  let items = 0;
+  for (const w of weeks) {
+    if (!w || typeof w !== 'object') return 'a week is not an object';
+    if (!isStr(w.id, 40)) return 'week id must be a string under 40 characters';
+    if (!isStr(w.label ?? '', 80)) return `week ${w.id}: label too long`;
+    if (!isStr(w.dates ?? '', 120)) return `week ${w.id}: dates too long`;
+    if (w.days !== undefined) {
+      if (!Array.isArray(w.days) || w.days.length > PLAN_MAX_DAYS) return `week ${w.id}: too many days`;
+      for (const d of w.days) if (!isInt(d, 1, 31)) return `week ${w.id}: ${JSON.stringify(d)} is not a day 1-31`;
+    }
+    if (w.lists !== undefined) {
+      if (!w.lists || typeof w.lists !== 'object') return `week ${w.id}: lists is not an object`;
+      for (const [store, secs] of Object.entries(w.lists)) {
+        if (!STORES.has(store)) return `week ${w.id}: unknown store ${JSON.stringify(store)}`;
+        if (!Array.isArray(secs)) return `week ${w.id}: store ${store} is not a list of sections`;
+        for (const s of secs) {
+          if (!s || !isStr(s.sec, 120) || !Array.isArray(s.items)) return `week ${w.id}: malformed section`;
+          items += s.items.length;
+          if (items > PLAN_MAX_ITEMS) return `more than ${PLAN_MAX_ITEMS} shopping items`;
+          for (const it of s.items) {
+            if (!it || !isStr(it.n, MAX_STR)) return `week ${w.id}: item name missing or too long`;
+            if (!isStr(it.q ?? '', 40)) return `week ${w.id}: item quantity too long`;
+            if (it.c !== undefined && !isNum(it.c, 0, 1000)) return `week ${w.id}: item cost out of range`;
+            if (it.note !== undefined && !isStr(it.note, MAX_STR)) return `week ${w.id}: item note too long`;
+          }
+        }
+      }
+    }
+  }
+
+  if (plan.days !== undefined) {
+    if (!Array.isArray(plan.days) || plan.days.length > PLAN_MAX_DAYS)
+      return `days must be at most ${PLAN_MAX_DAYS} entries`;
+    const seen = new Set();
+    for (const d of plan.days) {
+      if (!d || !isInt(d.d, 1, 31)) return 'a day is missing a day number 1-31';
+      if (seen.has(d.d)) return `day ${d.d} appears twice`;
+      seen.add(d.d);
+      if (!isInt(d.kc, 0, PLAN_MAX_KC)) return `day ${d.d}: kc must be a whole number 0-${PLAN_MAX_KC}`;
+      if (!isInt(d.cb, 0, 2000)) return `day ${d.d}: cb must be a whole number 0-2000`;
+      if (d.pr !== undefined && !isNum(d.pr, 0, 600)) return `day ${d.d}: pr out of range`;
+      if (d.ft !== undefined && !isNum(d.ft, 0, 600)) return `day ${d.d}: ft out of range`;
+      if (!isStr(d.dish ?? '', 120)) return `day ${d.d}: dish name too long`;
+      const meals = d.meals;
+      if (!Array.isArray(meals) || meals.length > PLAN_MAX_MEALS)
+        return `day ${d.d}: at most ${PLAN_MAX_MEALS} meals`;
+      let kc = 0, cb = 0;
+      for (const m of meals) {
+        if (!m || typeof m !== 'object') return `day ${d.d}: a meal is not an object`;
+        if (!isStr(m.l ?? '', 120)) return `day ${d.d}: meal label too long`;
+        if (!isStr(m.t ?? '', 40)) return `day ${d.d}: meal time too long`;
+        if (!isInt(m.kc, 0, PLAN_MAX_KC)) return `day ${d.d}: meal kc out of range`;
+        if (!isInt(m.cb, 0, 2000)) return `day ${d.d}: meal cb out of range`;
+        kc += m.kc; cb += m.cb;
+        if (m.i !== undefined) {
+          if (!Array.isArray(m.i) || m.i.length > PLAN_MAX_ING)
+            return `day ${d.d}: at most ${PLAN_MAX_ING} ingredients in one meal`;
+          for (const ing of m.i) {
+            if (!ing || !isStr(ing.n, MAX_STR)) return `day ${d.d}: ingredient name missing or too long`;
+            if (ing.c !== undefined && !isNum(ing.c, 0, PLAN_MAX_KC)) return `day ${d.d}: ingredient kcal out of range`;
+          }
+        }
+      }
+      /* The check scan.mjs makes on the repo, made here at the write instead.
+         A day that does not add up is not a rounding quibble - the coach reads
+         these totals back as fact and tells someone what to eat from them. */
+      if (kc !== d.kc) return `day ${d.d}: meals sum to ${kc} kcal but the day says ${d.kc}`;
+      if (cb !== d.cb) return `day ${d.d}: meals sum to ${cb} g carb but the day says ${d.cb}`;
+    }
+  }
+
+  if (plan.training !== undefined) {
+    if (!Array.isArray(plan.training) || plan.training.length > PLAN_MAX_DAYS)
+      return `training must be at most ${PLAN_MAX_DAYS} entries`;
+    for (const t of plan.training) {
+      if (!t || !isInt(t.d, 1, 31)) return 'a training entry is missing a day number 1-31';
+      if (t.h !== undefined && !isNum(t.h, 0, 24)) return `training day ${t.d}: hours must be 0-24`;
+      if (t.kc !== undefined && !isNum(t.kc, 0, 12000)) return `training day ${t.d}: kc out of range`;
+      if (!isStr(t.kind ?? '', 80)) return `training day ${t.d}: kind too long`;
+    }
+  }
+  return null;
+}
+
 async function readJson(request) {
   const declared = Number(request.headers.get('content-length') || 0);
   if (Number.isFinite(declared) && declared > MAX_BODY) return { tooLarge: true };
@@ -1851,6 +1965,9 @@ export default {
           { error: `plan.block must name a month and year, like "August 2026" - got ${JSON.stringify(r.body.plan.block ?? null)}` },
           400, origin
         );
+      /* Everything else a plan must be, including that its days add up. */
+      const invalid = validatePlan(r.body.plan);
+      if (invalid) return json({ error: `plan rejected: ${invalid}` }, 400, origin);
       return json(await listStub(env).setPlan(r.body.plan, r.body.resetTicks), 200, origin);
     }
 
