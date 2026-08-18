@@ -168,12 +168,12 @@ text-decoration:underline;text-underline-offset:3px}
 
 <div class="tabs" role="tablist">
   <button id="tSignin" role="tab" aria-selected="true">Sign in</button>
-  <button id="tNew" role="tab" aria-selected="false">I have an invite</button>
+  <button id="tNew" role="tab" aria-selected="false">Create account</button>
 </div>
 
 <div id="paneSignin">
-  <div class="field"><label for="u">Username</label>
-    <input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="alex"></div>
+  <div class="field"><label for="u">Email</label>
+    <input id="u" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
   <div class="field"><label for="p">Password</label>
     <input id="p" type="password" autocomplete="current-password" placeholder="••••••••"></div>
   <button id="goIn" class="btn primary" type="button">Sign in</button>
@@ -181,16 +181,24 @@ text-decoration:underline;text-underline-offset:3px}
 </div>
 
 <div id="paneNew" class="hidden">
-  <div class="field"><label for="code">Invite code</label>
-    <input id="code" autocapitalize="characters" spellcheck="false" placeholder="ABCD1234" maxlength="16"></div>
-  <div class="field"><label for="nu">Choose a username</label>
-    <input id="nu" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="alex"></div>
-  <p class="hint">Letters, numbers, dots and dashes. Three characters or more.</p>
+  <div class="field"><label for="ne">Email</label>
+    <input id="ne" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
   <div class="field"><label for="np">Choose a password</label>
     <input id="np" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
-  <p class="hint">Long beats complicated. Three or four words you'll remember is plenty.</p>
+  <p class="hint">Long beats complicated — three or four words you will remember is plenty. There is no reset yet, so pick something you will not lose.</p>
   <button id="goNew" class="btn primary" type="button">Create account</button>
-  <p class="alt">or <button id="newPk" type="button">set up a passkey instead</button></p>
+  <p class="alt">Got an invite code? <button id="haveCode" type="button">Use it instead</button></p>
+</div>
+
+<div id="paneCode" class="hidden">
+  <div class="field"><label for="code">Invite code</label>
+    <input id="code" autocapitalize="characters" spellcheck="false" placeholder="ABCD1234" maxlength="16"></div>
+  <div class="field"><label for="cu">Email</label>
+    <input id="cu" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
+  <div class="field"><label for="cp">Choose a password</label>
+    <input id="cp" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
+  <button id="goCode" class="btn primary" type="button">Redeem invite</button>
+  <p class="alt"><button id="noCode" type="button">Back</button></p>
 </div>
 
 <p class="alt" style="margin-top:30px;font-size:13.5px;color:var(--ink-3)">By continuing you agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.</p>
@@ -259,6 +267,7 @@ text-decoration:underline;text-underline-offset:3px}
   function show(which) {
     var isNew = which === 'new';
     $('paneNew').className = isNew ? '' : 'hidden';
+    $('paneCode').className = 'hidden';
     $('paneSignin').className = isNew ? 'hidden' : '';
     $('tNew').setAttribute('aria-selected', String(isNew));
     $('tSignin').setAttribute('aria-selected', String(!isNew));
@@ -281,21 +290,39 @@ text-decoration:underline;text-underline-offset:3px}
     finally { busy($('goIn'), false, 'Sign in'); }
   });
 
-  $('goNew').addEventListener('click', async function () {
-    var code = ($('code').value || '').trim().toUpperCase();
-    var u = ($('nu').value || '').trim().toLowerCase(), p = $('np').value || '';
-    if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
-    if (!/^[a-z0-9._-]{3,40}$/.test(u)) { say('bad', 'Usernames are 3+ characters: letters, numbers, dot, dash or underscore.'); return; }
+  async function createWith(emailEl, passEl, btn, label, extra) {
+    var mail = ($(emailEl).value || '').trim().toLowerCase();
+    var p = $(passEl).value || '';
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'That does not look like an email address.'); return; }
     if (p.length < 10) { say('bad', 'Make the password at least 10 characters — a few words you will remember is ideal.'); return; }
-    busy($('goNew'), true, 'Create account');
+    busy($(btn), true, label);
     try {
-      var opt = await post('/auth/password/options', { username: u });
-      var out = await post('/auth/password/register',
-        { code: code, username: u, salt: opt.salt, verifier: await derive(p, opt.salt, opt.iterations) });
+      /* The salt comes from the server before the password is stretched, and the
+         same salt is sent back with the derived key so login can reproduce it. */
+      var opt = await post('/auth/password/options', { username: mail });
+      var body = { email: mail, username: mail, salt: opt.salt,
+        verifier: await derive(p, opt.salt, opt.iterations) };
+      var out = await post(extra ? '/auth/password/register' : '/auth/signup',
+        extra ? Object.assign(body, extra) : body);
       if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
       land(out);
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
-    finally { busy($('goNew'), false, 'Create account'); }
+    finally { busy($(btn), false, label); }
+  }
+
+  $('goNew').addEventListener('click', function () {
+    createWith('ne', 'np', 'goNew', 'Create account', null);
+  });
+  $('goCode').addEventListener('click', function () {
+    var code = ($('code').value || '').trim().toUpperCase();
+    if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
+    createWith('cu', 'cp', 'goCode', 'Redeem invite', { code: code });
+  });
+  $('haveCode').addEventListener('click', function () {
+    $('paneNew').className = 'hidden'; $('paneCode').className = ''; msg.className = 'msg hidden';
+  });
+  $('noCode').addEventListener('click', function () {
+    $('paneCode').className = 'hidden'; $('paneNew').className = ''; msg.className = 'msg hidden';
   });
 
   /* Passkeys stay available for anyone who wants one - they are better - but
@@ -320,7 +347,7 @@ text-decoration:underline;text-underline-offset:3px}
 
   $('newPk').addEventListener('click', async function () {
     var code = ($('code').value || '').trim().toUpperCase();
-    var u = ($('nu').value || '').trim();
+    var u = ($('cu').value || $('ne').value || '').trim();
     if (code.length < 4) { say('bad', 'Enter your invite code first.'); return; }
     if (!u) { say('bad', 'Choose a username first.'); return; }
     if (!window.PublicKeyCredential) { say('bad', 'This browser cannot do passkeys. Use a password.'); return; }

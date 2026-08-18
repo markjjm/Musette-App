@@ -781,6 +781,41 @@ function scrubAdvice(a) {
   return a;
 }
 
+/* ---- Sending the verification code -------------------------------------
+   The Durable Object mints the code and stores only its hash; this sends it and
+   never returns it. Fails CLOSED: if the mail cannot go, the signup does not
+   quietly succeed as an unverifiable account - it refuses and says why, and the
+   pending record expires on its own.
+
+   Requires the domain to be onboarded to Cloudflare Email Sending
+   (`wrangler email sending enable musetteapp.com`) and the send_email binding.
+   Without the binding this returns a clear reason rather than throwing. */
+async function sendCode(env, to, code) {
+  if (!env.EMAIL) return { ok: false, why: 'email is not configured on this server yet' };
+  const text = [
+    `Your Musette verification code is ${code}`,
+    '',
+    'It is good for 15 minutes. If you did not ask to sign up, ignore this - no',
+    'account has been created and nothing further will be sent.',
+  ].join('\n');
+  try {
+    await env.EMAIL.send({
+      to,
+      from: { email: 'hello@musetteapp.com', name: 'Musette' },
+      subject: `${code} is your Musette code`,
+      text,
+      /* Both parts, always: some clients show only text, and an HTML-only mail
+         scores worse with spam filters. */
+      html: `<p style="font:16px system-ui">Your Musette verification code is</p>`
+        + `<p style="font:700 30px ui-monospace,monospace;letter-spacing:.15em">${code}</p>`
+        + `<p style="font:14px system-ui;color:#555">Good for 15 minutes. If you did not ask to sign up, ignore this &mdash; no account has been created.</p>`,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, why: 'could not send the verification email - try again shortly' };
+  }
+}
+
 /* ---- The three-month read ---------------------------------------------
    One model call, made on a schedule rather than on a question, stored, and
    read back instantly by everything that needs context. This is the layer that
@@ -1117,6 +1152,14 @@ const INVITE_TTL = 24 * 3600 * 1000;
    well under a second and the Worker never pays it. */
 const PBKDF2_ITERS = 600000;
 
+/* A cap, not a rate limit. Invite-only used to bound who could exist; with open
+   signup this is what replaces it. Far above real use, far below a bill worth
+   worrying about. */
+const MAX_ACCOUNTS = 200;
+const VERIFY_TTL_MS = 15 * 60 * 1000;
+const VERIFY_MAX_TRIES = 5;
+const RESEND_COOLDOWN_MS = 60 * 1000;
+
 const b64u = {
   enc(buf) {
     let s = '';
@@ -1439,6 +1482,150 @@ export class ListDO extends DurableObject {
        - Nobody can skip the KDF to log in: without the password there is no
          way to produce the right derived key.
      Rate limiting does the rest - RL_AUTH is 10 a minute on a wrong code. */
+
+
+  /* ---- Open signup ----------------------------------------------------
+     Email and password, no invite. This is a deliberate reversal of the
+     invite-only decision and it costs something real, recorded here so it is
+     not rediscovered: invite-only WAS the abuse control (decision doc L2 -
+     "identity costs an invite"). Without it, anyone can mint an account, and
+     every account can reach a model call. So two things stand in its place:
+     the per-IP limiter the whole Worker already sits behind, and a hard ceiling
+     on how many accounts can exist at all.
+
+     The ceiling is the important one. A rate limit slows a flood; a cap bounds
+     it. 200 is far above any real use of this app and far below a bill worth
+     worrying about, and hitting it is a signal to look rather than a disaster.
+
+     The email is NOT verified. Nothing is sent to it, so it is a username that
+     happens to look like an address - it cannot yet be used for a reset, and a
+     stranger can register an address that is not theirs. Saying so plainly
+     because the alternative is a sign-in page that implies a recovery path it
+     does not have. */
+
+  /* ---- Signup, with the email proved before the account exists ---------
+     Open signup without verification is a spam-account faucet, and the account
+     ceiling alone does not fix it: a flood of junk signups would simply fill
+     the ceiling and lock out real people. So a signup does NOT create an
+     account. It creates a PENDING record under its own prefix, holding the
+     already-stretched password and a hashed six-digit code, and only entering
+     that code promotes it to an account.
+
+     What that buys:
+       - A junk address can never become an account, because nobody reads the
+         code sent to it.
+       - Pending records are not accounts: they do not count against the
+         ceiling, do not appear in the account list, and expire on their own.
+       - The code is hashed, tried at most 5 times, and dies after 15 minutes.
+       - The password was already stretched in the browser before it got here,
+         so a pending record leaks no more than an account row would. */
+  async signupBegin(email, verifier, salt) {
+    const mail = String(email || '').trim().toLowerCase().slice(0, 120);
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) return { ok: false, why: 'that does not look like an email address' };
+    if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
+      return { ok: false, why: 'the browser did not derive a key correctly' };
+    }
+    if (await this.ctx.storage.get('auth:user:' + mail)) {
+      return { ok: false, why: 'there is already an account with that email - sign in instead' };
+    }
+    const all = await this.ctx.storage.list({ prefix: 'auth:acct:', limit: MAX_ACCOUNTS + 1 });
+    if (all.size >= MAX_ACCOUNTS) return { ok: false, why: 'this instance is full - ask the owner for an invite' };
+
+    /* One in flight per address, and a cooldown, so the send cannot be used to
+       mail-bomb somebody who never asked to sign up. */
+    const existing = await this.ctx.storage.get('auth:pending:' + mail);
+    if (existing && Date.now() - existing.sent < RESEND_COOLDOWN_MS) {
+      return { ok: false, why: 'a code was just sent - check your inbox, or wait a minute to send another' };
+    }
+
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+    await this.ctx.storage.put('auth:pending:' + mail, {
+      email: mail,
+      pw: { salt: String(salt || ''), verifier },
+      codeHash: await sha256B64(mail + ':' + code),
+      tries: 0,
+      sent: Date.now(),
+      exp: Date.now() + VERIFY_TTL_MS,
+    });
+    /* Returned to the CALLER, not to the browser - the route sends it and
+       never puts it in a response. */
+    return { ok: true, email: mail, code };
+  }
+
+  async signupVerify(email, code) {
+    const mail = String(email || '').trim().toLowerCase().slice(0, 120);
+    const key = 'auth:pending:' + mail;
+    const p = await this.ctx.storage.get(key);
+    if (!p) return { ok: false, why: 'no signup is waiting for that address - start again' };
+    if (p.exp < Date.now()) { await this.ctx.storage.delete(key); return { ok: false, why: 'that code has expired - start again' }; }
+    if (p.tries >= VERIFY_MAX_TRIES) { await this.ctx.storage.delete(key); return { ok: false, why: 'too many wrong codes - start again' }; }
+
+    const got = await sha256B64(mail + ':' + String(code || '').trim());
+    if (!(await safeEqual(got, p.codeHash))) {
+      await this.ctx.storage.put(key, { ...p, tries: p.tries + 1 });
+      return { ok: false, why: `that code is not right - ${VERIFY_MAX_TRIES - p.tries - 1} attempt(s) left` };
+    }
+
+    const uid = randomB64(16);
+    const pepper = randomB64(16);
+    await this.ctx.storage.put('auth:acct:' + uid, {
+      uid, name: mail, email: mail, email_verified: true,
+      created: new Date().toISOString(),
+      pw: { salt: p.pw.salt, pepper, hash: await sha256B64(pepper + ':' + p.pw.verifier), iters: PBKDF2_ITERS },
+    });
+    await this.ctx.storage.put('auth:user:' + mail, uid);
+    await this.ctx.storage.delete(key);
+    return { ok: true, ...(await this.issue(uid)), name: mail };
+  }
+
+  /* Expired pending records are swept whenever a new signup starts, so a burst
+     of abandoned signups cannot accumulate. Cheap, and it needs no alarm. */
+  /* A code that was never delivered must not hold the address hostage for the
+     cooldown - the person did nothing wrong and should be able to try again at
+     once. */
+  async dropPending(email) {
+    await this.ctx.storage.delete('auth:pending:' + String(email || '').trim().toLowerCase());
+    return { ok: true };
+  }
+
+  async sweepPending() {
+    const m = await this.ctx.storage.list({ prefix: 'auth:pending:' });
+    let n = 0;
+    for (const [k, v] of m) if (v.exp < Date.now()) { await this.ctx.storage.delete(k); n++; }
+    return n;
+  }
+
+  async signup(email, verifier, salt) {
+    const mail = String(email || '').trim().toLowerCase().slice(0, 120);
+    /* Deliberately loose. Anything stricter rejects real addresses, and this is
+       a username check rather than a proof the address exists - only sending to
+       it would prove that, and nothing is sent yet. */
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) return { ok: false, why: 'that does not look like an email address' };
+    if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
+      return { ok: false, why: 'the browser did not derive a key correctly' };
+    }
+    if (await this.ctx.storage.get('auth:user:' + mail)) {
+      return { ok: false, why: 'there is already an account with that email - sign in instead' };
+    }
+    const all = await this.ctx.storage.list({ prefix: 'auth:acct:', limit: MAX_ACCOUNTS + 1 });
+    if (all.size >= MAX_ACCOUNTS) {
+      return { ok: false, why: 'this instance is full - ask the owner for an invite' };
+    }
+
+    const uid = randomB64(16);
+    const pepper = randomB64(16);
+    const acct = {
+      uid,
+      name: mail,
+      email: mail,
+      email_verified: false,
+      created: new Date().toISOString(),
+      pw: { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS },
+    };
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    await this.ctx.storage.put('auth:user:' + mail, uid);
+    return { ok: true, ...(await this.issue(uid)), name: mail };
+  }
 
   async passwordRegister(code, username, verifier, salt) {
     const key = 'auth:invite:' + String(code || '').toUpperCase().slice(0, 16);
@@ -2496,6 +2683,23 @@ export default {
         const out = await stub.registerFinish(
           String(b.challenge || ''), b.name, String(b.credId || ''),
           String(b.publicKey || ''), String(b.clientData || ''), AUTH_ORIGINS);
+        return json(out, out.ok ? 200 : 400, origin);
+      }
+      if (path === '/auth/signup') {
+        await stub.sweepPending();
+        const begun = await stub.signupBegin(b.email, String(b.verifier || ''), String(b.salt || ''));
+        if (!begun.ok) return json(begun, 400, origin);
+        const sent = await sendCode(env, begun.email, begun.code);
+        /* The code is never returned. If the send failed the caller is told
+           plainly rather than being left waiting for mail that is not coming. */
+        if (!sent.ok) {
+          await stub.dropPending(begun.email);
+          return json({ ok: false, why: sent.why }, 502, origin);
+        }
+        return json({ ok: true, sent_to: begun.email, expires_minutes: 15 }, 200, origin);
+      }
+      if (path === '/auth/signup/verify') {
+        const out = await stub.signupVerify(b.email, b.code);
         return json(out, out.ok ? 200 : 400, origin);
       }
       if (path === '/auth/password/register') {
