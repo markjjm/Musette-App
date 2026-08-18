@@ -1,0 +1,370 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your plan — Musette</title><style>:root{
+--ink:#0E1116;--ink-2:#59616E;--ink-3:#8A93A1;
+--paper:#FBFAF8;--card:#fff;--line:#E7E4DE;
+--navy:#101C2E;--navy-2:#1B2C45;--cream:#F4F1EA;
+--amber:#E8A33D;--amber-deep:#C97F14;
+--moss:#2E6B4F;--plum:#6B3A63;--clay:#B4543A;
+--sh-1:0 1px 2px rgba(16,28,46,.06),0 4px 12px rgba(16,28,46,.05);
+--sh-2:0 2px 6px rgba(16,28,46,.08),0 18px 44px rgba(16,28,46,.10);
+--r:14px}
+@media(prefers-color-scheme:dark){:root{
+--ink:#ECEFF3;--ink-2:#A6AEBB;--ink-3:#727B89;
+--paper:#0B0F15;--card:#141A22;--line:#232C38;
+--navy:#080D14;--navy-2:#121C2A;--cream:#161D26;
+--sh-1:0 1px 2px rgba(0,0,0,.4);--sh-2:0 2px 8px rgba(0,0,0,.5),0 20px 50px rgba(0,0,0,.4)}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);
+font:17px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1140px;margin:0 auto;padding:0 28px}
+.narrow{max-width:760px}
+h1,h2,h3,h4{margin:0;letter-spacing:-.03em;line-height:1.08;font-weight:760}
+h1{font-size:clamp(40px,6.2vw,72px)}
+h2{font-size:clamp(27px,3.4vw,42px);letter-spacing:-.028em}
+h3{font-size:20px;letter-spacing:-.018em;font-weight:700;line-height:1.25}
+p{margin:0 0 18px;max-width:64ch}
+a{color:inherit;text-underline-offset:3px}
+.eyebrow{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;
+text-transform:uppercase;color:var(--amber-deep);margin:0 0 20px;display:flex;align-items:center;gap:10px}
+.eyebrow:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent);max-width:120px}
+.lede{font-size:clamp(18px,2.1vw,21px);line-height:1.55;color:var(--ink-2);max-width:56ch;font-weight:420}
+/* masthead */
+.mast{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.86);
+backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+@media(prefers-color-scheme:dark){.mast{background:rgba(11,15,21,.86)}}
+.mast .wrap{display:flex;align-items:center;gap:30px;height:70px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:780;font-size:19px;
+letter-spacing:-.03em;text-decoration:none}
+.mark i{width:26px;height:26px;border-radius:8px;flex:0 0 26px;
+background:linear-gradient(145deg,var(--amber),var(--amber-deep));display:block;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.mast nav{margin-left:auto;display:flex;gap:26px;align-items:center}
+.mast nav a{font-size:15px;font-weight:520;text-decoration:none;color:var(--ink-2)}
+.mast nav a:hover{color:var(--ink)}
+@media(max-width:720px){.mast nav a.hide-sm{display:none}}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:11px;
+font:650 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:transform .12s ease,box-shadow .12s ease}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber-deep));
+color:#22160A;box-shadow:var(--sh-1),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.primary:hover{box-shadow:var(--sh-2),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.ghost{border-color:var(--line);background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
+.btn.onnavy{background:rgba(255,255,255,.1);color:var(--cream);border-color:rgba(255,255,255,.22)}
+/* sections */
+section{padding:clamp(64px,8vw,116px) 0;position:relative}
+.rule{border-top:1px solid var(--line)}
+.dark{background:var(--navy);color:var(--cream)}
+.dark h2,.dark h3{color:#fff}
+.dark .lede,.dark p{color:#B9C4D4}
+.dark .eyebrow{color:var(--amber)}
+/* hero */
+.hero{padding-top:clamp(56px,7vw,92px);padding-bottom:clamp(48px,6vw,84px);overflow:hidden}
+.hero-grid{display:grid;gap:clamp(36px,5vw,64px);align-items:center;grid-template-columns:1fr}
+@media(min-width:940px){.hero-grid{grid-template-columns:1.05fr .95fr}}
+.hero h1 em{font-style:normal;background:linear-gradient(180deg,transparent 62%,rgba(232,163,61,.34) 62%)}
+.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+.trust{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-3)}
+.trust span{display:flex;align-items:center;gap:7px}
+.tick{width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:var(--moss);
+position:relative;opacity:.9}
+.tick:after{content:"";position:absolute;left:4.5px;top:2.5px;width:4px;height:7px;
+border:solid #fff;border-width:0 1.7px 1.7px 0;transform:rotate(45deg)}
+/* the ride/plate panel */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+box-shadow:var(--sh-2);overflow:hidden}
+.panel-hd{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;
+border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.015),transparent)}
+.panel-hd b{font-size:15px;letter-spacing:-.01em}
+.chip{font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;
+padding:6px 10px;border-radius:99px;background:var(--cream);color:var(--ink-2)}
+.chip.train{background:rgba(46,107,79,.12);color:var(--moss)}
+.chip.fuel{background:rgba(107,58,99,.12);color:var(--plum)}
+.panel-bd{padding:6px 20px 18px}
+.dl{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+padding:13px 0;border-bottom:1px dashed var(--line)}
+.dl:last-child{border-bottom:0}
+.dl dt{color:var(--ink-2);font-size:15px}
+.dl dd{margin:0;font:650 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big{font-size:26px!important;letter-spacing:-.03em}
+.arrow{display:grid;place-items:center;padding:14px 0}
+.arrow span{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);
+display:grid;place-items:center;color:var(--ink-3);box-shadow:var(--sh-1);font-size:15px}
+@media(min-width:940px){.stack{display:grid;gap:0}}
+/* cards */
+.grid{display:grid;gap:22px;grid-template-columns:1fr}
+@media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+padding:28px;box-shadow:var(--sh-1);position:relative}
+.dark .card{background:var(--navy-2);border-color:rgba(255,255,255,.09)}
+.card p{font-size:15.5px;color:var(--ink-2);margin:0}
+.card h3{margin-bottom:9px}
+.num{width:32px;height:32px;border-radius:9px;background:var(--cream);color:var(--ink-2);
+display:grid;place-items:center;font:700 14px/1 ui-monospace,Menlo,monospace;margin-bottom:16px}
+.dark .num{background:rgba(255,255,255,.09);color:var(--amber)}
+/* denial list */
+.nope{display:grid;gap:0;margin:34px 0 0;padding:0;list-style:none;
+border-top:1px solid var(--line)}
+.nope li{padding:20px 0 20px 38px;border-bottom:1px solid var(--line);position:relative;
+font-size:16.5px;color:var(--ink-2);max-width:70ch}
+.nope li b{color:var(--ink);font-weight:680}
+.nope li:before{content:"";position:absolute;left:6px;top:27px;width:15px;height:1.5px;
+background:var(--clay);opacity:.65}
+.dark .nope{border-color:rgba(255,255,255,.12)}
+.dark .nope li{border-color:rgba(255,255,255,.12);color:#B9C4D4}
+.dark .nope li b{color:#fff}
+/* quote */
+.pull{font-size:clamp(21px,2.6vw,29px);line-height:1.35;letter-spacing:-.02em;
+font-weight:600;max-width:22ch}
+/* footer */
+footer{background:var(--navy);color:#93A1B5;padding:56px 0 40px;font-size:14.5px}
+footer a{color:#C6D0DE;text-decoration:none}
+footer a:hover{color:#fff;text-decoration:underline}
+.fcols{display:grid;gap:28px;grid-template-columns:1fr;margin-bottom:34px}
+@media(min-width:720px){.fcols{grid-template-columns:2fr 1fr 1fr}}
+.fcols h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6B7A8F;
+margin-bottom:14px;font-weight:640}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid rgba(255,255,255,.1);padding-top:22px;font-size:13px;
+color:#6B7A8F;max-width:78ch;line-height:1.6}
+:focus-visible{outline:2.5px solid var(--amber);outline-offset:3px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.row{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+@media(max-width:640px){.row{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:620;margin:0 0 6px;color:var(--ink-2)}
+input,select{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--line);border-radius:10px;
+background:var(--card);color:var(--ink);font-family:inherit}
+input:focus,select:focus{outline:2.5px solid var(--amber);outline-offset:1px;border-color:transparent}
+.field{margin-bottom:16px}
+.msg{border-radius:11px;padding:13px 15px;font-size:15px;margin:0 0 20px;border:1px solid var(--line);
+background:var(--card);box-shadow:var(--sh-1)}
+.msg.bad{border-left:4px solid var(--clay)}.msg.ok{border-left:4px solid var(--moss)}
+.hidden{display:none}
+.stat{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed var(--line);font-size:15px}
+.stat:last-child{border-bottom:0}
+.stat b{font:650 15px/1 ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+pre{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:16px;overflow:auto;
+font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
+.wk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.bar{height:6px;background:var(--cream);border-radius:3px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber-deep))}
+</style></head><body>
+<header class="mast"><div class="wrap">
+<a class="mark" href="/"><i></i>Musette</a>
+<nav><a class="hide-sm" href="/how">How it works</a><a id="who" class="hide-sm"></a><button id="out" class="btn ghost" type="button">Sign out</button></nav>
+</div></header>
+<main><section><div class="wrap">
+
+<div id="gate">
+  <h1 style="font-size:32px">Sign in to see your plan</h1>
+  <p class="lede" style="margin:14px 0 26px">This page needs an account.</p>
+  <a class="btn primary" href="/signin">Sign in →</a>
+</div>
+
+<div id="app" class="hidden">
+  <p class="eyebrow">Your plan</p>
+  <h1 style="font-size:clamp(30px,4vw,44px)">Hello, <span id="name"></span></h1>
+  <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
+
+  <div class="grid g2" style="margin-top:34px;align-items:start">
+    <div class="card">
+      <h3>About you</h3>
+      <p style="margin-bottom:20px">These are what every target is computed from. Change them and the plan follows.</p>
+      <div class="row">
+        <div class="field"><label for="w">Weight (lb)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
+        <div class="field"><label for="h">Height (in)</label><input id="h" type="number" min="48" max="90"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="a">Age</label><input id="a" type="number" min="14" max="100"></div>
+        <div class="field"><label for="f">FTP (watts)</label><input id="f" type="number" min="0" max="600"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="g">Goal</label><select id="g">
+          <option value="hold">Hold weight steady</option>
+          <option value="lose">Lose slowly</option>
+          <option value="gain">Gain deliberately</option>
+        </select></div>
+        <div class="field"><label for="hw">Hours a week</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
+      </div>
+      <div class="field"><label for="av">Anything you will not eat</label><input id="av" maxlength="200" placeholder="no shellfish, no coriander"></div>
+      <button id="save" class="btn primary" type="button" style="width:100%">Save</button>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:22px">
+        <h3>Where you are</h3>
+        <div id="stats" style="margin-top:14px"><p style="margin:0">Loading…</p></div>
+      </div>
+      <div class="card">
+        <h3>Next month</h3>
+        <p style="margin-bottom:18px">Carries your current block forward onto next month's calendar, ramped, with a recovery week. Nothing is saved until you say so.</p>
+        <div class="row">
+          <div class="field"><label for="rp">Ramp % a week</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
+          <div class="field"><label for="rw">Recovery week</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
+        </div>
+        <button id="gen" class="btn primary" type="button" style="width:100%">Draft next month</button>
+        <div id="draft" class="hidden" style="margin-top:22px">
+          <div id="draftBody"></div>
+          <button id="pub" class="btn primary" type="button" style="width:100%;margin-top:16px">Publish this plan</button>
+          <p class="alt" style="text-align:center;margin-top:12px;font-size:13.5px;color:var(--ink-3)">Publishing replaces the current block on every device.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:22px">
+    <h3>The last three months</h3>
+    <div id="sum" style="margin-top:12px"><p style="margin:0">Loading…</p></div>
+  </div>
+</div>
+
+</div></section></main>
+<footer><div class="wrap"><div class="fcols"><div><a class="mark" href="/" style="color:#fff"><i></i>Musette</a></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div></div>
+<p class="fine">Musette plans food around training. It is not a medical device and does not give medical advice.</p>
+</div></footer>
+<script>
+(function () {
+  var API = 'https://api.musetteapp.com';
+  var $ = function (id) { return document.getElementById(id); };
+  var token = null, draft = null;
+
+  try { token = sessionStorage.getItem('musette.token'); } catch (e) {}
+  /* The sign-in page can also hand the token over in the fragment, which never
+     leaves the browser and is stripped immediately so it does not sit in the
+     address bar or get pasted into a chat by accident. */
+  var m = /[#&]t=([^&]+)/.exec(location.hash || '');
+  if (m) {
+    token = decodeURIComponent(m[1]);
+    try { sessionStorage.setItem('musette.token', token); } catch (e) {}
+    history.replaceState(null, '', location.pathname);
+  }
+
+  function say(kind, text) { var e = $('msg'); e.className = 'msg ' + kind; e.textContent = text; }
+  function busy(el, on, label) { el.disabled = on; el.textContent = on ? 'Working…' : label; }
+  async function api(path, opts) {
+    var o = opts || {};
+    var r = await fetch(API + path, {
+      method: o.method || 'GET',
+      headers: Object.assign({ Authorization: 'Bearer ' + token },
+        o.body ? { 'Content-Type': 'application/json' } : {}),
+      body: o.body ? JSON.stringify(o.body) : undefined,
+    });
+    if (r.status === 401) { signedOut(); throw new Error('signed out'); }
+    return await r.json();
+  }
+  function signedOut() {
+    try { sessionStorage.removeItem('musette.token'); } catch (e) {}
+    $('app').className = 'hidden'; $('gate').className = '';
+  }
+
+  $('out').addEventListener('click', function () {
+    if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    signedOut();
+  });
+
+  var P = ['weight_lb', 'height_in', 'age', 'ftp', 'goal', 'hours_wk', 'avoid'];
+  var FIELD = { weight_lb: 'w', height_in: 'h', age: 'a', ftp: 'f', goal: 'g', hours_wk: 'hw', avoid: 'av' };
+
+  function fillProfile(p) {
+    if (!p) return;
+    P.forEach(function (k) { if (p[k] !== undefined && p[k] !== null) $(FIELD[k]).value = p[k]; });
+  }
+
+  $('save').addEventListener('click', async function () {
+    busy($('save'), true, 'Save');
+    try {
+      var body = {};
+      P.forEach(function (k) {
+        var v = $(FIELD[k]).value;
+        body[k] = (k === 'goal' || k === 'avoid') ? v : Number(v);
+      });
+      var out = await api('/me/profile', { method: 'PUT', body: body });
+      if (!out.ok) { say('bad', out.why || 'Could not save.'); return; }
+      fillProfile(out.profile);
+      say('ok', 'Saved. Every target is computed from these.');
+    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
+    finally { busy($('save'), false, 'Save'); }
+  });
+
+  $('gen').addEventListener('click', async function () {
+    busy($('gen'), true, 'Draft next month');
+    try {
+      var out = await api('/plan/generate', { method: 'POST',
+        body: { ramp_percent: Number($('rp').value), recovery_week: Number($('rw').value) } });
+      if (!out.ok) { say('bad', out.why || out.error || 'Could not draft it.'); return; }
+      draft = out.plan;
+      var wk = {};
+      out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
+      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; }));
+      var html = '<div class="stat"><span>Block</span><b>' + out.plan.block + '</b></div>'
+        + '<div class="stat"><span>Days</span><b>' + out.plan.days.length + '</b></div>'
+        + '<div class="stat"><span>Total riding</span><b>' + out.basis.total_hours + ' h</b></div>'
+        + '<div class="stat"><span>Targets</span><b>' + out.basis.kcal_model + '</b></div>'
+        + '<p class="eyebrow" style="margin:18px 0 8px">By week</p>';
+      Object.keys(wk).sort().forEach(function (k) {
+        html += '<div class="wk"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
+          + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
+      });
+      $('draftBody').innerHTML = html;
+      $('draft').className = '';
+      say('ok', 'Drafted. Nothing is saved yet — look it over, then publish.');
+    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
+    finally { busy($('gen'), false, 'Draft next month'); }
+  });
+
+  $('pub').addEventListener('click', async function () {
+    if (!draft) return;
+    busy($('pub'), true, 'Publish this plan');
+    try {
+      /* PUT /plan is admin-only on purpose: replacing a whole month is the one
+         destructive write in the app. The signed-in page can DRAFT freely and
+         asks the server to publish; if the account is not an admin the server
+         says so rather than the page pretending it worked. */
+      var out = await api('/plan/publish', { method: 'POST', body: { plan: draft, resetTicks: true } });
+      if (!out.ok) { say('bad', out.why || 'Could not publish.'); return; }
+      say('ok', 'Published. Every device picks it up on the next sync.');
+      $('draft').className = 'hidden';
+      load();
+    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
+    finally { busy($('pub'), false, 'Publish this plan'); }
+  });
+
+  async function load() {
+    var me = await api('/me');
+    if (!me.ok) { signedOut(); return; }
+    $('gate').className = 'hidden'; $('app').className = '';
+    $('name').textContent = (me.name || '').split('@')[0];
+    $('who').textContent = me.name || '';
+    fillProfile(me.profile);
+
+    var s = await api('/summary');
+    var stats = '<div class="stat"><span>Current block</span><b>' + (me.block || 'none') + '</b></div>';
+    if (s.stored_rides) {
+      stats += '<div class="stat"><span>Activities stored</span><b>' + s.stored_rides.count + '</b></div>';
+      if (s.stored_rides.oldest) stats += '<div class="stat"><span>Going back to</span><b>' + s.stored_rides.oldest + '</b></div>';
+    }
+    $('stats').innerHTML = stats;
+
+    if (s.ok && s.summary) {
+      var w = (s.summary.watch || []).map(function (x) { return '<li>' + x + '</li>'; }).join('');
+      $('sum').innerHTML = '<p style="font-size:17px;font-weight:600;margin-bottom:14px">' + s.summary.headline + '</p>'
+        + '<p>' + s.summary.training + '</p><p>' + s.summary.fuelling + '</p>'
+        + (w ? '<p class="eyebrow" style="margin:18px 0 6px">Worth watching</p><ul style="margin:0;padding-left:20px;color:var(--ink-2);font-size:15px">' + w + '</ul>' : '')
+        + '<p style="font-size:13px;color:var(--ink-3);margin-top:16px">From ' + s.basis.rides + ' rides over '
+        + s.basis.window_days + ' days · ' + (s.age_days === 0 ? 'made today' : s.age_days + ' days old') + '</p>';
+    } else {
+      $('sum').innerHTML = '<p style="margin:0">' + (s.why || 'No summary yet.') + '</p>';
+    }
+  }
+
+  if (!token) { signedOut(); }
+  else load().catch(function () { signedOut(); });
+})();
+</script>
+</body></html>

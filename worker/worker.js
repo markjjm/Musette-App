@@ -1668,9 +1668,13 @@ export class ListDO extends DurableObject {
     if (inv.used) return { ok: false, why: 'that invite has already been used' };
     if (inv.exp < Date.now()) return { ok: false, why: 'that invite has expired - ask for a new one' };
 
-    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
-    if (!/^[a-z0-9._-]{3,40}$/.test(uname)) {
-      return { ok: false, why: 'usernames are 3-40 characters: letters, numbers, dot, dash or underscore' };
+    /* Either an email or a plain handle. Identity moved to email when open
+       signup landed, and this path - invite redemption - was still refusing
+       anything with an @ in it, so an invited person could not use the same
+       thing they would sign in with. */
+    const uname = String(username || '').trim().toLowerCase().slice(0, 120);
+    if (!/^[a-z0-9._-]{3,40}$/.test(uname) && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(uname)) {
+      return { ok: false, why: 'use an email address, or a handle of 3-40 letters, numbers, dots or dashes' };
     }
     if (await this.ctx.storage.get('auth:user:' + uname)) {
       return { ok: false, why: 'that username is taken' };
@@ -2832,6 +2836,16 @@ export default {
       }
     }
 
+    /* Resolved once, before any route, because routes on BOTH sides of the
+       access gate need it. It was declared inside the gate and referenced 160
+       lines above - a temporal dead zone error that would only have fired the
+       first time somebody pressed Publish. */
+    let session = null;
+    {
+      const bearer = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+      if (bearer) session = await listStub(env).session(bearer);
+    }
+
     if (path === '/health') return json({ ok: true }, 200, origin);
 
     /* ---- The stored three-month read ----------------------------------
@@ -2848,9 +2862,12 @@ export default {
        generator that wrote straight to storage would put a month of somebody's
        food one request away from a typo. */
     if (path === '/plan/generate' && request.method === 'POST') {
-      if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
-      if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
-        return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+      /* A draft is not a write: it returns a plan and stores nothing, so a
+         signed-in rider may ask for one. The admin key still works, for the
+         terminal. Publishing is where the gate that matters sits. */
+      const adminOk = env.ADMIN_KEY
+        && await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY);
+      if (!session && !adminOk) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);
       if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
       const b = r.body || {};
@@ -2878,6 +2895,25 @@ export default {
       const invalid = validatePlan(out.plan);
       if (invalid) return json({ ok: false, why: `generated plan is not valid: ${invalid}` }, 500, origin);
       return json(out, 200, origin);
+    }
+
+    /* Publishing a drafted block, as the signed-in rider rather than as the
+       operator. PUT /plan stays admin-only because it accepts any plan from
+       anywhere; this one accepts a plan too, but only from somebody holding a
+       session, and it runs the same validator. Replacing a month is still the
+       one destructive write in the app, so it takes the same undo snapshot
+       every other write does - /undo puts the old block back. */
+    if (path === '/plan/publish' && request.method === 'POST') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const r = await readJson(request);
+      if (r.tooLarge) return json({ ok: false, why: 'that plan is too large' }, 413, origin);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const plan = (r.body || {}).plan;
+      if (!blockYM(plan)) return json({ ok: false, why: 'that plan does not name a month' }, 400, origin);
+      const invalid = validatePlan(plan);
+      if (invalid) return json({ ok: false, why: `that plan is not valid: ${invalid}` }, 400, origin);
+      const state = await listStub(env).setPlan(plan, (r.body || {}).resetTicks !== false);
+      return json({ ok: true, block: plan.block, rev: state.rev, by: session.name }, 200, origin);
     }
 
     if (path === '/summary') {
@@ -3018,7 +3054,19 @@ export default {
        that had not received LIST_KEY yet and was allowed straight through.
        Open access now has to be asked for explicitly. */
     const openList = env.OPEN_LIST === 'yes';
-    if (!openList) {
+    /* An account is a credential too.
+       Until now a session token unlocked nothing: people could create accounts
+       and sign in, and then every data route still wanted the four-digit code,
+       so the two halves of the app did not meet. A valid session now satisfies
+       this gate exactly as the code does.
+
+       The code is NOT retired. Two phones in a kitchen already hold it, and
+       taking it away would sign them both out to fix something that is not
+       broken for them. It stays as the household door; the session is the
+       personal one, and either opens the same lock while there is still one
+       household behind it. When the plan splits per member, this is the line
+       that decides WHOSE data comes back rather than merely whether any does. */
+    if (!openList && !session) {
       if (!env.LIST_KEY)
         return json({ error: 'access code not configured' }, 503, origin);
       if (!(await safeEqual(request.headers.get('X-List-Key') || '', env.LIST_KEY))) {
@@ -3032,6 +3080,25 @@ export default {
         if (gate.blocked) return json({ error: 'too many attempts, wait a minute' }, 429, origin);
         return json({ error: 'bad or missing access code' }, 401, origin);
       }
+    }
+
+    /* The signed-in rider's own record. Reading needs a session, not the
+       household code, because "me" is meaningless without one. */
+    if (path === '/me' && request.method === 'GET') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const st = await listStub(env).read();
+      return json({ ok: true, ...session, profile: st.profile || null, block: (st.plan || {}).block || null }, 200, origin);
+    }
+    if (path === '/me/profile' && request.method === 'PUT') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const r = await readJson(request);
+      if (r.tooLarge) return json({ ok: false, why: 'payload too large' }, 413, origin);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      /* Goes through the same merge every phone uses, so cleanProfile() clamps
+         it and the last-write-wins timestamp still decides. The web app is not
+         a privileged writer; it is another client. */
+      const merged = await listStub(env).merge({ profile: { ...(r.body || {}), t: Date.now() } });
+      return json({ ok: true, profile: merged.profile }, 200, origin);
     }
 
     if (path === '/rev' && request.method === 'GET') {
