@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Musette — food that keeps up with your training</title>
+<meta name="description" content="A nutrition planner for cyclists. It reads what you actually rode and sets that day's calories and carbohydrate against it.">
+<style>:root{--ground:#F7F8FA;--surface:#fff;--line:#E1E5EB;--ink:#0F1620;--ink-2:#4A5666;--navy:#12305C;--navy-ink:#F2F5FA;--accent:#F0B429;--train:#1F6B4A;--fuel:#7A3E86}
+@media(prefers-color-scheme:dark){:root{--ground:#0C1118;--surface:#141B25;--line:#232C39;--ink:#E8ECF2;--ink-2:#A3AEBD;--navy:#0A1626;--navy-ink:#E8ECF2;--train:#6BC79B;--fuel:#C79BD2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+h1,h2,h3{letter-spacing:-.025em;font-weight:700;line-height:1.15;margin:0}
+h1{font-size:clamp(32px,5vw,52px)}h2{font-size:clamp(24px,3vw,38px)}h3{font-size:18px;font-weight:650}
+p{margin:0 0 16px;max-width:68ch}
+a{color:inherit}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+header.mast{background:var(--navy);color:var(--navy-ink)}
+.mast .wrap{display:flex;align-items:center;gap:28px;height:64px}
+.mark{font-weight:700;font-size:18px;letter-spacing:-.02em;text-decoration:none}
+.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.mast nav a{font-size:14px;text-decoration:none;opacity:.85}
+.mast nav a:hover,.mast nav a:focus{opacity:1;text-decoration:underline}
+.btn{display:inline-block;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:650;text-decoration:none;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--accent);color:#1a1200;border-color:var(--accent)}
+.btn.quiet{border-color:currentColor;opacity:.9}
+section{padding:clamp(48px,7vw,96px) 0}
+section+section{border-top:1px solid var(--line)}
+.lede{font-size:clamp(18px,2vw,22px);color:var(--ink-2);max-width:60ch}
+.grid{display:grid;gap:24px;grid-template-columns:1fr}
+@media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px}
+.card h3{margin-bottom:8px}
+.card p{font-size:15px;color:var(--ink-2);margin-bottom:0}
+.surface{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.surface .hd{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.surface .bd{padding:18px}
+.row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}
+.row b{font-weight:650}
+.num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.train{color:var(--train)}.fuel{color:var(--fuel)}
+ul.plain{list-style:none;padding:0;margin:0}
+ul.plain li{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink-2)}
+ul.plain li:last-child{border-bottom:0}
+ul.plain b{color:var(--ink);font-weight:650}
+footer{background:var(--navy);color:var(--navy-ink);padding:40px 0;font-size:14px}
+footer a{opacity:.85}
+footer .fl{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+footer p{opacity:.7;font-size:13px;max-width:none;margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.hero{padding-top:clamp(56px,8vw,110px)}
+.hero .acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+.steps{counter-reset:s}
+.steps .card{counter-increment:s;position:relative}
+.steps .card .mono:before{content:"Step " counter(s)}
+.no li{padding-left:26px;position:relative}
+.no li:before{content:"—";position:absolute;left:0;color:var(--ink-2)}
+</style></head><body>
+<header class="mast"><div class="wrap">
+<a class="mark" href="/">Musette</a>
+<nav>
+<a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/about">About</a>
+<a class="btn primary" href="/signin">Sign in</a>
+</nav>
+</div></header>
+<main>
+<section class="hero"><div class="wrap">
+<p class="mono">For cyclists who cook for themselves</p>
+<h1>Food that keeps up<br>with your training.</h1>
+<p class="lede">Musette reads what you actually rode — measured work, training load, time in each zone — and sets that day's calories and carbohydrate against it. Then it writes the shopping list.</p>
+<div class="acts"><a class="btn primary" href="/signin">Sign in</a><a class="btn quiet" href="/how">See how it works</a></div>
+</div></section>
+
+<section><div class="wrap">
+<h2>Two halves of the same number</h2>
+<p class="lede" style="margin-bottom:32px">A four-hour Saturday and a rest-day Monday are not the same eating problem. Most apps make you do that arithmetic yourself.</p>
+<div class="grid two">
+<div class="surface"><div class="hd"><b class="train">Saturday · long day</b><span class="mono">Measured</span></div><div class="bd">
+<div class="row"><span>Moving time</span><b class="num">3 h 45</b></div>
+<div class="row"><span>Work</span><b class="num">2,180 kJ</b></div>
+<div class="row"><span>Training load</span><b class="num">241 TSS</b></div>
+<div class="row"><span>Fitness → fatigue</span><b class="num">56.7 → 74.2</b></div>
+<p style="font-size:13px;color:var(--ink-2);margin:14px 0 0">Read from your ride file, not estimated from a slider.</p>
+</div></div>
+<div class="surface"><div class="hd"><b class="fuel">What that day eats</b><span class="mono">Computed</span></div><div class="bd">
+<div class="row"><span>Target</span><b class="num">4,591 kcal</b></div>
+<div class="row"><span>Carbohydrate</span><b class="num">741 g</b></div>
+<div class="row"><span>On the bike</span><b class="num">1,340 kcal · 335 g</b></div>
+<div class="row"><span>Dinner</span><b class="num">930 kcal</b></div>
+<p style="font-size:13px;color:var(--ink-2);margin:14px 0 0">Every figure here is arithmetic done in code. Nothing is a language model's guess.</p>
+</div></div>
+</div></div></section>
+
+<section><div class="wrap">
+<h2>How it works</h2>
+<div class="grid three" style="margin-top:32px">
+<div class="card steps"><p class="mono"></p><h3>Connect your training</h3><p>One link to intervals.icu, which already syncs from Garmin, Wahoo, Coros, Polar, Suunto, Zwift and the rest. Your rides arrive on their own.</p></div>
+<div class="card steps"><p class="mono"></p><h3>Answer the intake once</h3><p>Weight, height, the hours you ride, what you are training for, and what you will not eat. Ten minutes, and you can change any of it later.</p></div>
+<div class="card steps"><p class="mono"></p><h3>Shop and cook</h3><p>A month of dinners, portioned to your days, with the shopping list already split by store and priced. Tick items off in the aisle.</p></div>
+</div></div></section>
+
+<section><div class="wrap">
+<h2>What it does not do</h2>
+<p class="lede" style="margin-bottom:28px">This is a list of absences, and it is deliberate.</p>
+<ul class="plain no">
+<li><b>No feed, no streaks, no badges.</b> Nothing here is trying to get you to open it more often.</li>
+<li><b>No ads, and your data is never sold or shared for marketing.</b> There is no second business model hiding behind the first.</li>
+<li><b>Not a medical device.</b> It will not diagnose, treat, or tell you what your body needs. It plans food around training.</li>
+<li><b>No calorie shaming, ever.</b> It will not tell you to earn a meal or work one off.</li>
+<li><b>No public signup.</b> Invite only, so the person who invited you can vouch for it.</li>
+</ul>
+</div></section>
+
+<section><div class="wrap">
+<h2>What it holds about you</h2>
+<div class="grid two" style="margin-top:28px">
+<ul class="plain">
+<li><b>Bodyweight, height, age and training load.</b> Because the targets cannot be computed without them.</li>
+<li><b>What you ate, if you log it.</b> Kept 90 days, then deleted automatically.</li>
+<li><b>Three processors:</b> Cloudflare hosts it, intervals.icu supplies the rides, OpenAI writes the explanations.</li>
+<li><b>Export and delete yourself,</b> at any time, without asking anyone.</li>
+</ul>
+<div class="card"><h3>This is health data</h3><p>Training load and bodyweight are special-category data under GDPR Article 9. We treat them that way: explicit consent at signup, a named processor list, and a retention policy written down rather than implied. The full detail is on the <a href="/privacy">privacy page</a>, in plain language first.</p></div>
+</div></div></section>
+
+<section><div class="wrap" style="text-align:center">
+<h2>Already have an invite?</h2>
+<p class="lede" style="margin:16px auto 28px">Sign in with a passkey. There is no password to forget.</p>
+<a class="btn primary" href="/signin">Sign in</a>
+</div></section>
+</main>
+<footer><div class="wrap">
+<div class="fl"><a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/about">About</a><a href="mailto:hello@musetteapp.com">Contact</a></div>
+<p>Musette is not a medical device and does not give medical advice. It plans food around training. If you are managing a health condition, or have any history of disordered eating, talk to a clinician rather than to this.</p>
+</div></footer>
+</body></html>
