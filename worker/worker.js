@@ -781,6 +781,91 @@ function scrubAdvice(a) {
   return a;
 }
 
+/* ---- The three-month read ---------------------------------------------
+   One model call, made on a schedule rather than on a question, stored, and
+   read back instantly by everything that needs context. This is the layer that
+   lets the coach say "the third long ride in a row you have under-fuelled"
+   instead of meeting you fresh every time.
+
+   Everything numeric handed to it is computed here first, same as every other
+   prompt in this file. The model is asked what the numbers MEAN over a quarter
+   - the shape of the block, what keeps recurring, what to watch - and not to
+   work any of them out. */
+const SUMMARY_SCHEMA = {
+  type: 'object',
+  properties: {
+    headline: { type: 'string', description: 'One sentence: what the last three months actually were.' },
+    training: { type: 'string', description: 'Two or three sentences on the training: volume, consistency, where it went.' },
+    fuelling: { type: 'string', description: 'Two or three sentences on how the eating tracked the training.' },
+    watch: {
+      type: 'array',
+      description: 'At most three things that keep recurring and are worth acting on. Each one short.',
+      items: { type: 'string' },
+    },
+    confidence: { type: 'string', description: 'high, medium or low - how much history this rests on' },
+  },
+  required: ['headline', 'training', 'fuelling', 'watch', 'confidence'],
+  additionalProperties: false,
+};
+
+const SUMMARY_SYSTEM = (rider) => [
+  rider,
+  '',
+  'You are writing the standing summary that every later conversation starts from. It is made once and',
+  'read many times, so it must be about PATTERNS over a quarter and not about any single day.',
+  '',
+  'Every number below is already computed and verified. Treat each as settled fact: never recalculate one,',
+  'never contradict one, and never introduce a number that is not derivable from those given.',
+  '',
+  'Say what recurs. "Long rides are consistently under-fuelled by about a third" is worth writing down;',
+  '"on 14 August he ate 2,800 kcal" is not - that is a day, and the day already has its own read.',
+  '',
+  'If the history is thin, say so in `confidence` and keep `watch` short. A confident summary built on three',
+  'weeks of data is worse than an honest one that says it cannot see far enough yet.',
+  '',
+  'No medical advice, no diagnosis, and nothing about weight that a person managing disordered eating should',
+  'not read. Describe the training and the fuelling; do not moralise about either.',
+].join('\n');
+
+/* Assembled here, in code, from stored rides and stored weigh-ins. */
+function digestFacts(rides, weights, plan, riderBlock) {
+  const byWeek = {};
+  let load = 0, hours = 0, kj = 0, measured = 0;
+  for (const r of rides) {
+    const wk = r.date.slice(0, 10);
+    const monday = new Date(wk + 'T12:00:00Z');
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+    const key = monday.toISOString().slice(0, 10);
+    byWeek[key] = byWeek[key] || { h: 0, load: 0, n: 0 };
+    byWeek[key].h += (r.secs || 0) / 3600;
+    byWeek[key].load += r.load || 0;
+    byWeek[key].n += 1;
+    load += r.load || 0;
+    hours += (r.secs || 0) / 3600;
+    kj += r.kcal || 0;
+    if (r.trust === 'measured') measured++;
+  }
+  const weeks = Object.entries(byWeek).sort().map(([w, v]) => ({
+    week_of: w, hours: Math.round(v.h * 10) / 10, load: Math.round(v.load), rides: v.n,
+  }));
+  const longs = rides.filter((r) => (r.secs || 0) >= 3 * 3600)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((r) => ({ date: r.date, hours: Math.round((r.secs / 3600) * 10) / 10, load: r.load, kcal: r.kcal }));
+  return {
+    rider: riderBlock,
+    window_days: DIGEST_WINDOW_DAYS,
+    rides_counted: rides.length,
+    total_hours: Math.round(hours * 10) / 10,
+    total_load: Math.round(load),
+    total_ride_kcal: Math.round(kj),
+    share_power_measured: rides.length ? Math.round((measured / rides.length) * 100) : 0,
+    weeks,
+    long_rides: longs.slice(-12),
+    weight_trend: weightTrend(weights, DIGEST_WINDOW_DAYS),
+    block: (plan && plan.block) || null,
+  };
+}
+
 /* Never throws. A coach that is down must not take the meal plan with it. */
 async function askModel(env, system, schema, name, facts) {
   if (!env.OPENAI_KEY) return { ok: false, why: 'not configured' };
@@ -1450,6 +1535,88 @@ export class ListDO extends DurableObject {
      longer exists, and a session left behind is a signed-in browser that
      outlives the account it belongs to. Both are the kind of leftover that is
      invisible until it matters. */
+
+  /* ---- Activities kept, rather than re-fetched -------------------------
+     Rides lived only in caches.default: one to ten minutes, per-datacentre,
+     gone on the next deploy. That is request de-duplication, not memory, and it
+     meant every coach call re-fetched 180 days from intervals.icu - the single
+     largest consumer of an allowance that is 100 requests a day per user.
+
+     28 days of rides is about 15 KB. This is not a storage problem and never
+     was; it is a fetching problem, and the fix is to stop re-fetching what has
+     already been seen.
+
+     One key per ride, date first, so a range scan reads a window in order
+     without loading the rest. NOT in `state`: read() hands that back wholesale
+     on every sync, so anything growing per-activity would ride along on every
+     pull to every phone. */
+  async saveRides(rides) {
+    if (!Array.isArray(rides) || !rides.length) return { ok: true, saved: 0 };
+    let saved = 0;
+    for (const r of rides.slice(0, 400)) {
+      if (!r || !r.id || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) continue;
+      await this.ctx.storage.put(`r:${r.date}:${r.id}`, r);
+      saved++;
+    }
+    /* Everything is kept. The only pruning is a five-year backstop against the
+       unbounded growth the August audit caught in a different map, and the
+       boundary is pulled back further still so a whole calendar month is always
+       intact: pruning by a rolling day count alone would eat the first days of
+       the current month while the app was still drawing it. */
+    const byAge = new Date(Date.now() - RIDE_MAX_AGE_DAYS * 86400000);
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const monthFloor = new Date(Math.min(
+      monthStart.getTime(),
+      Date.now() - MONTH_MIN_DAYS * 86400000
+    ));
+    const cutoff = new Date(Math.min(byAge.getTime(), monthFloor.getTime())).toISOString().slice(0, 10);
+    const old = await this.ctx.storage.list({ prefix: 'r:', end: `r:${cutoff}` });
+    for (const k of old.keys()) await this.ctx.storage.delete(k);
+    return { ok: true, saved, pruned: old.size };
+  }
+
+  /* A window, oldest first. No upstream call, no cache, no network. */
+  async ridesBetween(oldest, newest) {
+    const m = await this.ctx.storage.list({ prefix: 'r:', start: `r:${oldest}`, end: `r:${newest}￿` });
+    return [...m.values()];
+  }
+
+  /* Every activity in one calendar month, '2026-08'. The app draws a month at a
+     time, so it asks for a month rather than for a rolling window that would
+     start mid-way through one. */
+  async ridesForMonth(ym) {
+    if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return [];
+    const m = await this.ctx.storage.list({ prefix: `r:${ym}-` });
+    return [...m.values()];
+  }
+
+  async rideSpan() {
+    const m = await this.ctx.storage.list({ prefix: 'r:' });
+    const dates = [...m.keys()].map((k) => k.slice(2, 12)).sort();
+    return { count: m.size, oldest: dates[0] || null, newest: dates[dates.length - 1] || null };
+  }
+
+  /* ---- The three-month read -------------------------------------------
+     Written once, read on every coach call. Regenerating it per request would
+     put a model call in front of every question and is exactly the cost shape
+     COACH_MAX_DAY exists to stop.
+
+     Served even when stale, with its age attached, because a summary from
+     Tuesday is worth more than no summary at all - and the caller can decide
+     what to do about the age rather than being handed nothing. */
+  async putDigest(d) {
+    await this.ctx.storage.put('digest:v1', { ...d, made: Date.now() });
+    return { ok: true };
+  }
+
+  async getDigest() {
+    const d = await this.ctx.storage.get('digest:v1');
+    if (!d) return { ok: false, why: 'no summary has been made yet' };
+    const ageDays = Math.floor((Date.now() - d.made) / 86400000);
+    return { ok: true, ...d, age_days: ageDays, stale: ageDays >= DIGEST_STALE_DAYS };
+  }
+
   async removeAccount(username) {
     const uname = String(username || '').trim().toLowerCase();
     const uid = await this.ctx.storage.get('auth:user:' + uname);
@@ -1838,6 +2005,28 @@ const ATL_K = 1 - Math.exp(-1 / 7);
    to settle. One fixed window for every endpoint, so /ask, /coach, /analyze and
    /ride cannot report different form for the same rider on the same day. */
 const FORM_DAYS = 180;
+
+/* Retention and analysis are two different windows, and conflating them was the
+   first draft's mistake.
+
+   RIDE_MAX_AGE_DAYS is retention: every activity is kept. A ride is 358 bytes,
+   so a rider putting in 500 a year costs 175 KB a year and five years costs
+   under a megabyte. There is no reason to throw that away, and having it is
+   what makes later inference possible at all. The five-year figure is a
+   backstop against unbounded growth, not a judgement that older rides stop
+   mattering.
+
+   MONTH_MIN_DAYS is what the app needs on hand to draw a whole calendar month
+   without a gap. 28 is not enough - a 31-day month drawn on the 31st needs 31.
+
+   DIGEST_WINDOW_DAYS is what the SUMMARY reads, and it is deliberately much
+   shorter than what is stored. Everything older is kept but not fed to the
+   model: a quarter is what a coach's standing read should rest on, and paying
+   to summarise five years on every regeneration would buy nothing. */
+const RIDE_MAX_AGE_DAYS = 1825;
+const MONTH_MIN_DAYS = 31;
+const DIGEST_WINDOW_DAYS = 90;
+const DIGEST_STALE_DAYS = 7;
 /* How much of the window must exist before the numbers are worth quoting. */
 const FORM_MIN_DAYS = 120;
 
@@ -2088,7 +2277,16 @@ function ownerLink(env) {
   if (!env.INTERVALS_KEY) return null;
   const athlete = String(env.INTERVALS_ATHLETE || '0');
   if (!ATHLETE_ID.test(athlete)) return null;
-  return { athlete, auth: `Basic ${btoa(`API_KEY:${env.INTERVALS_KEY}`)}` };
+  return {
+    athlete,
+    auth: `Basic ${btoa(`API_KEY:${env.INTERVALS_KEY}`)}`,
+    /* Attached here so fetchRides still takes one object that says both whose
+       rides these are and where they belong. Absent when there is no object to
+       write to, so a caller without one fetches and simply does not persist. */
+    persist: env.LIST_DO
+      ? (rides) => env.LIST_DO.get(env.LIST_DO.idFromName('household')).saveRides(rides)
+      : null,
+  };
 }
 
 /* The athlete is part of the key, not just the date range. It was not, which was
@@ -2161,6 +2359,18 @@ async function fetchRides(link, oldest, newest, ctx) {
     const body = { ok: true, rides, fetched: new Date().toISOString() };
     if (all.length > MAX_RIDES) body.truncated = all.length - MAX_RIDES;
     keep(body);
+    /* Persist on the way past. Every ride this Worker has ever seen goes to
+       durable storage here, so the next 28 days of questions need no upstream
+       call at all. Backgrounded: a slow write must not make a fast read wait,
+       and a failed write costs a re-fetch rather than an error. */
+    if (link.persist) {
+      try {
+        const put = Promise.resolve(link.persist(rides)).catch(() => {});
+        if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(put);
+      } catch {
+        /* Storing history is never worth failing a read for. */
+      }
+    }
     /* Attached after the copy that went into the cache, deliberately. How much of
        the daily allowance is left is true at this instant and a lie ten minutes
        later, so it must never come back on a cache hit. */
@@ -2197,6 +2407,62 @@ export default {
     }
 
     if (path === '/health') return json({ ok: true }, 200, origin);
+
+    /* ---- The stored three-month read ----------------------------------
+       GET is free, instant and never calls a model: it hands back what was
+       written last time, with its age, so the caller can decide what a
+       four-day-old summary is worth. POST regenerates, costs a model call,
+       and is gated on the same daily budget as the coach.
+
+       Split in two on purpose. A summary that regenerated itself on read would
+       put a model call in front of every question, which is the exact cost
+       shape COACH_MAX_DAY exists to prevent. */
+    if (path === '/summary') {
+      const stub = listStub(env);
+      if (request.method === 'GET') {
+        const span = await stub.rideSpan();
+        const ym = (url.searchParams.get('month') || '').slice(0, 7);
+        const month = ym ? await stub.ridesForMonth(ym) : null;
+        return json({
+          ...(await stub.getDigest()),
+          stored_rides: span,
+          ...(month ? { month: ym, rides: month } : {}),
+        }, 200, origin);
+      }
+      if (request.method === 'POST') {
+        if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+        if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+          return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+        const budget = await stub.spend();
+        if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
+
+        const today = new Date().toISOString().slice(0, 10);
+        const from = new Date();
+        from.setUTCDate(from.getUTCDate() - DIGEST_WINDOW_DAYS);
+        const fromISO = from.toISOString().slice(0, 10);
+
+        /* Read stored rides first; only reach upstream for what is missing.
+           This is the whole point of keeping them - a regeneration costs one
+           upstream call at most, not one per question. */
+        let rides = await stub.ridesBetween(fromISO, today);
+        if (rides.length < 5) {
+          const up = await fetchRides(ownerLink(env), fromISO, today, ctx);
+          if (up.ok) rides = up.rides;
+        }
+        if (!rides.length) return json({ ok: false, why: 'no rides in the last three months to summarise' }, 200, origin);
+
+        const state = await stub.read();
+        const facts = digestFacts(rides, state.weights, state.plan, riderNow(state.profile));
+        const out = await askModel(env, SUMMARY_SYSTEM(riderLine(state.profile)), SUMMARY_SCHEMA, 'summary', facts);
+        if (!out.ok) return json(out, 200, origin);
+        await stub.putDigest({
+          summary: out.advice, model: out.model, cost: out.cost,
+          basis: { rides: rides.length, window_days: DIGEST_WINDOW_DAYS, from: fromISO, to: today },
+        });
+        return json({ ok: true, ...(await stub.getDigest()), calls_today: budget.n }, 200, origin);
+      }
+      return json({ error: 'not found' }, 404, origin);
+    }
 
     /* ---- Accounts -----------------------------------------------------
        Rate limited by the same limiter as everything else, and every failure
