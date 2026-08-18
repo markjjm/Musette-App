@@ -18,6 +18,8 @@ const STORES = new Set(['A', 'M']);
 const ORIGIN_EXACT = new Set([
   'https://app.musetteapp.com',              // the app
   'https://musetteapp.com',                  // the public site, for sign-in
+  'https://www.musetteapp.com',
+  'https://musette-site-i44.pages.dev',      // the site's own hostname
   'https://shopping-list-app-9an.pages.dev', // TODO: remove after the cutover
 ]);
 const ORIGIN_SUFFIX = '.shopping-list-app-9an.pages.dev'; // Pages preview deploys
@@ -48,8 +50,8 @@ function allowedOrigin(origin) {
 function corsHeaders(origin) {
   const allow = allowedOrigin(origin);
   const h = {
-    'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,X-List-Key,X-Admin-Key',
+    'Access-Control-Allow-Methods': 'GET,PUT,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,X-List-Key,X-Admin-Key,Authorization',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -1010,6 +1012,75 @@ async function lookupFood(env, stub, q) {
    blob with no compare-and-swap, so two phones syncing in the same second
    silently lost one side's changes. Measured at 60-85% loss under
    concurrency. A shared family list has to be the source of truth. */
+/* ---- Accounts ----------------------------------------------------------
+   Passkeys, and nothing else. No passwords, because WebCrypto's only KDF is
+   PBKDF2 and OWASP wants 600k iterations of it - 150-350 ms of CPU against a
+   10 ms free-plan budget, which is indefensible at any work factor. No email,
+   so there is no address to leak and no reset link to phish. What is stored per
+   account is a public key; there is no secret here worth stealing.
+
+   None of this lives in `state`. read() hands state back wholesale to anyone
+   holding the list key, and the comment there has always said nothing private
+   may live in it. Credentials, sessions and invites are separate storage keys
+   so that stays structurally true rather than remembered. */
+const RP_ID = 'musetteapp.com';
+const RP_NAME = 'Musette';
+const CHALLENGE_TTL = 5 * 60 * 1000;      // long enough to pick a finger, short enough not to bank
+const SESSION_TTL = 30 * 24 * 3600 * 1000;
+const INVITE_TTL = 24 * 3600 * 1000;
+
+const b64u = {
+  enc(buf) {
+    let s = '';
+    const b = new Uint8Array(buf);
+    for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  },
+  dec(str) {
+    const s = String(str || '').replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(s + '='.repeat((4 - (s.length % 4)) % 4));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  },
+};
+
+const randomB64 = (n) => b64u.enc(crypto.getRandomValues(new Uint8Array(n)));
+const sha256Bytes = async (b) => new Uint8Array(await crypto.subtle.digest('SHA-256', b));
+const sha256B64 = async (s) => b64u.enc(await sha256Bytes(new TextEncoder().encode(s)));
+
+/* WebCrypto's ECDSA verify wants the raw r||s pair; a WebAuthn authenticator
+   signs in ASN.1 DER. Converting is the whole of the difference, and getting it
+   wrong fails closed - every signature simply refuses to verify - so this is
+   written out rather than guessed at. */
+function derToRaw(der) {
+  if (der[0] !== 0x30) return null;
+  let i = 2;
+  if (der[1] & 0x80) i = 2 + (der[1] & 0x7f);
+  const out = new Uint8Array(64);
+  for (const off of [0, 32]) {
+    if (der[i++] !== 0x02) return null;
+    let len = der[i++];
+    let start = i;
+    /* DER keeps a leading zero so the integer reads as positive; P-1363 does
+       not want it, and a short integer must be left-padded rather than shifted. */
+    while (len > 32) { start++; len--; }
+    out.set(der.subarray(start, start + len), off + (32 - len));
+    i = start + len;
+  }
+  return out;
+}
+
+/* The half of clientDataJSON that is the same for registration and login. */
+function checkClientData(json, expectType, expectChallenge, origins) {
+  let c;
+  try { c = JSON.parse(new TextDecoder().decode(json)); } catch { return 'clientData is not JSON'; }
+  if (c.type !== expectType) return `expected ${expectType}`;
+  if (c.challenge !== expectChallenge) return 'challenge does not match';
+  if (!origins.includes(c.origin)) return `origin ${c.origin} is not allowed`;
+  return null;
+}
+
 export class ListDO extends DurableObject {
   async load() {
     let s = await this.ctx.storage.get('state');
@@ -1183,6 +1254,154 @@ export class ListDO extends DurableObject {
       await this.ctx.storage.put('state', restored);
       return restored;
     });
+  }
+
+
+  /* ---- Accounts, invites and sessions ---------------------------------
+     Every one of these lives under its own storage key, never in `state`. */
+
+  async mintInvite(note) {
+    const code = (randomB64(9).toUpperCase().replace(/[^A-Z0-9]/g, '') + '000000').slice(0, 8);
+    await this.ctx.storage.put('auth:invite:' + code, {
+      exp: Date.now() + INVITE_TTL, note: clamp(note) || '', used: false,
+    });
+    return { ok: true, code, expires_in_hours: 24 };
+  }
+
+  async listAccounts() {
+    const m = await this.ctx.storage.list({ prefix: 'auth:acct:' });
+    return {
+      ok: true,
+      accounts: [...m.values()].map((a) => ({ uid: a.uid, name: a.name, created: a.created, last: a.last || null })),
+    };
+  }
+
+  /* Registration begins by SPENDING nothing: the invite is only checked here,
+     and consumed at the end, so a challenge that is never completed does not
+     burn somebody's one code. */
+  async registerBegin(code) {
+    const key = 'auth:invite:' + String(code || '').toUpperCase().slice(0, 16);
+    const inv = await this.ctx.storage.get(key);
+    if (!inv) return { ok: false, why: 'that invite code is not one we issued' };
+    if (inv.used) return { ok: false, why: 'that invite has already been used' };
+    if (inv.exp < Date.now()) return { ok: false, why: 'that invite has expired - ask for a new one' };
+
+    const challenge = randomB64(32);
+    const uid = randomB64(16);
+    await this.ctx.storage.put('auth:chal:' + challenge, { exp: Date.now() + CHALLENGE_TTL, uid, code: key });
+    return { ok: true, challenge, uid, rp: { id: RP_ID, name: RP_NAME } };
+  }
+
+  /* The public key arrives from the browser as SPKI, because
+     response.getPublicKey() hands it over directly and that is what spares this
+     file a CBOR decoder. Trusting the caller for it is sound: they are enrolling
+     their own credential, and every LOGIN afterwards is a signature check
+     against whatever was stored here. A forged key only locks its owner out. */
+  async registerFinish(challenge, name, credId, spki, clientDataB64, origins) {
+    const ch = await this.ctx.storage.get('auth:chal:' + challenge);
+    if (!ch || ch.exp < Date.now()) return { ok: false, why: 'that took too long - start again' };
+    await this.ctx.storage.delete('auth:chal:' + challenge);
+
+    const bad = checkClientData(b64u.dec(clientDataB64), 'webauthn.create', challenge, origins);
+    if (bad) return { ok: false, why: bad };
+
+    const inv = await this.ctx.storage.get(ch.code);
+    if (!inv || inv.used) return { ok: false, why: 'that invite has already been used' };
+
+    /* Refuse a key WebCrypto cannot read, here rather than at first login. */
+    try {
+      await crypto.subtle.importKey('spki', b64u.dec(spki), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    } catch {
+      return { ok: false, why: 'that device offered a key we cannot verify against' };
+    }
+
+    const uid = ch.uid;
+    const acct = {
+      uid,
+      name: clamp(name) || 'Rider',
+      created: new Date().toISOString(),
+      cred: { id: credId, spki, counter: 0 },
+    };
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    await this.ctx.storage.put('auth:cred:' + credId, uid);
+    await this.ctx.storage.put(ch.code, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
+    return { ok: true, ...(await this.issue(uid)), name: acct.name };
+  }
+
+  async loginBegin() {
+    const challenge = randomB64(32);
+    await this.ctx.storage.put('auth:chal:' + challenge, { exp: Date.now() + CHALLENGE_TTL, login: true });
+    return { ok: true, challenge, rp_id: RP_ID };
+  }
+
+  async loginFinish(challenge, credId, authDataB64, clientDataB64, sigB64, origins) {
+    const ch = await this.ctx.storage.get('auth:chal:' + challenge);
+    if (!ch || !ch.login || ch.exp < Date.now()) return { ok: false, why: 'that took too long - try again' };
+    await this.ctx.storage.delete('auth:chal:' + challenge);
+
+    const bad = checkClientData(b64u.dec(clientDataB64), 'webauthn.get', challenge, origins);
+    if (bad) return { ok: false, why: bad };
+
+    const uid = await this.ctx.storage.get('auth:cred:' + credId);
+    if (!uid) return { ok: false, why: 'that passkey is not registered here' };
+    const acct = await this.ctx.storage.get('auth:acct:' + uid);
+    if (!acct) return { ok: false, why: 'that account no longer exists' };
+
+    const authData = b64u.dec(authDataB64);
+    if (authData.length < 37) return { ok: false, why: 'malformed authenticator data' };
+
+    /* The authenticator asserts which relying party it signed for. Checking it
+       is what stops a passkey minted for another site being replayed here. */
+    const expectHash = await sha256Bytes(new TextEncoder().encode(RP_ID));
+    for (let i = 0; i < 32; i++) if (authData[i] !== expectHash[i]) return { ok: false, why: 'wrong relying party' };
+    if (!(authData[32] & 0x01)) return { ok: false, why: 'the device did not confirm a person was present' };
+
+    const raw = derToRaw(b64u.dec(sigB64));
+    if (!raw) return { ok: false, why: 'malformed signature' };
+
+    const signed = new Uint8Array(authData.length + 32);
+    signed.set(authData, 0);
+    signed.set(await sha256Bytes(b64u.dec(clientDataB64)), authData.length);
+
+    const key = await crypto.subtle.importKey('spki', b64u.dec(acct.cred.spki),
+      { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    const good = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, raw, signed);
+    if (!good) return { ok: false, why: 'that signature did not verify' };
+
+    /* A counter that goes backwards means the credential was cloned. Many
+       platform authenticators keep it at 0 forever, so 0 is not evidence of
+       anything and only a genuine decrease is refused. */
+    const counter = new DataView(authData.buffer, authData.byteOffset).getUint32(33);
+    if (counter > 0 && counter <= (acct.cred.counter || 0)) return { ok: false, why: 'this passkey looks cloned' };
+    acct.cred.counter = counter;
+    acct.last = new Date().toISOString();
+    await this.ctx.storage.put('auth:acct:' + uid, acct);
+    return { ok: true, ...(await this.issue(uid)), name: acct.name };
+  }
+
+  /* Only the hash is stored, so a dump of this object does not yield a working
+     session for anybody. */
+  async issue(uid) {
+    const token = randomB64(32);
+    await this.ctx.storage.put('auth:sess:' + (await sha256B64(token)), {
+      uid, exp: Date.now() + SESSION_TTL, created: Date.now(),
+    });
+    return { token, uid, expires_days: 30 };
+  }
+
+  async session(token) {
+    if (!token) return null;
+    const key = 'auth:sess:' + (await sha256B64(token));
+    const s = await this.ctx.storage.get(key);
+    if (!s) return null;
+    if (s.exp < Date.now()) { await this.ctx.storage.delete(key); return null; }
+    const acct = await this.ctx.storage.get('auth:acct:' + s.uid);
+    return acct ? { uid: s.uid, name: acct.name } : null;
+  }
+
+  async logout(token) {
+    if (token) await this.ctx.storage.delete('auth:sess:' + (await sha256B64(token)));
+    return { ok: true };
   }
 
   async setPlan(plan, resetTicks) {
@@ -1803,6 +2022,68 @@ export default {
     }
 
     if (path === '/health') return json({ ok: true }, 200, origin);
+
+    /* ---- Accounts -----------------------------------------------------
+       Rate limited by the same limiter as everything else, and every failure
+       says what actually went wrong. A sign-in page that says "something went
+       wrong" is a page people give up on, and there is nothing to protect here
+       by being vague: an attacker holding no invite and no passkey learns
+       nothing from being told which one they are missing. */
+    if (path.startsWith('/auth/')) {
+      const AUTH_ORIGINS = ['https://musetteapp.com', 'https://www.musetteapp.com', 'https://app.musetteapp.com'];
+      const stub = listStub(env);
+      const bearer = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
+
+      if (path === '/auth/me' && request.method === 'GET') {
+        const s = await stub.session(bearer);
+        return json(s ? { ok: true, ...s } : { ok: false, why: 'not signed in' }, s ? 200 : 401, origin);
+      }
+      if (path === '/auth/logout' && request.method === 'POST') {
+        return json(await stub.logout(bearer), 200, origin);
+      }
+
+      if (request.method !== 'POST') return json({ error: 'not found' }, 404, origin);
+      const r = await readJson(request);
+      if (r.tooLarge) return json({ ok: false, why: 'payload too large' }, 413, origin);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const b = r.body || {};
+
+      if (path === '/auth/register/options') {
+        return json(await stub.registerBegin(b.code), 200, origin);
+      }
+      if (path === '/auth/register/verify') {
+        const out = await stub.registerFinish(
+          String(b.challenge || ''), b.name, String(b.credId || ''),
+          String(b.publicKey || ''), String(b.clientData || ''), AUTH_ORIGINS);
+        return json(out, out.ok ? 200 : 400, origin);
+      }
+      if (path === '/auth/login/options') {
+        return json(await stub.loginBegin(), 200, origin);
+      }
+      if (path === '/auth/login/verify') {
+        const out = await stub.loginFinish(
+          String(b.challenge || ''), String(b.credId || ''), String(b.authData || ''),
+          String(b.clientData || ''), String(b.signature || ''), AUTH_ORIGINS);
+        return json(out, out.ok ? 200 : 401, origin);
+      }
+      /* Making an invite is an admin act: it is the only way in, so it is the
+         one thing that must not be self-serve. */
+      if (path === '/auth/invite') {
+        if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+        if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+          return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+        return json(await stub.mintInvite(b.note), 200, origin);
+      }
+      if (path === '/auth/accounts') {
+        if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+        if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+          return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+        return json(await stub.listAccounts(), 200, origin);
+      }
+      return json({ error: 'not found' }, 404, origin);
+    }
+
+
 
     /* Open by design: this household chose an unauthenticated family list.
        The gate is not deleted, it is conditional — set a LIST_KEY secret and

@@ -58,69 +58,155 @@ input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .msg.bad{border-left:3px solid #B4433B}
 .msg.ok{border-left:3px solid var(--train)}
 .hidden{display:none}
-.sep{text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:22px 0}
-</style></head><body>
+.sep{text-align:center;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:22px 0}</style></head><body>
 <header class="mast"><div class="wrap">
 <a class="mark" href="/">Musette</a>
-<nav><a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/about">About</a></nav>
+<nav><a href="/how">How it works</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
 </div></header>
 <main><section><div class="wrap"><div class="pane">
 <h1 style="font-size:32px">Sign in</h1>
-<p class="lede" style="font-size:17px;margin-bottom:28px">Musette is invite only. If you were sent a link, open it on the device you want to use.</p>
+<p class="lede" style="font-size:17px;margin-bottom:28px">Use your face, fingerprint or screen lock. There's no password to make up or forget.</p>
 
 <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
 <div class="opt">
-  <h3>Passkey</h3>
-  <p>Face, fingerprint or device PIN. There is no password to forget, and nothing to steal from us.</p>
-  <button id="pk" class="btn primary" type="button">Continue with a passkey</button>
-  <p id="pkno" class="note hidden">This device or browser does not support passkeys. Use the invite code below, or open this page on your phone.</p>
+  <h3>Sign in</h3>
+  <p>You've been here before on this device.</p>
+  <button id="pk" class="btn primary" type="button">Sign in</button>
+  <p id="pkno" class="note hidden">This browser can't do passkeys. Try Safari or Chrome on your phone.</p>
 </div>
 
-<div class="sep">or</div>
+<div class="sep">first time?</div>
 
 <div class="opt">
-  <h3>Redeem an invite</h3>
-  <p>A code from whoever invited you. It works once, and it expires 24 hours after it was made.</p>
-  <label for="code">Invite code</label>
-  <input id="code" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" spellcheck="false" placeholder="XXXX-XXXX" maxlength="24">
+  <h3>Create your account</h3>
+  <p>You'll need the code from whoever invited you. It takes about ten seconds.</p>
+  <label for="name">Your name</label>
+  <input id="name" autocomplete="name" maxlength="40" placeholder="Alex">
   <div style="height:14px"></div>
-  <button id="go" class="btn primary" type="button">Redeem</button>
+  <label for="code">Invite code</label>
+  <input id="code" inputmode="text" autocapitalize="characters" autocomplete="one-time-code" spellcheck="false" placeholder="ABCD1234" maxlength="16">
+  <div style="height:14px"></div>
+  <button id="go" class="btn primary" type="button">Create account</button>
 </div>
 
-<p class="note"><b>Forgotten which device holds your passkey?</b> Passkeys sync through iCloud Keychain or Google Password Manager, so try another device signed into the same account. If that fails, ask whoever invited you for a fresh code — there is no automated reset, because we hold no email address to send one to.</p>
-<p class="note">By signing in you agree to the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>, including that Musette holds bodyweight and training data.</p>
+<p class="note">Signing in means you're happy with the <a href="/terms">terms</a> and the <a href="/privacy">privacy policy</a>.</p>
 </div></div></section></main>
 <footer><div class="wrap">
-<div class="fl"><a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/about">About</a><a href="mailto:hello@musetteapp.com">Contact</a></div>
-<p>Musette is not a medical device and does not give medical advice. It plans food around training.</p>
+<div class="fl"><a href="/how">How it works</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="mailto:hello@musetteapp.com">Contact</a></div>
+<p>Musette plans food around training. It isn't a medical device and doesn't give medical advice.</p>
 </div></footer>
 <script>
-/* Auth does not exist server-side yet: /auth/* is step 5 of the build order and
-   is gated on passkeys landing. Every state below is real and reachable, so the
-   page can be designed and keyboard-tested now rather than discovered later.
-   The moment the Worker answers, only send() changes. */
 (function () {
+  var API = 'https://api.musetteapp.com';
   var msg = document.getElementById('msg');
-  function say(kind, text) {
-    msg.className = 'msg ' + kind;
-    msg.textContent = text;
+  var pk = document.getElementById('pk'), go = document.getElementById('go');
+
+  function say(kind, text) { msg.className = 'msg ' + kind; msg.textContent = text; }
+  function busy(b, el, label) { el.disabled = b; el.textContent = b ? 'One moment…' : label; }
+
+  /* base64url both ways. WebAuthn hands out ArrayBuffers and wants them back
+     as BufferSources, and JSON in between can only carry strings. */
+  function enc(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
-  /* No passkey support is a state to design, not an error to hit. */
+  function dec(str) {
+    var s = String(str).replace(/-/g, '+').replace(/_/g, '/');
+    var bin = atob(s + '='.repeat((4 - (s.length % 4)) % 4));
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  async function post(p, body, token) {
+    var h = { 'Content-Type': 'application/json' };
+    if (token) h.Authorization = 'Bearer ' + token;
+    var r = await fetch(API + p, { method: 'POST', headers: h, body: JSON.stringify(body || {}) });
+    return await r.json();
+  }
+  function land(out) {
+    /* The token is the account. sessionStorage rather than localStorage: it
+       dies with the tab, which is the right default on a machine that might
+       not be yours. The app picks it up from here. */
+    try { sessionStorage.setItem('musette.token', out.token); } catch (e) {}
+    say('ok', 'Signed in as ' + out.name + '. Taking you to the app…');
+    setTimeout(function () { location.href = 'https://app.musetteapp.com/#t=' + encodeURIComponent(out.token); }, 900);
+  }
+
   if (!window.PublicKeyCredential) {
     document.getElementById('pkno').className = 'note';
-    document.getElementById('pk').disabled = true;
+    pk.disabled = true;
   }
-  document.getElementById('pk').addEventListener('click', function () {
-    say('bad', 'Passkey sign-in is not live yet. Redeem an invite code below, or use the app link you were sent.');
+
+  pk.addEventListener('click', async function () {
+    busy(true, pk, 'Sign in');
+    try {
+      var opt = await post('/auth/login/options');
+      if (!opt.ok) { say('bad', opt.why || 'Could not start sign-in.'); return; }
+      var cred = await navigator.credentials.get({
+        publicKey: {
+          challenge: dec(opt.challenge),
+          rpId: opt.rp_id,
+          userVerification: 'preferred',
+          timeout: 60000,
+        },
+      });
+      var out = await post('/auth/login/verify', {
+        challenge: opt.challenge,
+        credId: cred.id,
+        authData: enc(cred.response.authenticatorData),
+        clientData: enc(cred.response.clientDataJSON),
+        signature: enc(cred.response.signature),
+      });
+      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      land(out);
+    } catch (e) {
+      /* A cancelled prompt is not an error worth shouting about. */
+      say('bad', e && e.name === 'NotAllowedError'
+        ? 'Cancelled — nothing happened. Try again when ready.'
+        : 'No passkey for this site on this device yet. Create an account below.');
+    } finally { busy(false, pk, 'Sign in'); }
   });
-  document.getElementById('go').addEventListener('click', function () {
-    var v = (document.getElementById('code').value || '').trim();
-    if (v.length < 6) { say('bad', 'That code looks too short. Check the link you were sent.'); return; }
-    /* Deliberately not a real request yet. Claiming to have checked a code
-       against a server that has no auth would be the one lie this page cannot
-       afford to tell. */
-    say('bad', 'Invite redemption is not live yet. Ask whoever invited you to add you directly for now.');
+
+  go.addEventListener('click', async function () {
+    var name = (document.getElementById('name').value || '').trim();
+    var code = (document.getElementById('code').value || '').trim().toUpperCase();
+    if (!name) { say('bad', 'What should we call you?'); return; }
+    if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
+    busy(true, go, 'Create account');
+    try {
+      var opt = await post('/auth/register/options', { code: code });
+      if (!opt.ok) { say('bad', opt.why || 'That invite did not work.'); return; }
+      var cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: dec(opt.challenge),
+          rp: { id: opt.rp.id, name: opt.rp.name },
+          user: { id: dec(opt.uid), name: name, displayName: name },
+          /* ES256 only. It is what WebCrypto can verify natively, which is what
+             keeps a CBOR decoder out of the Worker. */
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
+          attestation: 'none',
+          timeout: 60000,
+        },
+      });
+      var spki = cred.response.getPublicKey && cred.response.getPublicKey();
+      if (!spki) { say('bad', 'That device offered a key we cannot read. Try another device.'); return; }
+      var out = await post('/auth/register/verify', {
+        challenge: opt.challenge,
+        name: name,
+        credId: cred.id,
+        publicKey: enc(spki),
+        clientData: enc(cred.response.clientDataJSON),
+      });
+      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      land(out);
+    } catch (e) {
+      say('bad', e && e.name === 'NotAllowedError'
+        ? 'Cancelled — nothing was created. Try again when ready.'
+        : 'Something went wrong setting up the passkey. Try again.');
+    } finally { busy(false, go, 'Create account'); }
   });
 })();
 </script>
