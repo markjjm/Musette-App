@@ -4,8 +4,7 @@ Family meal-plan and grocery list. Cloudflare Pages front end, Cloudflare Worker
 for cross-device sync.
 
 - App: https://shopping-list-app-9an.pages.dev
-- Sync: https://shopping-list-sync.markpjacobs1.workers.dev
-- Cloudflare account: `9f2fda20777a150b6eeec70cfd8d6d6d` (markpjacobs1@gmail.com)
+- Sync: https://api.musetteapp.com
 
 ## Layout
 
@@ -53,7 +52,7 @@ npm run build && npm run deploy:web
 
 # 2. Publish it to the Worker - every phone picks it up on its next sync,
 #    no redeploy, no reinstall:
-export LIST_URL=https://shopping-list-sync.markpjacobs1.workers.dev
+export LIST_URL=https://api.musetteapp.com
 export LIST_KEY=...   # the shared list key
 export ADMIN_KEY=...  # the admin key
 python3 tools/publish-plan.py plan.json      # --keep-ticks to preserve check-offs

@@ -1,4 +1,5 @@
 name = "shopping-list-app"
 compatibility_date = "2026-07-01"
-account_id = "9f2fda20777a150b6eeec70cfd8d6d6d"
+# account_id comes from CLOUDFLARE_ACCOUNT_ID in the environment rather than
+# living in a file, so a repo that goes public does not name the account.
 pages_build_output_dir = "public"

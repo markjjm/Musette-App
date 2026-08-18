@@ -71,10 +71,33 @@ if (cmd === 'invite') {
     }
     console.log('');
   }
+} else if (cmd === 'remove') {
+  const who = rest.join(' ').trim();
+  if (!who) { console.error('  Who? node tools/accounts.mjs remove <username>'); process.exit(1); }
+  const out = await call('/auth/remove', { username: who });
+  console.log(`\n  Removed ${out.name} — ${out.removed.join(', ')}\n`);
+} else if (cmd === 'signout') {
+  const who = rest.join(' ').trim();
+  const out = await call('/auth/signout-all', { username: who });
+  console.log(`\n  Signed ${who} out of ${out.signed_out} place(s). The account is untouched.\n`);
+} else if (cmd === 'invites') {
+  const out = await call('/auth/invites', {});
+  if (!out.invites.length) { console.log('\n  No invites yet.\n'); }
+  else {
+    console.log('');
+    for (const i of out.invites) {
+      const when = i.state === 'open' ? `${i.hours_left}h left` : i.state;
+      console.log(`   ${i.code}   ${when.padEnd(10)} ${i.note}`);
+    }
+    console.log('');
+  }
 } else {
   console.log(`
   node tools/accounts.mjs invite ["who it is for"]   one-use code, good for 24 hours
   node tools/accounts.mjs list                       who has an account
+  node tools/accounts.mjs invites                    codes issued, and their state
+  node tools/accounts.mjs signout <username>         sign them out everywhere, keep the account
+  node tools/accounts.mjs remove <username>          delete the account and every way back in
 
   Talking to ${URL_BASE}
 `);

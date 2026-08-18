@@ -11,7 +11,7 @@ stored XSS across both phones. Everything here is aimed at those two.
 | Piece | What it is |
 |---|---|
 | `web/public/index.html` | The whole front end. One file, inline `<script>`/`<style>`, no third-party code. Data in `localStorage`. |
-| `worker/worker.js` | Sync API at `shopping-list-sync.markpjacobs1.workers.dev`. |
+| `worker/worker.js` | Sync API at `api.musetteapp.com`. |
 | Durable Object `ListDO` | Owns `{rev, updated, plan, extras, ticks, pantry}`. One object, one request at a time, so read-modify-write is atomic. |
 | KV `LIST` | Cold backup of the pre-migration blob. Nothing writes to it. |
 

@@ -1444,6 +1444,65 @@ export class ListDO extends DurableObject {
     return { ok: true, name: acct.name };
   }
 
+
+  /* Removing someone has to remove every way back in, not just the account row.
+     A credential left behind is a working passkey pointing at a uid that no
+     longer exists, and a session left behind is a signed-in browser that
+     outlives the account it belongs to. Both are the kind of leftover that is
+     invisible until it matters. */
+  async removeAccount(username) {
+    const uname = String(username || '').trim().toLowerCase();
+    const uid = await this.ctx.storage.get('auth:user:' + uname);
+    let acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
+    if (!acct) {
+      /* Passkey-only accounts have no username row, so fall back to a scan. */
+      const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
+      for (const a of all.values()) if ((a.name || '').toLowerCase() === uname) acct = a;
+      if (!acct) return { ok: false, why: `no account called ${uname}` };
+    }
+    const gone = [];
+    if (acct.cred && acct.cred.id) { await this.ctx.storage.delete('auth:cred:' + acct.cred.id); gone.push('passkey'); }
+    if (uid) { await this.ctx.storage.delete('auth:user:' + uname); gone.push('username'); }
+    const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
+    let n = 0;
+    for (const [k, v] of sess) if (v.uid === acct.uid) { await this.ctx.storage.delete(k); n++; }
+    await this.ctx.storage.delete('auth:acct:' + acct.uid);
+    return { ok: true, name: acct.name, removed: gone.concat(`${n} session(s)`) };
+  }
+
+  /* Signed out everywhere, account intact. The thing you reach for when a phone
+     goes missing rather than when a person leaves. */
+  async revokeSessions(username) {
+    const uname = String(username || '').trim().toLowerCase();
+    let uid = await this.ctx.storage.get('auth:user:' + uname);
+    if (!uid) {
+      const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
+      for (const [, a] of all) if ((a.name || '').toLowerCase() === uname) uid = a.uid;
+    }
+    if (!uid) return { ok: false, why: `no account called ${uname}` };
+    const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
+    let n = 0;
+    for (const [k, v] of sess) if (v.uid === uid) { await this.ctx.storage.delete(k); n++; }
+    return { ok: true, signed_out: n };
+  }
+
+  /* There is no email, so there is no self-serve reset and pretending otherwise
+     would be a dead link on the sign-in page. A reset is an operator handing
+     someone a fresh invite in person, which is what invite-only already means. */
+  async listInvites() {
+    const m = await this.ctx.storage.list({ prefix: 'auth:invite:' });
+    const now = Date.now();
+    return {
+      ok: true,
+      invites: [...m].map(([k, v]) => ({
+        code: k.replace('auth:invite:', ''),
+        note: v.note || '',
+        state: v.used ? 'used' : (v.exp < now ? 'expired' : 'open'),
+        hours_left: v.used || v.exp < now ? 0 : Math.round((v.exp - now) / 36e5),
+      })),
+    };
+  }
+
   async loginBegin() {
     const challenge = randomB64(32);
     await this.ctx.storage.put('auth:chal:' + challenge, { exp: Date.now() + CHALLENGE_TTL, login: true });
@@ -2204,6 +2263,16 @@ export default {
         if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
           return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
         return json(await stub.mintInvite(b.note), 200, origin);
+      }
+      if (path === '/auth/remove' || path === '/auth/signout-all' || path === '/auth/invites') {
+        if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
+        if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
+          return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+        if (path === '/auth/invites') return json(await stub.listInvites(), 200, origin);
+        const out = path === '/auth/remove'
+          ? await stub.removeAccount(b.username)
+          : await stub.revokeSessions(b.username);
+        return json(out, out.ok ? 200 : 404, origin);
       }
       if (path === '/auth/accounts') {
         if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
