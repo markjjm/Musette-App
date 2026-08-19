@@ -17,34 +17,35 @@
    never a second set of component rules.
    ============================================================ */
 :root {
-  /* surfaces: paper sits UNDER card, with a real step between them */
-  --paper:      #E3DAC2;
-  --card:       #FBF8F0;
-  --card-sunk:  #EFE8D6;
-  --ink:        #17150F;
-  --ink-soft:   #4E4838;
-  --gravel:     #6B6450;
-  --rule:       #D2C7A9;
-  --rule-soft:  #E2DAC4;
+  /* surfaces: bright, clean creamy canvas and crisp white cards matching the website */
+  --paper:      #FAF7F2;
+  --card:       #FFFFFF;
+  --card-sunk:  #F4EFE6;
+  --ink:        #2C2219;
+  --ink-soft:   #59493B;
+  --gravel:     #857567;
+  --rule:       #E8E1D5;
+  --rule-soft:  #F3EDE4;
 
-  /* navy carries the header; it is a surface, not a hairline */
-  --pen:        #12305C;
-  --pen-deep:   #0B2244;
-  --pen-ink:    #F4EFE2;
-  --pen-mute:   #9DB4D8;
-  --pen-line:   #2A4B7C;
-  --pen-text:   #12305C;   /* navy as TEXT on a card surface */
+  /* navy carries the header with clean contrast */
+  --pen:        #2C2219;
+  --pen-deep:   #1E1711;
+  --pen-ink:    #FAF7F2;
+  --pen-mute:   #A89B8D;
+  --pen-line:   #4D3E30;
+  --pen-text:   #2C2219;
 
-  /* amber marks cook nights — a real tint, not a 1% sliver */
-  --mark:       #F0B429;
-  --mark-soft:  #FBEFCC;
-  --mark-line:  #E2A310;
-  --mark-ink:   #7A5100;
+  /* vibrant Musette orange */
+  --mark:       #FF7A00;
+  --mark-soft:  #FFF1E5;
+  --mark-line:  #FFB370;
+  --mark-ink:   #9A3412;
 
-  --ok:         #1F6B4A;
-  --ok-soft:    #DCEBE2;
-  --bad:        #9B2C14;
-  --bad-soft:   #F6E2DC;
+  /* vibrant emerald green for training */
+  --ok:         #10B981;
+  --ok-soft:    rgba(16,185,129,.12);
+  --bad:        #EF4444;
+  --bad-soft:   rgba(239,68,68,.12);
 
   --sys: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -62,7 +63,7 @@
   --sb: env(safe-area-inset-bottom, 12px);
   --hdr-h: 190px;
   --foot-h: 0px;   /* the footer is gone; navigation lives in the header */
-  --shadow: 0 1px 0 rgba(23,21,15,.05), 0 6px 18px rgba(23,21,15,.07);
+  --shadow: 0 1px 3px rgba(44,34,25,.04), 0 6px 18px rgba(44,34,25,.06);
 
   /* Training intensity: ordinal, so one hue light->dark, never categorical hues.
      Lightness is monotonic; every cell also shows its hours, so colour is a
@@ -71,7 +72,7 @@
   --i2: #5D86BD;   /* loading  */
   --i3: #3A66A4;   /* key      */
   --i4: #12305C;   /* long     */
-  --i0: #D2C7A9;   /* rest     */
+  --i0: #D6CCC0;   /* rest     */
 
   /* Carbohydrate density of a meal, in three ordinal steps. The rail's SEGMENT
      COUNT is the encoding; hue only reinforces it, so it survives greyscale. */
@@ -80,24 +81,24 @@
   /* Training zones, easy to hard. Green is easy and red is hard, which is the
      way round everyone already reads a chart. Each has a surface and an ink so
      text keeps its contrast while the card still carries the colour. */
-  --z0: #8A8578;  --z0-bg: #EFEDE6;  --z0-ink: #55514A;   /* rest      */
-  --z1: #3F9E6A;  --z1-bg: #E6F4EC;  --z1-ink: #1E5F3D;   /* recovery  */
-  --z2: #63A83F;  --z2-bg: #ECF4E3;  --z2-ink: #3C6624;   /* endurance */
-  --z3: #C9992B;  --z3-bg: #FAF2DF;  --z3-ink: #7E5F14;   /* tempo     */
-  --z4: #D0742A;  --z4-bg: #FBEEE2;  --z4-ink: #83430F;   /* threshold */
-  --z5: #C43B2E;  --z5-bg: #FAE8E6;  --z5-ink: #7E2118;   /* VO2       */
+  --z0: #857567;  --z0-bg: #F4EFE6;  --z0-ink: #59493B;   /* rest      */
+  --z1: #10B981;  --z1-bg: rgba(16,185,129,.12);  --z1-ink: #065F46;   /* recovery  */
+  --z2: #059669;  --z2-bg: rgba(5,150,105,.12);  --z2-ink: #064E3B;   /* endurance */
+  --z3: #D97706;  --z3-bg: rgba(217,119,6,.12);  --z3-ink: #78350F;   /* tempo     */
+  --z4: #EA580C;  --z4-bg: rgba(234,88,12,.12);  --z4-ink: #7C2D12;   /* threshold */
+  --z5: #DC2626;  --z5-bg: rgba(220,38,38,.12);  --z5-ink: #7F1D1D;   /* VO2       */
 
   /* Carb grid. Two CATEGORIES, not a ramp: where the carbohydrate came from.
      Chosen for a wide L* gap (green ~52, navy ~21) so the stack still reads
      as two parts in greyscale; the bottle half is hatched as well, so colour
      is never the only channel. */
-  --tbl:       #3E8E6E;   /* carbohydrate eaten at the table */
-  --btl:       #12305C;   /* carbohydrate drunk on the bike  */
-  --btl-hatch: #4E6E9E;   /* hatch stripe inside the bottle segment */
-  --cg-line:   #B9AE92;   /* 6 and 8 g/kg reference hairlines */
-  --cg-todo:   #8C93A6;   /* a ride still to come: outline, not fill */
-  --cg-track:  #E2DAC4;   /* adherence track, empty */
-  --cg-fill:   #6B6450;   /* adherence track, logged */
+  --tbl:       #10B981;   /* carbohydrate eaten at the table */
+  --btl:       #2C2219;   /* carbohydrate drunk on the bike  */
+  --btl-hatch: #4D3E30;   /* hatch stripe inside the bottle segment */
+  --cg-line:   #D6CCC0;   /* 6 and 8 g/kg reference hairlines */
+  --cg-todo:   #A89B8D;   /* a ride still to come: outline, not fill */
+  --cg-track:  #E8E1D5;   /* adherence track, empty */
+  --cg-fill:   #59493B;   /* adherence track, logged */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1134,22 +1135,99 @@ footer {
   font-weight: 700;
   color: var(--ink);
 }
+/* Train View Switcher */
+.train-view-switch {
+  display: flex;
+  background: var(--card-sunk);
+  padding: 4px;
+  border-radius: 12px;
+  margin: 4px 14px 14px;
+  border: 1px solid var(--rule);
+  gap: 4px;
+}
+.tvs-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 750;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: center;
+}
+.tvs-btn.on {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 4px rgba(44,34,25,0.08);
+  font-weight: 800;
+}
 .cwc-actual-sync {
-  margin-top: 10px;
-  padding: 8px 10px;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(16, 185, 129, 0.07);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 12px;
+}
+.cwc-sync-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
-.cwc-actual-sync b {
-  color: #065F46;
+.cwc-sync-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  background: var(--ok-soft, rgba(16,185,129,.12));
+  color: var(--ok, #10B981);
+  border: 1px solid rgba(16,185,129,.28);
+  padding: 2px 7px;
+  border-radius: 5px;
 }
-:root[data-theme="dark"] .cwc-actual-sync b {
-  color: #34D399;
+.cwc-sync-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.cwc-sync-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 6px 8px;
+  padding: 6px 0;
+  border-top: 1px dashed rgba(16,185,129,.25);
+}
+.cwc-sync-grid > div {
+  text-align: left;
+}
+.cwc-sync-grid b {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.cwc-sync-grid span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--gravel);
+}
+.cgc.selected {
+  border-color: var(--mark, #FF7A00);
+  box-shadow: 0 0 0 2px var(--mark, #FF7A00);
+  background: var(--mark-soft, #FFF1E5);
+}
+.cgc.has-act {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.04);
 }
 .trainhd {
   display: flex; gap: 10px; margin: 14px 16px 4px;
@@ -2794,7 +2872,8 @@ function monthGrid(){
                              : ' ' + Math.round(ad * 100) + ' percent logged as eaten.')
               : ' Not yet.');
 
-    cells.push(`<button class="cgc${isNow ? ' today' : ''}" role="listitem" data-cgday="${esc(iso)}" aria-label="${esc(label)}">`
+    const isSel = selDay === iso;
+    cells.push(`<button class="cgc${isNow ? ' today' : ''}${isSel ? ' selected' : ''}${act ? ' has-act' : ''}" role="listitem" data-cgday="${esc(iso)}" aria-label="${esc(label)}">`
       + `<span class="cgd" aria-hidden="true">${Number(dn)}</span>`
       + `<span class="cgstack" aria-hidden="true">`
         + `<span class="cgbar" data-h="${hPct.toFixed(1)}" data-bp="${bPct.toFixed(1)}">`
@@ -3120,12 +3199,13 @@ function renderTrainSchedule(w) {
   const wkTraining = (plan.training || []).filter(t => t.wk === w.id);
   if (!wkTraining.length) return '';
 
-  let html = `<div class="sech">This Week's Structured Prescriptions</div>`;
+  let html = `<div class="sech">This Week's Prescriptions &amp; Activities</div>`;
 
   wkTraining.forEach(t => {
     const dn = Number(t.d) || 0;
     const iso = ym ? ym + '-' + String(dn).padStart(2, '0') : '';
     const isNow = todayD > 0 && dn === todayD;
+    const isSel = selDay === iso;
     const hrs = Number(t.h) || 0;
     const onbike = t.bk ? Number(t.bk.cb) : 0;
     const rx = coachWorkoutPrescription(dn, t.kind, hrs, onbike);
@@ -3133,13 +3213,13 @@ function renderTrainSchedule(w) {
     // Check if ride was completed
     const act = (block.state === 'ok' && iso) ? (block.by[iso] || null) : null;
 
-    html += `<div class="coach-workout-card${isNow ? ' is-today' : ''}${hrs === 0 ? ' is-rest' : ''}" data-day="${esc(iso)}">
+    html += `<div class="coach-workout-card${isNow ? ' is-today' : ''}${hrs === 0 ? ' is-rest' : ''}${isSel ? ' is-selected' : ''}" data-day="${esc(iso)}">
       <div class="cwc-header">
         <div class="cwc-date">
           <span class="cwc-date-badge">${esc(t.wd || '')}</span>
           <span class="cwc-day-num">${dn}</span>
         </div>
-        <span class="cwc-type-tag ${rx.typeTag}">${esc(rx.typeLabel)}</span>
+        <span class="cwc-type-tag ${esc(rx.typeTag)}">${esc(rx.typeLabel)}</span>
       </div>
       <div class="cwc-title">${esc(rx.title)}${hrs > 0 ? ' <span style="font-size:13px;color:var(--ink-soft);font-weight:600">(' + hhm(hrs) + ')</span>' : ''}</div>
       <div class="cwc-desc">${esc(rx.desc)}</div>
@@ -3150,8 +3230,22 @@ function renderTrainSchedule(w) {
 
     if (act) {
       html += `<div class="cwc-actual-sync">
-        <div><b>\u2713 Completed:</b> ${hhm(act.secs / 3600)} &middot; ${act.kcal} kcal ${act.watts ? '&middot; ' + act.watts + 'W avg' : ''}</div>
-        <button class="bcan" style="padding:4px 8px;font-size:11px" onclick="selDay='${esc(iso)}'; loadDayRides('${esc(iso)}'); render();">View Debrief &rarr;</button>
+        <div class="cwc-sync-top">
+          <span class="cwc-sync-badge">\u2713 Recorded Activity</span>
+          <span class="cwc-sync-name">${esc(act.name || 'Workout')}</span>
+        </div>
+        <div class="cwc-sync-grid">
+          <div><b>${hhm(act.secs / 3600)}</b><span>moving</span></div>
+          ${act.km ? `<div><b>${Number(act.km)} km</b><span>distance</span></div>` : ''}
+          ${act.watts ? `<div><b>${Number(act.watts)} W</b><span>avg power</span></div>` : ''}
+          ${act.np ? `<div><b>${Number(act.np)} W</b><span>NP</span></div>` : ''}
+          ${act.hr ? `<div><b>${Number(act.hr)}</b><span>bpm</span></div>` : ''}
+          <div><b>${Number(act.kcal)}</b><span>kcal</span></div>
+          ${act.load ? `<div><b>${Number(act.load)}</b><span>TSS</span></div>` : ''}
+        </div>
+        <button class="cbtn" style="margin-top:10px;padding:8px 12px;font-size:13px" onclick="selDay='${esc(iso)}'; loadDayRides('${esc(iso)}'); render();">
+          ${dayRide.day === iso && dayRide.read ? 'View AI Coach Debrief \u2192' : '\ud83c\udf99\ufe0f Read Workout with Coach \u2192'}
+        </button>
       </div>`;
     }
 
@@ -3211,6 +3305,7 @@ const hhm = (h) => { const t = Math.round(h * 60); return t >= 60 ? (t / 60 | 0)
 
 /* Which day the Fuel tab is showing. Defaults to today, moves with the strip. */
 let selDay = '';
+let trainView = 'week';
 
 const DOW = ['S','M','T','W','T','F','S'];
 const dnum = (d) => Number(d.slice(8,10));
@@ -3911,20 +4006,28 @@ function render(){
       </div>
     </div>`;
 
-    let stepperHtml = `<div class="sech">Training Block Roadmap</div>`
-      + `<div class="wkrow">` + Object.keys(shapes).map(k => {
-          const x = shapes[k], on = k === w.id;
-          return `<div class="wkc${on ? ' on' : ''}"><i>${esc(x.name.replace(' week',''))}</i>`
-            + `<b>${x.hours}h</b><span>${x.days} days</span></div>`;
-        }).join('') + `</div>`;
+    let viewSwitchHtml = `<div class="train-view-switch">
+      <button class="tvs-btn${trainView === 'week' ? ' on' : ''}" data-tview="week">\ud83d\udcc5 Week Schedule</button>
+      <button class="tvs-btn${trainView === 'month' ? ' on' : ''}" data-tview="month">\ud83d\uddd3\ufe0f Month Calendar</button>
+    </div>`;
 
-    m.innerHTML = heroHtml
-      + stepperHtml
-      + renderTrainSchedule(w)
-      + analysisCard()
-      + `<div class="sech">30-Day Block Overview & Periodization</div>`
-      + monthGrid()
-      + rideDetail();
+    let contentHtml = '';
+    if (trainView === 'week') {
+      let stepperHtml = `<div class="sech">Training Block Roadmap</div>`
+        + `<div class="wkrow">` + Object.keys(shapes).map(k => {
+            const x = shapes[k], on = k === w.id;
+            return `<div class="wkc${on ? ' on' : ''}"><i>${esc(x.name.replace(' week',''))}</i>`
+              + `<b>${x.hours}h</b><span>${x.days} days</span></div>`;
+          }).join('') + `</div>`;
+      contentHtml = stepperHtml + renderTrainSchedule(w) + rideDetail() + analysisCard();
+    } else {
+      contentHtml = `<div class="sech">30-Day Block Overview &amp; Activities</div>`
+        + monthGrid()
+        + rideDetail()
+        + analysisCard();
+    }
+
+    m.innerHTML = heroHtml + viewSwitchHtml + contentHtml;
 
     totals(); paintBars(); paintMonth(); updateHeaderHeight(); return;
   }
@@ -4136,6 +4239,13 @@ document.addEventListener('click', e => {
     render(); return;
   }
 
+  const tvs = e.target.closest('[data-tview]');
+  if (tvs && tvs.dataset.tview){
+    trainView = tvs.dataset.tview;
+    render();
+    return;
+  }
+
   /* A cell in the block grid selects that day above, so the grid is a way into
      the plan rather than a picture beside it. Its own class, not .row: the
      shopping tick handler claims .row globally. */
@@ -4143,8 +4253,8 @@ document.addEventListener('click', e => {
   if (cgs && cgs.dataset.cgday){
     selDay = cgs.dataset.cgday;
     coach.advice = null; coach.err = '';
+    loadDayRides(selDay);
     render();
-    const m = $('#main'); if (m) m.scrollIntoView({ block: 'start' });
     return;
   }
 
