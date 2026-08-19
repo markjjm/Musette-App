@@ -379,9 +379,9 @@ function prune(state) {
    against a schema that had no way to notice. Arithmetic a pocket calculator
    cannot get wrong has no business going to a language model, and a wrong
    number here would be indistinguishable from a right one. */
-const COACH_MODEL = 'gpt-5-mini';
-const COACH_EFFORT = 'low';   // minimal cannot do the sums; medium buys nothing here
-const COACH_MAX_DAY = 40;     // hard ceiling on calls per UTC day
+const COACH_MODEL = 'gpt-5';
+const COACH_EFFORT = 'medium'; // deep reasoning across multi-week training, metabolic periodization, and recovery
+const COACH_MAX_DAY = 100;     // generous ceiling for active multi-sport athletes
 
 /* ---- Who is being advised ----------------------------------------------
    cleanProfile() has clamped and stored this since the profile existed, the
@@ -998,7 +998,7 @@ async function askModel(env, system, schema, name, facts) {
            1,700 tokens; 4,000 is generous and still two orders of magnitude
            below the ceiling. A truncated answer is caught by the
            status === 'incomplete' check below and refused rather than shown. */
-        max_output_tokens: 4000,
+        max_output_tokens: 8000,
         input: [
           { role: 'system', content: system },
           { role: 'user', content: JSON.stringify(facts) },
@@ -1097,7 +1097,7 @@ const ASK_SCHEMA = {
 
    What is stored is marked as model-sourced. A number a model produced and a
    number a person checked should not be indistinguishable later. */
-const FOOD_MAX_DAY = 25;
+const FOOD_MAX_DAY = 60;
 
 const FOOD_SYSTEM = [
   'You return nutrition facts for a single food, per 100 grams.',
