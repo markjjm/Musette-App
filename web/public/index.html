@@ -970,6 +970,187 @@ footer {
 .afoot { font-size: 12px; color: var(--gravel); margin: 10px 0 0; }
 .cerr { font-size: 13px; color: var(--gravel); margin: 10px 0 0; }
 
+/* ---- Elite Coach Training Dashboard ---- */
+.train-hero {
+  margin: 12px 14px 14px;
+  padding: 18px 18px 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 95, 70, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.train-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ok, #10B981);
+  background: var(--ok-soft, rgba(16, 185, 129, 0.12));
+  padding: 4px 9px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+.train-hero-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.train-hero-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  line-height: 1.45;
+}
+.coach-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.coach-stat-col {
+  text-align: center;
+}
+.coach-stat-val {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.coach-stat-lbl {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gravel);
+  margin-top: 4px;
+}
+
+/* Weekly Plan Cards */
+.coach-workout-card {
+  margin: 0 14px 12px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.coach-workout-card.is-today {
+  border-color: var(--ok, #10B981);
+  box-shadow: 0 0 0 1px var(--ok, #10B981), 0 2px 8px rgba(16, 185, 129, 0.12);
+}
+.coach-workout-card.is-rest {
+  background: var(--card-sunk);
+  border-style: dashed;
+}
+.cwc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.cwc-date {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.cwc-date-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gravel);
+  text-transform: uppercase;
+}
+.cwc-day-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.cwc-type-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.cwc-type-tag.z-rest { background: var(--card-sunk); color: var(--gravel); }
+.cwc-type-tag.z-moderate { background: var(--ok-soft, rgba(16, 185, 129, 0.12)); color: var(--ok, #10B981); }
+.cwc-type-tag.z-key { background: var(--mark-soft, rgba(245, 158, 11, 0.12)); color: var(--mark-ink, #D97706); }
+.cwc-type-tag.z-long { background: var(--bad-soft, rgba(239, 68, 68, 0.12)); color: var(--bad, #EF4444); }
+
+.cwc-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.cwc-desc {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+.cwc-intervals {
+  background: var(--card-sunk);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.cwc-intervals b {
+  color: var(--ink);
+  font-weight: 700;
+}
+.cwc-fueling {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed var(--rule);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.cwc-fuel-target {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+.cwc-actual-sync {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12.5px;
+}
+.cwc-actual-sync b {
+  color: #065F46;
+}
+:root[data-theme="dark"] .cwc-actual-sync b {
+  color: #34D399;
+}
 .trainhd {
   display: flex; gap: 10px; margin: 14px 16px 4px;
   background: var(--pen); color: var(--pen-ink);
@@ -2874,6 +3055,96 @@ async function runAnalyze(){
   look.busy = false; render();
 }
 
+function coachWorkoutPrescription(d, kind, h, onbike) {
+  const hrs = Number(h) || 0;
+  const k = String(kind || '').toLowerCase();
+  if (k.includes('long') || hrs >= 2.5) {
+    return {
+      typeTag: 'z-long',
+      typeLabel: 'Long Aerobic Overload',
+      title: 'The Key Long Endurance Ride',
+      desc: 'Progressive aerobic endurance session designed to expand mitochondrial capacity, maximize fat oxidation, and build mental stamina.',
+      intervals: '<b>Warmup:</b> 15m progressive spin (Zone 1/2)<br><b>Main Block:</b> ' + Math.max(1, Math.round(hrs * 60 - 35)) + 'm steady Zone 2 endurance (65–75% FTP, 85–95 rpm)<br><b>Finish:</b> Final 20m building to Zone 3 tempo under accumulated fatigue<br><b>Cooldown:</b> 15m easy spin',
+      fueling: 'Pre: 1.5 g/kg carbs 90m before • Bottle: ' + (onbike ? onbike + 'g' : '60–90g/hr') + ' carbs + 500mg sodium • Post: 30m window 1.0 g/kg carbs + 25g protein',
+    };
+  }
+  if (k.includes('key') || hrs >= 1.5) {
+    return {
+      typeTag: 'z-key',
+      typeLabel: 'Threshold / Sweetspot',
+      title: 'Threshold & Sweetspot Intervals',
+      desc: 'Targeted lactate clearance workout to increase Functional Threshold Power (FTP) and power at aerobic threshold.',
+      intervals: '<b>Warmup:</b> 15m with 3x30s high-cadence spin-ups (100+ rpm)<br><b>Main Set:</b> 3x12m at 88–92% FTP (Sweetspot) w/ 4m easy recovery spin<br><b>Cooldown:</b> 15m easy Zone 1 flush',
+      fueling: 'Pre: 40–50g fast carbs 45m before • Bottle: ' + (onbike ? onbike + 'g' : '50–60g/hr') + ' bottle fuel • Post: Balanced recovery meal within 1h',
+    };
+  }
+  if (k.includes('moderate') || hrs > 0) {
+    return {
+      typeTag: 'z-moderate',
+      typeLabel: 'Aerobic Base & Tempo',
+      title: 'Aerobic Endurance Maintenance',
+      desc: 'Steady cardiovascular conditioning that stimulates aerobic adaptation without accumulating excess neuromuscular fatigue.',
+      intervals: '<b>Continuous:</b> ' + Math.round(hrs * 60) + 'm steady Zone 2 (60–70% FTP), conversational breathing, smooth pedal stroke',
+      fueling: 'Pre: Standard meal • Bottle: Water or light 30g carb bottle • Post: Standard planned dinner',
+    };
+  }
+  return {
+    typeTag: 'z-rest',
+    typeLabel: 'Active Recovery',
+    title: 'Rest & Muscular Adaptation',
+    desc: 'Musculoskeletal repair, nervous system recovery, and glycogen supercompensation. Adaptation happens when resting.',
+    intervals: '<b>Prescription:</b> Complete physical rest or optional 20m light mobility, stretching, or easy walk',
+    fueling: 'Focus on nutrient-dense whole foods, steady hydration, and 8+ hours quality sleep',
+  };
+}
+
+function renderTrainSchedule(w) {
+  const ym = blockYM();
+  const todayD = todayInBlock();
+  const wkTraining = (plan.training || []).filter(t => t.wk === w.id);
+  if (!wkTraining.length) return '';
+
+  let html = `<div class="sech">This Week's Structured Prescriptions</div>`;
+
+  wkTraining.forEach(t => {
+    const dn = Number(t.d) || 0;
+    const iso = ym ? ym + '-' + String(dn).padStart(2, '0') : '';
+    const isNow = todayD > 0 && dn === todayD;
+    const hrs = Number(t.h) || 0;
+    const onbike = t.bk ? Number(t.bk.cb) : 0;
+    const rx = coachWorkoutPrescription(dn, t.kind, hrs, onbike);
+
+    // Check if ride was completed
+    const act = (block.state === 'ok' && iso) ? (block.by[iso] || null) : null;
+
+    html += `<div class="coach-workout-card${isNow ? ' is-today' : ''}${hrs === 0 ? ' is-rest' : ''}" data-day="${esc(iso)}">
+      <div class="cwc-header">
+        <div class="cwc-date">
+          <span class="cwc-date-badge">${esc(t.wd || '')}</span>
+          <span class="cwc-day-num">${dn}</span>
+        </div>
+        <span class="cwc-type-tag ${rx.typeTag}">${esc(rx.typeLabel)}</span>
+      </div>
+      <div class="cwc-title">${esc(rx.title)}${hrs > 0 ? ' <span style="font-size:13px;color:var(--ink-soft);font-weight:600">(' + hhm(hrs) + ')</span>' : ''}</div>
+      <div class="cwc-desc">${esc(rx.desc)}</div>
+      <div class="cwc-intervals">${rx.intervals}</div>
+      <div class="cwc-fueling">
+        <span><b>Fueling:</b> ${esc(rx.fueling)}</span>
+      </div>`;
+
+    if (act) {
+      html += `<div class="cwc-actual-sync">
+        <div><b>\u2713 Completed:</b> ${hhm(act.secs / 3600)} &middot; ${act.kcal} kcal ${act.watts ? '&middot; ' + act.watts + 'W avg' : ''}</div>
+        <button class="bcan" style="padding:4px 8px;font-size:11px" onclick="selDay='${esc(iso)}'; loadDayRides('${esc(iso)}'); render();">View Debrief &rarr;</button>
+      </div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  return html;
+}
+
 /* Numbers like "form -7" mean nothing to anyone who has not read a coaching
    book. The plain reading leads and the figure follows, so the term is taught
    rather than assumed. Nothing is removed — this is a layer, not a dilution. */
@@ -3609,23 +3880,36 @@ function render(){
     const hrs = wk.reduce((a, t) => a + (Number(t.h) || 0), 0);
     const rides = wk.filter(t => (Number(t.h) || 0) > 0).length;
     const onbike = wk.reduce((a, t) => a + ((t.bk && Number(t.bk.cb)) || 0), 0);
+    const longDay = wk.slice().sort((a,b) => (Number(b.h)||0) - (Number(a.h)||0))[0];
     const shapes = weekShape();
-    m.innerHTML = `<div class="sech">${esc(plan.block || 'The block')} &middot; at a glance</div>`
+
+    let heroHtml = `<div class="train-hero">
+      <div class="train-hero-badge">\u26a1 Mesocycle &middot; Progressive Overload</div>
+      <div class="train-hero-title">${esc(plan.block || 'Monthly Training Plan')}</div>
+      <div class="train-hero-sub">Structured endurance workouts paired with precision carbohydrate and recovery fueling to build mitochondrial capacity and raise threshold power.</div>
+      <div class="coach-stat-grid">
+        <div class="coach-stat-col"><span class="coach-stat-val">${(Math.round(hrs * 10) / 10)}h</span><span class="coach-stat-lbl">Week Vol</span></div>
+        <div class="coach-stat-col"><span class="coach-stat-val">${rides}</span><span class="coach-stat-lbl">Sessions</span></div>
+        <div class="coach-stat-col"><span class="coach-stat-val">${onbike}g</span><span class="coach-stat-lbl">Bottle Fuel</span></div>
+        <div class="coach-stat-col"><span class="coach-stat-val">${longDay ? longDay.h + 'h' : '0h'}</span><span class="coach-stat-lbl">Long Focus</span></div>
+      </div>
+    </div>`;
+
+    let stepperHtml = `<div class="sech">Training Block Roadmap</div>`
       + `<div class="wkrow">` + Object.keys(shapes).map(k => {
           const x = shapes[k], on = k === w.id;
           return `<div class="wkc${on ? ' on' : ''}"><i>${esc(x.name.replace(' week',''))}</i>`
             + `<b>${x.hours}h</b><span>${x.days} days</span></div>`;
-        }).join('') + `</div>`
+        }).join('') + `</div>`;
+
+    m.innerHTML = heroHtml
+      + stepperHtml
+      + renderTrainSchedule(w)
+      + analysisCard()
+      + `<div class="sech">30-Day Block Overview & Periodization</div>`
       + monthGrid()
-      + rideDetail() + analysisCard()
-      + (wk.length ? `
-      <div class="trainhd">
-        <div><span class="tnum">${(Math.round(hrs * 100) / 100)}</span><span class="tlab">hours</span></div>
-        <div><span class="tnum">${rides}</span><span class="tlab">ride days</span></div>
-        <div><span class="tnum">${onbike}</span><span class="tlab">g carb on bike</span></div>
-      </div>
-      ` : '')
-      ;
+      + rideDetail();
+
     totals(); paintBars(); paintMonth(); updateHeaderHeight(); return;
   }
 

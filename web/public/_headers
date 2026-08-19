@@ -2,7 +2,7 @@
 # Re-run `npm run build` after changing any page, or the hashes go stale and
 # the browser refuses to run what it is served.
 /
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-/izd61ybDvmmSdAAZCmAUbxiHuKGZOXrR+7Gc6jydHM='; style-src 'sha256-JUUuJFjcAhxzAfeB+6ILzCCn+hGRW/5MmRpRQuyf4V0='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-lbtHSonCaYxOFynBR40gV10e2qpbGCRhL6dZrGBdoIA='; style-src 'sha256-GHWXrRxvYqUqsXZFiSvmaL+1KRmL6LSvdIaL3+Lvfbw='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /*
   X-Content-Type-Options: nosniff
