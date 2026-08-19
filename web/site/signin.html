@@ -177,6 +177,7 @@ text-decoration:underline;text-underline-offset:3px}
   <div class="field"><label for="p">Password</label>
     <input id="p" type="password" autocomplete="current-password" placeholder="••••••••"></div>
   <button id="goIn" class="btn primary" type="button">Sign in</button>
+  <p class="alt"><button id="forgot" type="button">Forgotten your password?</button></p>
   <p class="alt">or <button id="usePk" type="button">use a passkey instead</button></p>
 </div>
 
@@ -188,6 +189,27 @@ text-decoration:underline;text-underline-offset:3px}
   <p class="hint">Long beats complicated — three or four words you will remember is plenty. There is no reset yet, so pick something you will not lose.</p>
   <button id="goNew" class="btn primary" type="button">Create account</button>
   <p class="alt">Got an invite code? <button id="haveCode" type="button">Use it instead</button></p>
+  <p class="hint" style="text-align:center;margin-top:14px">You don't need one — anyone can sign up. We'll email you a code to check the address is yours.</p>
+</div>
+
+<div id="paneForgot" class="hidden">
+  <p class="lede" style="font-size:16px;margin-bottom:20px">Tell us the address on your account and we'll email you a code.</p>
+  <div class="field"><label for="fe">Email</label>
+    <input id="fe" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
+  <button id="goForgot" class="btn primary" type="button">Email me a code</button>
+  <p class="alt"><button id="backIn" type="button">Back to sign in</button></p>
+</div>
+
+<div id="paneReset" class="hidden">
+  <p class="lede" style="font-size:16px;margin-bottom:20px">Enter the code we sent to <b id="resetTo"></b>, and choose a new password.</p>
+  <div class="field"><label for="rc">Code</label>
+    <input id="rc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
+      style="font:650 24px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
+  <div class="field"><label for="rp">New password</label>
+    <input id="rp" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
+  <p class="hint">Setting a new password signs you out on every other device.</p>
+  <button id="goReset" class="btn primary" type="button">Set new password</button>
+  <p class="alt"><button id="backIn2" type="button">Back to sign in</button></p>
 </div>
 
 <div id="paneVerify" class="hidden">
@@ -281,6 +303,8 @@ text-decoration:underline;text-underline-offset:3px}
     $('paneNew').className = isNew ? '' : 'hidden';
     $('paneCode').className = 'hidden';
     $('paneVerify').className = 'hidden';
+    $('paneForgot').className = 'hidden';
+    $('paneReset').className = 'hidden';
     $('paneSignin').className = isNew ? 'hidden' : '';
     $('tNew').setAttribute('aria-selected', String(isNew));
     $('tSignin').setAttribute('aria-selected', String(!isNew));
@@ -341,6 +365,50 @@ text-decoration:underline;text-underline-offset:3px}
     if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
     createWith('cu', 'cp', 'goCode', 'Redeem invite', { code: code });
   });
+  var resetEmail = null;
+  function only(id) {
+    ['paneSignin','paneNew','paneCode','paneVerify','paneForgot','paneReset'].forEach(function (p) {
+      var el = $(p); if (el) el.className = (p === id) ? '' : 'hidden';
+    });
+    msg.className = 'msg hidden';
+  }
+  $('forgot').addEventListener('click', function () { only('paneForgot'); });
+  $('backIn').addEventListener('click', function () { only('paneSignin'); });
+  $('backIn2').addEventListener('click', function () { only('paneSignin'); });
+
+  $('goForgot').addEventListener('click', async function () {
+    var mail = ($('fe').value || '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'That does not look like an email address.'); return; }
+    busy($('goForgot'), true, 'Email me a code');
+    try {
+      var out = await post('/auth/reset/request', { email: mail });
+      /* The server answers the same whether or not the account exists, and so
+         does this - saying "no such account" would hand anyone a way to test
+         which addresses are registered. */
+      resetEmail = mail;
+      $('resetTo').textContent = mail;
+      only('paneReset');
+      say('ok', out.message || 'If that address has an account, a code is on its way.');
+    } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
+    finally { busy($('goForgot'), false, 'Email me a code'); }
+  });
+
+  $('goReset').addEventListener('click', async function () {
+    var code = ($('rc').value || '').trim();
+    var pw = $('rp').value || '';
+    if (!/^\d{6}$/.test(code)) { say('bad', 'The code is six digits.'); return; }
+    if (pw.length < 10) { say('bad', 'Make the new password at least 10 characters.'); return; }
+    busy($('goReset'), true, 'Set new password');
+    try {
+      var opt = await post('/auth/password/options', { username: resetEmail });
+      var out = await post('/auth/reset/confirm', { email: resetEmail, code: code,
+        salt: opt.salt, verifier: await derive(pw, opt.salt, opt.iterations) });
+      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      land(out);
+    } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
+    finally { busy($('goReset'), false, 'Set new password'); }
+  });
+
   $('goVerify').addEventListener('click', async function () {
     var code = ($('vc').value || '').trim();
     if (!/^\d{6}$/.test(code)) { say('bad', 'The code is six digits.'); return; }

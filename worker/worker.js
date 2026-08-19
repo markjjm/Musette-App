@@ -790,6 +790,35 @@ function scrubAdvice(a) {
    Requires the domain to be onboarded to Cloudflare Email Sending
    (`wrangler email sending enable musetteapp.com`) and the send_email binding.
    Without the binding this returns a clear reason rather than throwing. */
+/* A reset mail says what to do if it was not you, because an unexpected reset
+   code is the first sign somebody is trying to get in. */
+async function sendResetCode(env, to, code) {
+  if (!env.EMAIL) return { ok: false, why: 'email is not configured on this server yet' };
+  const text = [
+    `Your Musette password reset code is ${code}`,
+    '',
+    'It is good for 15 minutes, and using it signs you out everywhere else.',
+    '',
+    'If you did not ask to reset your password, ignore this - nothing has',
+    'changed and your current password still works.',
+  ].join('\n');
+  try {
+    await env.EMAIL.send({
+      to,
+      from: { email: 'hello@musetteapp.com', name: 'Musette' },
+      subject: `${code} is your Musette reset code`,
+      text,
+      html: `<p style="font:16px system-ui">Your Musette password reset code is</p>`
+        + `<p style="font:700 30px ui-monospace,monospace;letter-spacing:.15em">${code}</p>`
+        + `<p style="font:14px system-ui;color:#555">Good for 15 minutes. Using it signs you out everywhere else.<br>`
+        + `If you did not ask for this, ignore it &mdash; nothing has changed.</p>`,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, why: 'could not send the reset email - try again shortly' };
+  }
+}
+
 async function sendCode(env, to, code) {
   if (!env.EMAIL) return { ok: false, why: 'email is not configured on this server yet' };
   const text = [
@@ -1196,6 +1225,7 @@ const MAX_ACCOUNTS = 200;
 const VERIFY_TTL_MS = 15 * 60 * 1000;
 const VERIFY_MAX_TRIES = 5;
 const RESEND_COOLDOWN_MS = 60 * 1000;
+const RESET_TTL_MS = 15 * 60 * 1000;
 
 const b64u = {
   enc(buf) {
@@ -1572,6 +1602,71 @@ export class ListDO extends DurableObject {
        - The code is hashed, tried at most 5 times, and dies after 15 minutes.
        - The password was already stretched in the browser before it got here,
          so a pending record leaks no more than an account row would. */
+
+  /* ---- Forgetting a password ------------------------------------------
+     There was no reset because there was no email to send one to. There is
+     now, so the honest thing is to build it rather than keep telling people to
+     ask an operator.
+
+     Two properties matter more than convenience:
+
+     It must not say whether an address has an account. The route always
+     answers the same way; this returns whether to SEND, and the caller cannot
+     tell the difference between "no account" and "code on its way".
+
+     A reset must end every existing session. Someone resetting a password is
+     often doing it because they think somebody else has it, and leaving the
+     attacker's 30-day token alive would make the reset theatre. */
+  async resetRequest(email) {
+    const mail = String(email || '').trim().toLowerCase().slice(0, 120);
+    const uid = mail ? await this.ctx.storage.get('auth:user:' + mail) : null;
+    if (!uid) return { ok: true, send: false };
+
+    const prev = await this.ctx.storage.get('auth:reset:' + mail);
+    if (prev && Date.now() - prev.sent < RESEND_COOLDOWN_MS) {
+      /* Same answer as a fresh request, so the cooldown does not become a way
+         to test which addresses exist. */
+      return { ok: true, send: false };
+    }
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
+    await this.ctx.storage.put('auth:reset:' + mail, {
+      uid, codeHash: await sha256B64(mail + ':reset:' + code),
+      tries: 0, sent: Date.now(), exp: Date.now() + RESET_TTL_MS,
+    });
+    return { ok: true, send: true, email: mail, code };
+  }
+
+  async resetConfirm(email, code, verifier, salt) {
+    const mail = String(email || '').trim().toLowerCase().slice(0, 120);
+    const key = 'auth:reset:' + mail;
+    const r = await this.ctx.storage.get(key);
+    if (!r) return { ok: false, why: 'no reset is waiting for that address - start again' };
+    if (r.exp < Date.now()) { await this.ctx.storage.delete(key); return { ok: false, why: 'that code has expired - start again' }; }
+    if (r.tries >= VERIFY_MAX_TRIES) { await this.ctx.storage.delete(key); return { ok: false, why: 'too many wrong codes - start again' }; }
+    if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
+      return { ok: false, why: 'the browser did not derive a key correctly' };
+    }
+
+    const got = await sha256B64(mail + ':reset:' + String(code || '').trim());
+    if (!(await safeEqual(got, r.codeHash))) {
+      await this.ctx.storage.put(key, { ...r, tries: r.tries + 1 });
+      return { ok: false, why: `that code is not right - ${VERIFY_MAX_TRIES - r.tries - 1} attempt(s) left` };
+    }
+
+    const acct = await this.ctx.storage.get('auth:acct:' + r.uid);
+    if (!acct) return { ok: false, why: 'that account no longer exists' };
+    const pepper = randomB64(16);
+    acct.pw = { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS };
+    await this.ctx.storage.put('auth:acct:' + r.uid, acct);
+    await this.ctx.storage.delete(key);
+
+    /* Every other session dies here, including whoever prompted the reset. */
+    const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
+    let killed = 0;
+    for (const [k, v] of sess) if (v.uid === r.uid) { await this.ctx.storage.delete(k); killed++; }
+    return { ok: true, ...(await this.issue(r.uid)), name: acct.name, signed_out: killed };
+  }
+
   async signupBegin(email, verifier, salt, inviteCode, openSignup) {
     /* Closed by default, and this is a REVERSAL worth explaining rather than
        quietly doing. Open signup shipped before per-user storage did, and the
@@ -1583,6 +1678,14 @@ export class ListDO extends DurableObject {
        deletion, because the intent was right and only the ordering was wrong:
        OPEN_SIGNUP=yes reopens it, which is one deploy the day isolation exists.
        Fails CLOSED, the same way the access code does. */
+    /* Open again. It was closed because every account shared one Durable
+       Object, so a stranger could read the owner's weight - and that is now
+       fixed and proven, which was always the condition for reopening.
+
+       What stands in for the invite: an address that never reads its code never
+       becomes an account, the account ceiling still binds, and the per-IP
+       limiter still bites. INVITES_ONLY=yes closes it again without a code
+       change if that ever needs undoing. */
     if (openSignup !== true) {
       const ik = 'auth:invite:' + String(inviteCode || '').toUpperCase().slice(0, 16);
       const inv = await this.ctx.storage.get(ik);
@@ -3565,7 +3668,7 @@ export default {
       if (path === '/auth/signup') {
         await stub.sweepPending();
         const begun = await stub.signupBegin(b.email, String(b.verifier || ''), String(b.salt || ''),
-          b.code, env.OPEN_SIGNUP === 'yes');
+          b.code, env.INVITES_ONLY !== 'yes');
         if (!begun.ok) return json(begun, 400, origin);
         const sent = await sendCode(env, begun.email, begun.code);
         /* The code is never returned. If the send failed the caller is told
@@ -3575,6 +3678,25 @@ export default {
           return json({ ok: false, why: sent.why }, 502, origin);
         }
         return json({ ok: true, sent_to: begun.email, expires_minutes: 15 }, 200, origin);
+      }
+      if (path === '/auth/reset/request') {
+        const out = await stub.resetRequest(b.email);
+        if (out.send) {
+          const sent = await sendResetCode(env, out.email, out.code);
+          if (!sent.ok) return json({ ok: false, why: sent.why }, 502, origin);
+        }
+        /* Identical answer either way. Anything else is an oracle for which
+           addresses have accounts. */
+        return json({ ok: true, message: 'If that address has an account, a code is on its way.' }, 200, origin);
+      }
+      if (path === '/auth/reset/confirm') {
+        const out = await stub.resetConfirm(b.email, b.code, String(b.verifier || ''), String(b.salt || ''));
+        if (!out.ok) {
+          const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+          const gate = await stub.noteFailure(ip);
+          if (gate.blocked) return json({ ok: false, why: 'too many attempts, wait a minute' }, 429, origin);
+        }
+        return json(out, out.ok ? 200 : 400, origin);
       }
       if (path === '/auth/signup/verify') {
         const out = await stub.signupVerify(b.email, b.code);
