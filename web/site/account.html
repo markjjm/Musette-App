@@ -203,6 +203,30 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
         <h3>Where you are</h3>
         <div id="stats" style="margin-top:14px"><p style="margin:0">Loading…</p></div>
       </div>
+      <div class="card" style="margin-bottom:22px">
+        <h3>Your training</h3>
+        <div id="icuOff">
+          <p style="margin-bottom:16px">Musette reads your rides, runs and walks from <b>intervals.icu</b>, which already syncs from Garmin, Wahoo, Coros, Polar, Suunto and Zwift. Connect once and they arrive on their own.</p>
+          <ol style="margin:0 0 18px;padding-left:20px;font-size:15px;color:var(--ink-2);line-height:1.75">
+            <li>Open <a href="https://intervals.icu/settings" target="_blank" rel="noopener">intervals.icu/settings</a> and scroll to <b>Developer Settings</b>.</li>
+            <li>Copy your <b>API key</b>, and your <b>athlete id</b> from the top of the same page (it looks like <code>i123456</code>).</li>
+            <li>Paste both below. We check them with intervals.icu before saving.</li>
+          </ol>
+          <div class="row">
+            <div class="field"><label for="icuA">Athlete id</label><input id="icuA" placeholder="123456" inputmode="numeric"></div>
+            <div class="field"><label for="icuL">Label (optional)</label><input id="icuL" maxlength="40" placeholder="my Garmin"></div>
+          </div>
+          <div class="field"><label for="icuK">API key</label>
+            <input id="icuK" type="password" autocomplete="off" spellcheck="false" placeholder="paste it here"></div>
+          <button id="icuSave" class="btn primary" type="button" style="width:100%">Connect</button>
+          <p style="font-size:13px;color:var(--ink-3);margin:14px 0 0">Your key is encrypted before it is stored and is never shown again, not even to you. Disconnect any time, or change it at intervals.icu to revoke it instantly.</p>
+        </div>
+        <div id="icuOn" class="hidden">
+          <div id="icuStat"></div>
+          <button id="icuDrop" class="btn ghost" type="button" style="width:100%;margin-top:16px">Disconnect</button>
+        </div>
+      </div>
+
       <div class="card">
         <h3>Next month</h3>
         <p style="margin-bottom:18px">Carries your current block forward onto next month's calendar, ramped, with a recovery week. Nothing is saved until you say so.</p>
@@ -343,6 +367,48 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     finally { busy($('pub'), false, 'Publish this plan'); }
   });
 
+  function paintIcu(v) {
+    if (v && v.linked) {
+      $('icuOn').className = ''; $('icuOff').className = 'hidden';
+      $('icuStat').innerHTML = '<div class="stat"><span>Connected</span><b>athlete ' + v.athlete + '</b></div>'
+        + (v.label ? '<div class="stat"><span>Label</span><b>' + v.label + '</b></div>' : '')
+        + '<div class="stat"><span>Since</span><b>' + (v.since || '').slice(0, 10) + '</b></div>'
+        + (v.rides_found !== undefined
+            ? '<div class="stat"><span>Found straight away</span><b>' + v.rides_found + ' in 14 days</b></div>' : '');
+    } else {
+      $('icuOn').className = 'hidden'; $('icuOff').className = '';
+    }
+  }
+
+  $('icuSave').addEventListener('click', async function () {
+    var key = ($('icuK').value || '').trim();
+    var ath = ($('icuA').value || '').trim().replace(/^i/i, '');
+    if (!/^\d{1,12}$/.test(ath)) { say('bad', 'The athlete id is the number from your intervals.icu settings, like 123456.'); return; }
+    if (key.length < 8) { say('bad', 'That API key looks too short — copy the whole thing.'); return; }
+    busy($('icuSave'), true, 'Connect');
+    try {
+      var out = await api('/me/intervals', { method: 'PUT', body: { key: key, athlete: ath, label: $('icuL').value } });
+      if (!out.linked) { say('bad', out.why || 'Could not connect.'); return; }
+      /* Cleared immediately: there is no reason for a key to sit in a form
+         field after it has been stored. */
+      $('icuK').value = '';
+      paintIcu(out);
+      say('ok', out.rides_found
+        ? ('Connected. ' + out.rides_found + ' activities from the last fortnight are in already.')
+        : 'Connected. Nothing in the last fortnight, but new activities will arrive on their own.');
+    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
+    finally { busy($('icuSave'), false, 'Connect'); }
+  });
+
+  $('icuDrop').addEventListener('click', async function () {
+    busy($('icuDrop'), true, 'Disconnect');
+    try {
+      paintIcu(await api('/me/intervals', { method: 'DELETE' }));
+      say('ok', 'Disconnected. Activities already stored stay; no new ones will arrive.');
+    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
+    finally { busy($('icuDrop'), false, 'Disconnect'); }
+  });
+
   async function load() {
     var me = await api('/me');
     if (!me.ok) { signedOut(); return; }
@@ -353,6 +419,8 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     $('name').textContent = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
     $('who').textContent = me.name || '';
     fillProfile(me.profile);
+
+    paintIcu(await api('/me/intervals'));
 
     var s = await api('/summary');
     var stats = '<div class="stat"><span>Current block</span><b>' + (me.block || 'none') + '</b></div>';

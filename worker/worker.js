@@ -50,7 +50,7 @@ function allowedOrigin(origin) {
 function corsHeaders(origin) {
   const allow = allowedOrigin(origin);
   const h = {
-    'Access-Control-Allow-Methods': 'GET,PUT,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,X-List-Key,X-Admin-Key,Authorization',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
@@ -1976,6 +1976,33 @@ export class ListDO extends DurableObject {
      without loading the rest. NOT in `state`: read() hands that back wholesale
      on every sync, so anything growing per-activity would ride along on every
      pull to every phone. */
+
+  /* The rider's own intervals.icu credential, sealed. Never returned in the
+     clear by any method - status only, so a read of this object cannot hand
+     somebody else's key to a client. */
+  async setIntervals(sealed, athlete, label) {
+    await this.ctx.storage.put('icu', {
+      sealed, athlete: String(athlete), label: clamp(label) || '', linked: new Date().toISOString(),
+    });
+    return { ok: true };
+  }
+
+  async intervalsStatus() {
+    const v = await this.ctx.storage.get('icu');
+    if (!v) return { ok: true, linked: false };
+    return { ok: true, linked: true, athlete: v.athlete, label: v.label, since: v.linked };
+  }
+
+  /* For the Worker only, to build a request. */
+  async intervalsSealed() {
+    return (await this.ctx.storage.get('icu')) || null;
+  }
+
+  async clearIntervals() {
+    await this.ctx.storage.delete('icu');
+    return { ok: true, linked: false };
+  }
+
   async saveRides(rides) {
     if (!Array.isArray(rides) || !rides.length) return { ok: true, saved: 0 };
     let saved = 0;
@@ -3330,6 +3357,75 @@ function ridesTTL(newest) {
   d.setUTCDate(d.getUTCDate() - 1);
   return newest >= d.toISOString().slice(0, 10) ? RIDES_TTL_LIVE : RIDES_TTL_DONE;
 }
+/* ---- Each person's own intervals.icu ----------------------------------
+   Until now there was one key in a Worker secret - the owner's - and
+   athlete '0' meaning "whoever owns it". Everybody else got "not linked", and
+   the alternative was handing strangers the owner's rides.
+
+   OAuth is the right long-term answer and is registered by emailing a human;
+   until that lands, each person pastes their own key. That is worse in every
+   way except the ones that matter today: it needs nobody's approval, it works
+   this afternoon, and each key carries its own 5,000/day allowance instead of
+   everyone sharing one.
+
+   Stored ENCRYPTED. It is a long-lived, unscoped, write-capable credential for
+   somebody else's account, and storing that in the clear because it is
+   inconvenient not to would be the single worst thing in this repo. AES-GCM
+   under a Worker secret, so reading the object is not enough. */
+async function icuKey(env) {
+  if (!env.INTERVALS_ENC) return null;
+  const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(env.INTERVALS_ENC));
+  return await crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+}
+
+async function icuSeal(env, plain) {
+  const k = await icuKey(env);
+  if (!k) return null;
+  /* A fresh nonce every time. Reusing one with GCM is catastrophic rather than
+     merely weak, so it is generated here and never derived from anything. */
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(plain));
+  return { iv: b64u.enc(iv), ct: b64u.enc(ct) };
+}
+
+async function icuOpen(env, sealed) {
+  const k = await icuKey(env);
+  if (!k || !sealed || !sealed.iv || !sealed.ct) return null;
+  try {
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: b64u.dec(sealed.iv) }, k, b64u.dec(sealed.ct));
+    return new TextDecoder().decode(pt);
+  } catch {
+    /* A key sealed under a different secret cannot be recovered, and pretending
+       otherwise would surface as a confusing 401 from intervals.icu instead of
+       an honest "reconnect". */
+    return null;
+  }
+}
+
+/* Prove the credential works before storing it. A key that is wrong should fail
+   here, once, with a clear reason - not silently on every future ride read. */
+async function icuVerify(key, athlete) {
+  /* A deliberately tiny window, computed rather than written down. A literal
+     date here would be the same shape as the bug scan.mjs exists to catch, and
+     a narrow recent range costs intervals.icu almost nothing to answer. */
+  const day = new Date().toISOString().slice(0, 10);
+  const q = new URLSearchParams({ oldest: day, newest: day, fields: 'id' });
+  try {
+    const r = await fetch(`${ICU}/athlete/${encodeURIComponent(athlete)}/activities?${q}`, {
+      headers: { Authorization: `Basic ${btoa(`API_KEY:${key}`)}`, Accept: 'application/json' },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (r.status === 401 || r.status === 403) return { ok: false, why: 'intervals.icu did not accept that key' };
+    if (r.status === 404) return { ok: false, why: 'no athlete with that id - check the number in your intervals.icu settings' };
+    if (r.status === 429) return { ok: false, why: 'intervals.icu is rate limiting - try again in a minute' };
+    if (!r.ok) return { ok: false, why: `intervals.icu answered ${r.status}` };
+    return { ok: true };
+  } catch {
+    return { ok: false, why: 'could not reach intervals.icu just now' };
+  }
+}
+
 /* ---- Whose rides these are ---------------------------------------------
    `athlete=0` means "whoever owns this key". That is exactly right for one
    household and a data leak for two: a second person who has not linked their
@@ -3347,6 +3443,28 @@ function ridesTTL(newest) {
    numeric with an optional `i` prefix, so a link can never be turned into an
    arbitrary probe of someone else's athlete number. */
 const ATHLETE_ID = /^(?:0|i?\d{1,12})$/;
+
+/* The rider's own credential if they have linked one, and the Worker's owner
+   key only as a fallback. Async now, because the credential has to be unsealed.
+   Returning null rather than the owner's key when a stranger has not linked is
+   the whole point: "not linked" is the honest answer, and handing over somebody
+   else's rides is not. */
+async function linkFor(env, dataId) {
+  const sealed = await dataStub(env, dataId).intervalsSealed();
+  if (sealed) {
+    const key = await icuOpen(env, sealed.sealed);
+    if (key) {
+      return {
+        athlete: sealed.athlete,
+        auth: `Basic ${btoa(`API_KEY:${key}`)}`,
+        persist: (rides) => dataStub(env, dataId).saveRides(rides),
+      };
+    }
+  }
+  /* Only the household falls back to the Worker's own key. Anyone else who has
+     not linked gets nothing, which reads as "not linked" downstream. */
+  return dataId === HOUSEHOLD ? ownerLink(env, dataId) : null;
+}
 
 function ownerLink(env, dataId) {
   if (!env.INTERVALS_KEY) return null;
@@ -3835,6 +3953,50 @@ export default {
       const st = await me().read();
       return json({ ok: true, ...session, profile: st.profile || null, block: (st.plan || {}).block || null }, 200, origin);
     }
+    /* Linking intervals.icu, per person.
+       The key is verified against intervals.icu BEFORE it is stored, so a typo
+       fails once here with a reason rather than silently on every future ride
+       read. It is never returned by any route afterwards - status only. */
+    if (path === '/me/intervals') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const stub = me();
+      if (request.method === 'GET') return json(await stub.intervalsStatus(), 200, origin);
+      if (request.method === 'DELETE') return json(await stub.clearIntervals(), 200, origin);
+      if (request.method === 'PUT') {
+        if (!env.INTERVALS_ENC) {
+          /* Fails closed. Storing somebody else's long-lived, write-capable
+             credential unencrypted because the secret is missing would be the
+             worst thing in this repo. */
+          return json({ ok: false, why: 'this server cannot store credentials safely yet' }, 503, origin);
+        }
+        const r = await readJson(request);
+        if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+        const b = r.body || {};
+        const key = String(b.key || '').trim();
+        const athlete = String(b.athlete || '').trim().replace(/^i/i, '');
+        if (key.length < 8 || key.length > 200) return json({ ok: false, why: 'that does not look like an API key' }, 400, origin);
+        if (!/^\d{1,12}$/.test(athlete)) return json({ ok: false, why: 'the athlete id is the number from your intervals.icu settings, like 123456' }, 400, origin);
+
+        const check = await icuVerify(key, 'i' + athlete);
+        if (!check.ok) return json(check, 400, origin);
+        const sealed = await icuSeal(env, key);
+        if (!sealed) return json({ ok: false, why: 'could not secure that key' }, 500, origin);
+        await stub.setIntervals(sealed, 'i' + athlete, b.label);
+
+        /* Pull a fortnight straight away, so linking visibly does something
+           rather than leaving somebody wondering whether it worked. */
+        const today = new Date().toISOString().slice(0, 10);
+        const from = new Date(); from.setUTCDate(from.getUTCDate() - 14);
+        const got = await fetchRides(await linkFor(env, session.dataId), from.toISOString().slice(0, 10), today, ctx);
+        return json({
+          ...(await stub.intervalsStatus()),
+          rides_found: got.ok ? got.rides.length : 0,
+          note: got.ok ? null : got.why,
+        }, 200, origin);
+      }
+      return json({ error: 'not found' }, 404, origin);
+    }
+
     if (path === '/me/profile' && request.method === 'PUT') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);
@@ -3871,7 +4033,7 @@ export default {
       if (!isDate(oldest) || !isDate(newest))
         return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
 
-      return json(await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);
+      return json(await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);
     }
 
     if (path === '/state' && request.method === 'GET') {
@@ -3900,7 +4062,7 @@ export default {
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - FORM_DAYS);
       const formStart = from.toISOString().slice(0, 10);
-      const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), formStart, date, ctx);
+      const hist = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), formStart, date, ctx);
       const state = await me().read();
       const rides = hist.ok ? hist.rides : [];
       const recentFrom = new Date(date + 'T12:00:00Z');
@@ -3961,7 +4123,7 @@ export default {
       const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
-      const rideRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
+      const rideRes = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], date, nowMins);
       /* Enough load behind it for fitness to have settled, so advice about today
          knows whether he is buried or fresh. Under-fuelling a deeply negative form
@@ -3970,7 +4132,7 @@ export default {
       if (facts) {
         const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - FORM_DAYS);
         const backISO = back.toISOString().slice(0, 10);
-        const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), backISO, date, ctx);
+        const hist = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), backISO, date, ctx);
         if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date, backISO);
       }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
@@ -3998,7 +4160,7 @@ export default {
       const formFrom = new Date(to + 'T12:00:00Z');
       formFrom.setUTCDate(formFrom.getUTCDate() - FORM_DAYS);
       const formStart = formFrom.toISOString().slice(0, 10);
-      const rideRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), formStart, to, ctx);
+      const rideRes = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), formStart, to, ctx);
       if (!rideRes.ok) return json({ ok: false, why: rideRes.why }, 200, origin);
 
       const tableFrom = from.toISOString().slice(0, 10);
@@ -4024,7 +4186,7 @@ export default {
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
       const want = url.searchParams.get('why') === '1';
 
-      const dayRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
+      const dayRes = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
       if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
@@ -4035,7 +4197,7 @@ export default {
       /* Six weeks of his own riding is the comparison set. */
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - 42);
-      const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), from.toISOString().slice(0, 10), date, ctx);
+      const hist = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), from.toISOString().slice(0, 10), date, ctx);
       const state = await me().read();
       /* Same month gate as coachFacts: a day-of-month lookup would otherwise
          read September 3's ride against August 3's plan. No plan for the day is

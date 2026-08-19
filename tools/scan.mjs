@@ -351,9 +351,20 @@ if (!/function blockYM\(/.test(worker)) {
    fetchRides so no future route can forget it - assert that, and assert that
    nothing else reaches upstream directly. */
 {
+  /* Every RIDE READ goes through fetchRides, which is where the cache is.
+     icuVerify() is the one allowed exception and it is allowed by name rather
+     than by raising a count: it checks a credential once, when somebody links
+     their account, and caching that would mean a key that has since been
+     revoked keeps appearing to work. A second unnamed call site is still an
+     error, because that is how the unmetered proxy came back last time. */
   const icuCalls = [...worker.matchAll(/fetch\(`\$\{ICU\}/g)].length;
-  if (icuCalls > 1) {
-    err(`worker.js calls intervals.icu from ${icuCalls} places - all of them must go through fetchRides, which is where the cache is`);
+  const verifyBody = /async function icuVerify\([\s\S]*?\n\}/.exec(worker);
+  const verifyCalls = verifyBody ? [...verifyBody[0].matchAll(/fetch\(`\$\{ICU\}/g)].length : 0;
+  if (icuCalls - verifyCalls > 1) {
+    err(`worker.js calls intervals.icu from ${icuCalls - verifyCalls} places outside icuVerify() - all ride reads must go through fetchRides, which is where the cache is`);
+  }
+  if (verifyCalls > 1) {
+    err(`icuVerify() makes ${verifyCalls} upstream calls - it is a single credential check, not a fetcher`);
   }
   const fr = /async function fetchRides\([\s\S]*?\n\}/.exec(worker);
   if (!fr) err('worker.js has no fetchRides() - cannot verify ride responses are cached');

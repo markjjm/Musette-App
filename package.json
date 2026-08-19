@@ -13,7 +13,8 @@
     "dev:worker": "wrangler dev --config worker/wrangler.toml",
     "deploy:web": "npm run build && wrangler pages deploy web/public --project-name shopping-list-app",
     "deploy:worker": "wrangler deploy --config worker/wrangler.toml",
-    "foods": "node tools/build-foods.mjs"
+    "foods": "node tools/build-foods.mjs",
+    "smoke": "node tools/smoke.mjs"
   },
   "devDependencies": {
     "wrangler": "4.123.0"

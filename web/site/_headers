@@ -2,10 +2,10 @@
 # Re-run `npm run build` after changing any page, or the hashes go stale and
 # the browser refuses to run what it is served.
 /account
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-JzvKcyJSD8HEue7gsXNrQplQYmqlNjq6/vRFdY6T+WE='; style-src 'sha256-6IfRrIs07Da291uZan/gTYwOSczOH8EcFA8wEF2oUZA='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-KVltNh8A9s7cQPVceP685sEqdSvKNxcH3EOFPrhbhbg='; style-src 'sha256-6IfRrIs07Da291uZan/gTYwOSczOH8EcFA8wEF2oUZA='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-JzvKcyJSD8HEue7gsXNrQplQYmqlNjq6/vRFdY6T+WE='; style-src 'sha256-6IfRrIs07Da291uZan/gTYwOSczOH8EcFA8wEF2oUZA='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-KVltNh8A9s7cQPVceP685sEqdSvKNxcH3EOFPrhbhbg='; style-src 'sha256-6IfRrIs07Da291uZan/gTYwOSczOH8EcFA8wEF2oUZA='; img-src data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-rBB/Id2I/vlXr9XL4OhGads22htEm8kPMA34jbQv3p4='; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'

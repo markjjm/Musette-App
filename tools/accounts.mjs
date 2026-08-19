@@ -24,7 +24,10 @@ function env(name, fallback) {
   if (process.env[name]) return process.env[name];
   if (existsSync(devVars)) {
     const m = new RegExp(`^${name}=(.*)$`, 'm').exec(readFileSync(devVars, 'utf8'));
-    if (m) return m[1].trim();
+    /* .dev.vars values may be quoted; sourcing it in a shell strips those and
+       reading it here did not, so a four-digit code arrived as six characters
+       and every authenticated call quietly 401'd. */
+    if (m) return m[1].trim().replace(/^(['"])(.*)\1$/, '$2');
   }
   return fallback;
 }
