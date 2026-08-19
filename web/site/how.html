@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>How it Works — Musette</title>
 <meta name="description" content="The physiology and engineering behind Musette: how training kilojoules convert to metabolic calories, periodized carbohydrates, and real grocery lists.">
 <style>:root{
@@ -20,92 +20,95 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--ground);color:var(--ink);
 font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility;
+padding-bottom:env(safe-area-inset-bottom)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+@media(max-width:640px){.wrap{padding:0 16px}}
 .narrow{max-width:780px}
-h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
-h1{font-size:clamp(38px,5vw,58px);letter-spacing:-.038em}
-h2{font-size:clamp(26px,3.2vw,40px);letter-spacing:-.028em}
-h3{font-size:19px;letter-spacing:-.02em;font-weight:750;line-height:1.25}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.1;font-weight:800;color:var(--ink);word-break:break-word}
+h1{font-size:clamp(32px,6.8vw,56px);letter-spacing:-.038em}
+h2{font-size:clamp(22px,4.5vw,38px);letter-spacing:-.028em}
+h3{font-size:18.5px;letter-spacing:-.02em;font-weight:750;line-height:1.28}
 p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
 a{color:inherit;text-underline-offset:3px}
 .mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
-.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:var(--r-pill);
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);
 background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
-font:750 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px}
+font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:18px}
 .pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
-.lede{font-size:clamp(18.5px,2.2vw,22px);line-height:1.5;color:var(--ink-2);max-width:62ch;font-weight:420}
+.lede{font-size:clamp(17px,2.1vw,21px);line-height:1.52;color:var(--ink-2);max-width:62ch;font-weight:420}
 /* masthead */
-.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.92);
 backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
-.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
-.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+.mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px}
+.mark{display:flex;align-items:center;gap:9px;font-weight:850;font-size:19px;
 letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
-.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
-display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
-.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
-.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center}
-.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mark-icon{width:28px;height:28px;border-radius:9px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(255,107,53,.32)}
+.mark-icon:after{content:"";width:7px;height:7px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:18px;align-items:center}
+.mast nav a{font-size:14px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
 .mast nav a:hover{color:var(--accent-hover)}
 .mast nav a.active{color:var(--accent-hover);font-weight:750}
 @media(max-width:760px){.mast nav a.hide-sm{display:none}}
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 24px;border-radius:var(--r-pill);
-font:750 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
-transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--r-pill);
+min-height:44px;font:750 14.5px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:all .15s cubic-bezier(.16,1,.3,1);touch-action:manipulation}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:var(--sunset);color:#fff;box-shadow:0 4px 14px rgba(255,107,53,.35),inset 0 1px 0 rgba(255,255,255,.4)}
 .btn.primary:hover{box-shadow:0 6px 20px rgba(255,107,53,.48);transform:translateY(-1px)}
 .btn.ghost{border-color:var(--line-strong);background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs)}
 .btn.ghost:hover{background:var(--surface-2);border-color:var(--ink-3);transform:translateY(-1px)}
 /* sections */
-section{padding:clamp(54px,7vw,98px) 0;position:relative}
+section{padding:clamp(44px,6vw,84px) 0;position:relative}
 .rule{border-top:1px solid var(--line)}
-.step-hd{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.step-num{width:36px;height:36px;border-radius:12px;background:var(--sunset);color:#fff;
-display:grid;place-items:center;font:800 15px/1 ui-monospace,Menlo,monospace;box-shadow:0 3px 10px rgba(255,107,53,.3)}
+.step-hd{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.step-num{width:34px;height:34px;border-radius:10px;background:var(--sunset);color:#fff;
+display:grid;place-items:center;font:800 14px/1 ui-monospace,Menlo,monospace;box-shadow:0 3px 8px rgba(255,107,53,.3);flex-shrink:0}
 /* interactive calculator */
 .calc-box{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-lg);
-padding:28px;box-shadow:var(--sh-md);margin:28px 0}
+padding:22px 20px;box-shadow:var(--sh-md);margin:24px 0}
+@media(max-width:540px){.calc-box{padding:16px 14px}}
 .unit-toggle{display:inline-flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:var(--r-pill);
-border:1px solid var(--line);margin-bottom:18px}
-.unit-btn{border:0;background:transparent;padding:6px 14px;border-radius:var(--r-pill);
-font:700 12px/1 ui-monospace,Menlo,monospace;cursor:pointer;color:var(--ink-2);transition:all .12s}
+border:1px solid var(--line);margin-bottom:16px;max-width:100%}
+.unit-btn{border:0;background:transparent;padding:6px 12px;border-radius:var(--r-pill);
+font:700 11.5px/1 ui-monospace,Menlo,monospace;cursor:pointer;color:var(--ink-2);transition:all .12s;min-height:32px;touch-action:manipulation}
 .unit-btn.active{background:var(--sunset);color:#fff;box-shadow:0 2px 6px rgba(255,107,53,.3)}
-.calc-grid{display:grid;gap:22px;grid-template-columns:1fr}
+.calc-grid{display:grid;gap:18px;grid-template-columns:1fr}
 @media(min-width:760px){.calc-grid{grid-template-columns:1fr 1.1fr}}
-.calc-inputs{display:grid;gap:14px}
-.field-inline{display:grid;gap:6px}
-.field-inline label{font:700 12px/1 ui-monospace,Menlo,monospace;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em}
-.field-inline input{width:100%;padding:11px 14px;font:750 16px/1 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink)}
-.calc-results{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:12px}
-.calc-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14.5px}
+.calc-inputs{display:grid;gap:12px}
+.field-inline{display:grid;gap:5px}
+.field-inline label{font:700 11.5px/1 ui-monospace,Menlo,monospace;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em}
+.field-inline input{width:100%;padding:11px 13px;font:750 15px/1 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);min-height:44px}
+.calc-results{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:10px}
+.calc-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px;gap:8px}
 .calc-row:last-child{border-bottom:0}
 .calc-row dt{color:var(--ink-2)}
-.calc-row dd{margin:0;font:800 16px/1 ui-monospace,Menlo,monospace;color:var(--ink)}
+.calc-row dd{margin:0;font:800 15px/1 ui-monospace,Menlo,monospace;color:var(--ink);text-align:right}
 /* table */
-.table-wrap{overflow-x:auto;margin:22px 0}
-table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
-th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
-th{background:var(--surface-2);font:750 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:20px 0}
+table{width:100%;min-width:580px;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{background:var(--surface-2);font:750 10.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
 tr:last-child td{border-bottom:0}
 /* cards */
-.grid{display:grid;gap:22px;grid-template-columns:1fr}
+.grid{display:grid;gap:18px;grid-template-columns:1fr}
 @media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--sh-xs)}
-.card h3{margin-bottom:8px}
-.card p{font-size:14.5px;color:var(--ink-2);margin:0;line-height:1.55}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh-xs)}
+.card h3{margin-bottom:6px}
+.card p{font-size:14px;color:var(--ink-2);margin:0;line-height:1.55}
 /* footer */
-footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer{background:var(--surface-2);color:var(--ink-2);padding:48px 0 36px;font-size:14px;border-top:1px solid var(--line)}
 footer a{color:var(--ink);text-decoration:none;font-weight:600}
 footer a:hover{color:var(--accent-hover);text-decoration:underline}
-.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
-@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
-.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
-margin-bottom:14px}
-.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
-color:var(--ink-3);max-width:84ch;line-height:1.65}
+.fcols{display:grid;gap:26px;grid-template-columns:1fr;margin-bottom:30px}
+@media(min-width:680px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:12px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fine{border-top:1px solid var(--line);padding-top:20px;font-size:12.5px;
+color:var(--ink-3);max-width:84ch;line-height:1.6}
 :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
@@ -116,7 +119,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
 <a class="hide-sm" href="/access">Access</a>
 <a class="hide-sm" href="/about">About</a>
 <a class="hide-sm" href="/privacy">Privacy</a>
-<a class="btn primary" href="/signin">Sign in</a>
+<a class="btn primary" href="/signin" style="padding:8px 16px;min-height:36px;font-size:13.5px">Sign in</a>
 </nav>
 </div></header>
 
@@ -125,7 +128,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
 <section><div class="wrap">
   <div class="pill-badge"><i></i>The Nutrition & Physiology Engine</div>
   <h1>Physics first. The food follows.</h1>
-  <p class="lede" style="margin-top:18px">Every athlete knows the frustration of under-fueling a big training session, bonking miles from home, and raiding the kitchen at 4pm. Musette solves this with exact metabolic physics and delicious whole food recipes.</p>
+  <p class="lede" style="margin-top:16px">Every athlete knows the frustration of under-fueling a big training session, bonking miles from home, and raiding the kitchen at 4pm. Musette solves this with exact metabolic physics and delicious whole food recipes.</p>
 </div></section>
 
 <section class="rule"><div class="wrap">
@@ -136,7 +139,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
   <p>A power meter, GPS running watch, or heart rate monitor measures physical effort continuously. In endurance exercise, $1\text{ kJ of mechanical work} \approx 1\text{ kcal of metabolic expenditure}$ because human muscular efficiency is approximately 21% to 24%.</p>
 
   <div class="calc-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px;gap:8px">
       <h3>Interactive Training Fuel Calculator</h3>
       <div class="unit-toggle">
         <button class="unit-btn active" id="btnImperial">Imperial (lbs / mi)</button>
@@ -163,8 +166,8 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
         <div class="calc-row"><dt>Mechanical Work Output</dt><dd id="resKj">2,646 kJ</dd></div>
         <div class="calc-row"><dt>Workout Energy Burn</dt><dd id="resBurn">~2,646 kcal</dd></div>
         <div class="calc-row"><dt>Resting Baseline (BMR)</dt><dd id="resBmr">1,960 kcal</dd></div>
-        <div class="calc-row"><dt>Total Daily Target</dt><dd id="resTotal" style="color:var(--accent-hover);font-size:19px">4,606 kcal</dd></div>
-        <div class="calc-row"><dt>Carbohydrate Requirement</dt><dd id="resCarbs" style="color:var(--train);font-size:19px">735 g (4.7 g/lb)</dd></div>
+        <div class="calc-row"><dt>Total Daily Target</dt><dd id="resTotal" style="color:var(--accent-hover);font-size:18px">4,606 kcal</dd></div>
+        <div class="calc-row"><dt>Carbohydrate Requirement</dt><dd id="resCarbs" style="color:var(--train);font-size:18px">735 g (4.7 g/lb)</dd></div>
         <div class="calc-row"><dt>During-Workout Fuel</dt><dd id="resOnBike">280 g (80 g/h)</dd></div>
       </div>
     </div>
@@ -228,7 +231,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
     <div class="step-num">3</div>
     <h2>Curated Dinners & Consolidated Grocery Lists</h2>
   </div>
-  <div class="grid g3" style="margin-top:20px">
+  <div class="grid g3" style="margin-top:18px">
     <div class="card">
       <h3>Monthly Dinner Blueprint</h3>
       <p>30 curated, tested dinner recipes built specifically for active athletes. Every dinner delivers 40–55g of high-quality protein and calibrated starch.</p>
@@ -244,10 +247,10 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
   </div>
 </div></section>
 
-<section class="rule" style="background:var(--surface-2);border-bottom:1px solid var(--line);text-align:center;padding:54px 0"><div class="wrap">
+<section class="rule" style="background:var(--surface-2);border-bottom:1px solid var(--line);text-align:center;padding:48px 0"><div class="wrap">
   <div class="pill-badge"><i></i>Start fueling with intention</div>
   <h2 style="max-width:20ch;margin:0 auto">Ready to build your month?</h2>
-  <p class="lede" style="margin:16px auto 28px">Get started with your invite code or sign in to your dashboard.</p>
+  <p class="lede" style="margin:14px auto 24px">Get started with your invite code or sign in to your dashboard.</p>
   <a class="btn primary" href="/signin">Sign in or Redeem Invite →</a>
 </div></section>
 

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>About — Musette</title>
 <meta name="description" content="The story behind Musette: an artisanal, privacy-first nutrition planner built for endurance athletes who cook for their families.">
 <style>:root{
@@ -20,61 +20,63 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--ground);color:var(--ink);
 font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility;
+padding-bottom:env(safe-area-inset-bottom)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+@media(max-width:640px){.wrap{padding:0 16px}}
 .narrow{max-width:760px}
-h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
-h1{font-size:clamp(36px,5vw,56px);letter-spacing:-.038em}
-h2{font-size:clamp(25px,3.2vw,38px);letter-spacing:-.028em;margin:38px 0 16px}
-h3{font-size:18.5px;letter-spacing:-.02em;font-weight:750;line-height:1.25}
-p{margin:0 0 18px;max-width:68ch;color:var(--ink-2)}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.1;font-weight:800;color:var(--ink);word-break:break-word}
+h1{font-size:clamp(32px,6.5vw,54px);letter-spacing:-.038em}
+h2{font-size:clamp(22px,4.5vw,36px);letter-spacing:-.028em;margin:32px 0 14px}
+h3{font-size:18px;letter-spacing:-.02em;font-weight:750;line-height:1.28}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
 a{color:inherit;text-underline-offset:3px}
 .mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
 .pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);
 background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
 font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
 .pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
-.lede{font-size:clamp(18px,2.1vw,21.5px);line-height:1.52;color:var(--ink-2);max-width:62ch;font-weight:420}
+.lede{font-size:clamp(17px,2vw,21px);line-height:1.52;color:var(--ink-2);max-width:62ch;font-weight:420}
 /* masthead */
-.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.92);
 backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
-.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
-.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+.mast .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px}
+.mark{display:flex;align-items:center;gap:9px;font-weight:850;font-size:19px;
 letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
-.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
-display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
-.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
-.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center}
-.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mark-icon{width:28px;height:28px;border-radius:9px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(255,107,53,.32)}
+.mark-icon:after{content:"";width:7px;height:7px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:18px;align-items:center}
+.mast nav a{font-size:14px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
 .mast nav a:hover{color:var(--accent-hover)}
 .mast nav a.active{color:var(--accent-hover);font-weight:750}
 @media(max-width:760px){.mast nav a.hide-sm{display:none}}
 /* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:var(--r-pill);
-font:750 14.5px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
-transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--r-pill);
+min-height:44px;font:750 14.5px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:all .15s cubic-bezier(.16,1,.3,1);touch-action:manipulation}
 .btn:active{transform:scale(.98)}
 .btn.primary{background:var(--sunset);color:#fff;box-shadow:0 3px 10px rgba(255,107,53,.3)}
 .btn.primary:hover{box-shadow:0 5px 16px rgba(255,107,53,.45);transform:translateY(-1px)}
 /* sections */
-section{padding:clamp(52px,6.5vw,96px) 0;position:relative}
-.quote{border-left:3px solid var(--accent);padding:18px 24px;margin:28px 0;background:var(--surface-2);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:17px;line-height:1.55;color:var(--ink);font-style:italic}
-.grid{display:grid;gap:20px;grid-template-columns:1fr}
+section{padding:clamp(44px,6vw,84px) 0;position:relative}
+.quote{border-left:3px solid var(--accent);padding:16px 20px;margin:24px 0;background:var(--surface-2);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:16px;line-height:1.55;color:var(--ink);font-style:italic}
+.grid{display:grid;gap:18px;grid-template-columns:1fr}
 @media(min-width:760px){.g2{grid-template-columns:1fr 1fr}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--sh-xs)}
-.card h3{margin-bottom:8px}
-.card p{font-size:14.5px;color:var(--ink-2);margin:0;line-height:1.55}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--sh-xs)}
+.card h3{margin-bottom:6px}
+.card p{font-size:14px;color:var(--ink-2);margin:0;line-height:1.55}
 /* footer */
-footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer{background:var(--surface-2);color:var(--ink-2);padding:48px 0 36px;font-size:14px;border-top:1px solid var(--line)}
 footer a{color:var(--ink);text-decoration:none;font-weight:600}
 footer a:hover{color:var(--accent-hover);text-decoration:underline}
-.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
-@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
-.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
-margin-bottom:14px}
-.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
-color:var(--ink-3);max-width:84ch;line-height:1.65}
+.fcols{display:grid;gap:26px;grid-template-columns:1fr;margin-bottom:30px}
+@media(min-width:680px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:12px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.fine{border-top:1px solid var(--line);padding-top:20px;font-size:12.5px;
+color:var(--ink-3);max-width:84ch;line-height:1.6}
 :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
@@ -85,14 +87,14 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
 <a class="hide-sm" href="/access">Access</a>
 <a class="active" href="/about">About</a>
 <a class="hide-sm" href="/privacy">Privacy</a>
-<a class="btn primary" href="/signin">Sign in</a>
+<a class="btn primary" href="/signin" style="padding:8px 16px;min-height:36px;font-size:13.5px">Sign in</a>
 </nav>
 </div></header>
 
 <main><section><div class="wrap narrow">
   <div class="pill-badge"><i></i>The Origin Story</div>
   <h1>Built out of sheer frustration with calorie counters.</h1>
-  <p class="lede" style="margin-top:20px">Musette was created by an athlete who loves cooking, trains 8 to 14 hours a week across running, cycling, and lifting, and got tired of fighting software that treated multi-hour endurance workouts like an error in a spreadsheet.</p>
+  <p class="lede" style="margin-top:18px">Musette was created by an athlete who loves cooking, trains 8 to 14 hours a week across running, cycling, and lifting, and got tired of fighting software that treated multi-hour endurance workouts like an error in a spreadsheet.</p>
 
   <div class="quote">
     "If you run 15 miles or ride 50 miles on a Saturday, you don't need a calorie deficit lecture from an algorithm that assumes everyone works in an office cubicle and walks 3,000 steps a day. You need to know how many grams of carbohydrate to eat and what delicious food to cook for dinner."
@@ -101,7 +103,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
   <h2>The Musette Philosophy</h2>
   <p>Most fitness tech exists to maximize monthly active users, engagement metrics, and recurring subscription fees. Musette is built under a completely different ethos:</p>
 
-  <div class="grid g2" style="margin-top:24px">
+  <div class="grid g2" style="margin-top:20px">
     <div class="card">
       <h3>1. Output Over Guesswork</h3>
       <p>Your devices measure real physical energy expenditure. We use metabolic physics rather than generic approximations to calculate exact energy demands.</p>
@@ -124,10 +126,10 @@ color:var(--ink-3);max-width:84ch;line-height:1.65}
   <p>In endurance sport, a <i>musette</i> is the cotton feed bag handed to athletes mid-effort containing essential food, rice cakes, and hydration. It represents simple, purposeful nourishment when you're working hardest.</p>
 </div></section>
 
-<section class="rule" style="background:var(--surface-2);border-bottom:1px solid var(--line);text-align:center;padding:54px 0"><div class="wrap">
+<section class="rule" style="background:var(--surface-2);border-bottom:1px solid var(--line);text-align:center;padding:48px 0"><div class="wrap">
   <div class="pill-badge"><i></i>Explore the engine</div>
   <h2 style="max-width:20ch;margin:0 auto">Want to see the calculations?</h2>
-  <p class="lede" style="margin:16px auto 28px">Read through the exact physiology pipeline and calculations.</p>
+  <p class="lede" style="margin:14px auto 24px">Read through the exact physiology pipeline and calculations.</p>
   <a class="btn primary" href="/how">See How It Works →</a>
 </div></section>
 
