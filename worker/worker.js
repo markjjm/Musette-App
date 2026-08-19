@@ -1992,14 +1992,74 @@ export class ListDO extends DurableObject {
     return { ok: true, linked: false };
   }
 
+  /* SQLite and Historical Synopsis Layer:
+     Embedded SQLite inside Cloudflare Durable Object (ctx.storage.sql) stores
+     time-indexed workouts, weigh-ins, and multi-week historical synopses so the
+     AI coach has deep, instant multi-week memory. */
+  initSql() {
+    if (!this.ctx.storage || !this.ctx.storage.sql) return false;
+    try {
+      this.ctx.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS workouts (
+          id TEXT PRIMARY KEY,
+          date TEXT NOT NULL,
+          name TEXT,
+          sport TEXT,
+          secs INTEGER,
+          km REAL,
+          up REAL,
+          kcal INTEGER,
+          watts REAL,
+          np REAL,
+          hr REAL,
+          pwhr REAL,
+          load REAL,
+          trust TEXT,
+          created_at INTEGER
+        );
+        CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(date);
+
+        CREATE TABLE IF NOT EXISTS weigh_ins (
+          date TEXT PRIMARY KEY,
+          weight_lb REAL NOT NULL,
+          created_at INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS weekly_synopses (
+          week_of TEXT PRIMARY KEY,
+          total_hours REAL,
+          total_load REAL,
+          total_kcal REAL,
+          workout_count INTEGER,
+          avg_efficiency REAL,
+          long_session_h REAL,
+          updated_at INTEGER
+        );
+      `);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async saveRides(rides) {
     if (!Array.isArray(rides) || !rides.length) return { ok: true, saved: 0 };
     let saved = 0;
+    const hasSql = this.initSql();
     for (const r of rides.slice(0, 400)) {
       if (!r || !r.id || !/^\d{4}-\d{2}-\d{2}$/.test(r.date || '')) continue;
       await this.ctx.storage.put(`r:${r.date}:${r.id}`, r);
+      if (hasSql) {
+        try {
+          this.ctx.storage.sql.exec(`
+            INSERT OR REPLACE INTO workouts (id, date, name, sport, secs, km, up, kcal, watts, np, hr, pwhr, load, trust, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, r.id, r.date, r.name || 'Workout', r.type || 'Workout', r.secs || 0, r.km || 0, r.up || 0, r.kcal || 0, r.watts || 0, r.np || 0, r.hr || 0, r.pwhr || 0, r.load || 0, r.trust || 'estimated', Date.now());
+        } catch {}
+      }
       saved++;
     }
+    await this.refreshWeeklySynopses(rides);
     /* Everything is kept. The only pruning is a five-year backstop against the
        unbounded growth the August audit caught in a different map, and the
        boundary is pulled back further still so a whole calendar month is always
@@ -2018,9 +2078,107 @@ export class ListDO extends DurableObject {
     return { ok: true, saved, pruned: old.size };
   }
 
+  async refreshWeeklySynopses(rides) {
+    if (!rides || !rides.length) return;
+    const hasSql = this.initSql();
+    const byWeek = {};
+    for (const r of rides) {
+      if (!r || !r.date) continue;
+      const wk = r.date.slice(0, 10);
+      const monday = new Date(wk + 'T12:00:00Z');
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+      const key = monday.toISOString().slice(0, 10);
+      byWeek[key] = byWeek[key] || { week_of: key, total_hours: 0, total_load: 0, total_kcal: 0, workout_count: 0, pwhr_sum: 0, pwhr_n: 0, long_session_h: 0 };
+      const h = (r.secs || 0) / 3600;
+      byWeek[key].total_hours = Math.round((byWeek[key].total_hours + h) * 10) / 10;
+      byWeek[key].total_load = Math.round(byWeek[key].total_load + (r.load || 0));
+      byWeek[key].total_kcal = Math.round(byWeek[key].total_kcal + (r.kcal || 0));
+      byWeek[key].workout_count += 1;
+      if (h > byWeek[key].long_session_h) byWeek[key].long_session_h = Math.round(h * 10) / 10;
+      if (r.pwhr > 0) { byWeek[key].pwhr_sum += r.pwhr; byWeek[key].pwhr_n += 1; }
+    }
+    if (hasSql) {
+      for (const w of Object.values(byWeek)) {
+        try {
+          const avgEff = w.pwhr_n ? Math.round((w.pwhr_sum / w.pwhr_n) * 100) / 100 : null;
+          this.ctx.storage.sql.exec(`
+            INSERT OR REPLACE INTO weekly_synopses (week_of, total_hours, total_load, total_kcal, workout_count, avg_efficiency, long_session_h, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `, w.week_of, w.total_hours, w.total_load, w.total_kcal, w.workout_count, avgEff, w.long_session_h, Date.now());
+        } catch {}
+      }
+    }
+  }
+
+  async getHistoricalSynopsis(weeksCount = 8) {
+    const hasSql = this.initSql();
+    if (hasSql) {
+      try {
+        const rows = [...this.ctx.storage.sql.exec(`
+          SELECT week_of, total_hours, total_load, total_kcal, workout_count, avg_efficiency, long_session_h
+          FROM weekly_synopses
+          ORDER BY week_of DESC
+          LIMIT ?
+        `, weeksCount)];
+        if (rows.length) {
+          const workouts = [...this.ctx.storage.sql.exec(`
+            SELECT date, name, sport, ROUND(secs / 3600.0, 1) as hours, kcal, load, pwhr
+            FROM workouts
+            ORDER BY date DESC
+            LIMIT 12
+          `)];
+          return {
+            source: 'sqlite',
+            weeks_recorded: rows.length,
+            weekly_progression: rows.reverse(),
+            recent_workouts: workouts,
+          };
+        }
+      } catch {}
+    }
+    const state = await this.load();
+    const oldest = new Date();
+    oldest.setUTCDate(oldest.getUTCDate() - weeksCount * 7);
+    const m = await this.ctx.storage.list({ prefix: 'r:', start: `r:${oldest.toISOString().slice(0, 10)}` });
+    const allRides = [...m.values()];
+    const byWeek = {};
+    for (const r of allRides) {
+      const wk = r.date.slice(0, 10);
+      const monday = new Date(wk + 'T12:00:00Z');
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+      const key = monday.toISOString().slice(0, 10);
+      byWeek[key] = byWeek[key] || { week_of: key, total_hours: 0, total_load: 0, total_kcal: 0, workout_count: 0, pwhr_sum: 0, pwhr_n: 0, long_session_h: 0 };
+      const h = (r.secs || 0) / 3600;
+      byWeek[key].total_hours = Math.round((byWeek[key].total_hours + h) * 10) / 10;
+      byWeek[key].total_load = Math.round(byWeek[key].total_load + (r.load || 0));
+      byWeek[key].total_kcal = Math.round(byWeek[key].total_kcal + (r.kcal || 0));
+      byWeek[key].workout_count += 1;
+      if (h > byWeek[key].long_session_h) byWeek[key].long_session_h = Math.round(h * 10) / 10;
+      if (r.pwhr > 0) { byWeek[key].pwhr_sum += r.pwhr; byWeek[key].pwhr_n += 1; }
+    }
+    const weeklyProg = Object.values(byWeek).sort((a, b) => a.week_of.localeCompare(b.week_of)).map(w => ({
+      week_of: w.week_of,
+      total_hours: w.total_hours,
+      total_load: w.total_load,
+      total_kcal: w.total_kcal,
+      workout_count: w.workout_count,
+      avg_efficiency: w.pwhr_n ? Math.round((w.pwhr_sum / w.pwhr_n) * 100) / 100 : null,
+      long_session_h: w.long_session_h,
+    }));
+    return {
+      source: 'document',
+      weeks_recorded: weeklyProg.length,
+      weekly_progression: weeklyProg,
+      recent_workouts: allRides.slice(-12).map(r => ({
+        date: r.date, name: r.name, sport: r.type, hours: Math.round((r.secs / 3600) * 10) / 10, kcal: r.kcal, load: r.load, pwhr: r.pwhr
+      })),
+      weight_trend: weightTrend(state.weights, weeksCount * 7),
+    };
+  }
+
   /* A window, oldest first. No upstream call, no cache, no network. */
   async ridesBetween(oldest, newest) {
-    const m = await this.ctx.storage.list({ prefix: 'r:', start: `r:${oldest}`, end: `r:${newest}￿` });
+    const m = await this.ctx.storage.list({ prefix: 'r:', start: `r:${oldest}`, end: `r:${newest}` });
     return [...m.values()];
   }
 
@@ -4059,12 +4217,14 @@ export default {
       const recentISO = recentFrom.toISOString().slice(0, 10);
       const recent = rides.filter((r) => r.date >= recentISO);
       const today = coachFacts(state, rides.filter((r) => r.date === date), date, 23 * 60);
+      const historicalSynopsis = await me().getHistoricalSynopsis(8);
 
       const facts = {
         the_question: q,
         today: today,
         fitness_and_form: trainingForm(rides, date, formStart),
         recent_riding: trainingStats(recent, state.plan, date, rides, formStart),
+        historical_synopsis: historicalSynopsis,
         /* Named plainly and flattened, because nested container names get cited
            back at the reader as though they were sources. */
         last_ten_rides: rides.slice(0, 10).map((r) => ({
@@ -4114,11 +4274,13 @@ export default {
 
       const rideRes = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], date, nowMins);
+      const historicalSynopsis = await me().getHistoricalSynopsis(8);
       /* Enough load behind it for fitness to have settled, so advice about today
          knows whether he is buried or fresh. Under-fuelling a deeply negative form
          is the expensive mistake — which is exactly why this window is FORM_DAYS
          and not 90: a short one reports a rider as buried when they are level. */
       if (facts) {
+        facts.historical_synopsis = historicalSynopsis;
         const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - FORM_DAYS);
         const backISO = back.toISOString().slice(0, 10);
         const hist = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), backISO, date, ctx);
@@ -4163,6 +4325,7 @@ export default {
          rider block: where the body has been going, not just where it is. */
       stats.rider = riderNow(state.profile);
       stats.weight_trend = weightTrend(state.weights, FORM_DAYS);
+      stats.historical_synopsis = await me().getHistoricalSynopsis(weeks);
       const out = await askModel(env, ANALYST_SYSTEM(riderLine(state.profile)), ANALYST_SCHEMA, 'analysis', stats);
       return json({ ...out, stats, calls_today: budget.n }, 200, origin);
     }
