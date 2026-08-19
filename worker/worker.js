@@ -1557,7 +1557,24 @@ export class ListDO extends DurableObject {
        - The code is hashed, tried at most 5 times, and dies after 15 minutes.
        - The password was already stretched in the browser before it got here,
          so a pending record leaks no more than an account row would. */
-  async signupBegin(email, verifier, salt) {
+  async signupBegin(email, verifier, salt, inviteCode, openSignup) {
+    /* Closed by default, and this is a REVERSAL worth explaining rather than
+       quietly doing. Open signup shipped before per-user storage did, and the
+       two together mean every account reads and writes the same object: a
+       stranger who signs up can read your weight and your food log, and can
+       replace your month. Proven, not theorised - two accounts, one profile.
+
+       So an invite is required again until the split lands. A var rather than a
+       deletion, because the intent was right and only the ordering was wrong:
+       OPEN_SIGNUP=yes reopens it, which is one deploy the day isolation exists.
+       Fails CLOSED, the same way the access code does. */
+    if (openSignup !== true) {
+      const ik = 'auth:invite:' + String(inviteCode || '').toUpperCase().slice(0, 16);
+      const inv = await this.ctx.storage.get(ik);
+      if (!inv) return { ok: false, why: 'signing up needs an invite code at the moment' };
+      if (inv.used) return { ok: false, why: 'that invite has already been used' };
+      if (inv.exp < Date.now()) return { ok: false, why: 'that invite has expired - ask for a new one' };
+    }
     const mail = String(email || '').trim().toLowerCase().slice(0, 120);
     if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) return { ok: false, why: 'that does not look like an email address' };
     if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
@@ -1579,6 +1596,9 @@ export class ListDO extends DurableObject {
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0');
     await this.ctx.storage.put('auth:pending:' + mail, {
       email: mail,
+      /* Which invite this signup must burn, remembered so an abandoned attempt
+         does not spend somebody's one code. */
+      invite: openSignup === true ? null : 'auth:invite:' + String(inviteCode || '').toUpperCase().slice(0, 16),
       pw: { salt: String(salt || ''), verifier },
       codeHash: await sha256B64(mail + ':' + code),
       tries: 0,
@@ -1606,6 +1626,10 @@ export class ListDO extends DurableObject {
 
     const uid = randomB64(16);
     const pepper = randomB64(16);
+    if (p.invite) {
+      const inv = await this.ctx.storage.get(p.invite);
+      if (inv) await this.ctx.storage.put(p.invite, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
+    }
     await this.ctx.storage.put('auth:acct:' + uid, {
       uid, name: mail, email: mail, email_verified: true,
       created: new Date().toISOString(),
@@ -1738,15 +1762,46 @@ export class ListDO extends DurableObject {
 
   /* Adding a password to an account that signs in with a passkey, or the other
      way round. One account, either door. */
-  async addPassword(token, username, verifier, salt) {
+  /* Setting a password where there was none is ADDING one - a passkey user
+     giving themselves a second door - and a session is enough for that.
+     REPLACING one is different: a stolen token could otherwise change the
+     password and lock the owner out permanently, because with no email there is
+     no recovery. So a change needs the current password, proved the same way a
+     login proves it. */
+  async addPassword(token, username, verifier, salt, currentVerifier) {
     const s = await this.session(token);
     if (!s) return { ok: false, why: 'sign in first' };
+    const acct = await this.ctx.storage.get('auth:acct:' + s.uid);
+    if (!acct) return { ok: false, why: 'no such account' };
+    if (acct.pw) {
+      const got = await sha256B64(acct.pw.pepper + ':' + String(currentVerifier || ''));
+      if (!(await safeEqual(got, acct.pw.hash))) {
+        return { ok: false, why: 'that is not your current password' };
+      }
+    }
     return await this.passwordRegisterFor(s.uid, username, verifier, salt);
   }
 
+  /* The salt a caller needs to prove their CURRENT password before changing it. */
+  async passwordSaltFor(token) {
+    const s = await this.session(token);
+    if (!s) return { ok: false, why: 'sign in first' };
+    const acct = await this.ctx.storage.get('auth:acct:' + s.uid);
+    if (!acct || !acct.pw) return { ok: true, has_password: false };
+    return { ok: true, has_password: true, salt: acct.pw.salt, iterations: acct.pw.iters };
+  }
+
   async passwordRegisterFor(uid, username, verifier, salt) {
-    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
-    if (!/^[a-z0-9._-]{3,40}$/.test(uname)) return { ok: false, why: 'that username will not do' };
+    /* Email or handle, the same rule passwordRegister uses. It was fixed there
+       and not here, so changing a password worked only for accounts whose name
+       had no @ in it - which, since identity moved to email, is nobody. Two
+       validators for one concept is how that happens; they now read the same.
+       The old slice(0, 40) also quietly truncated any address longer than
+       forty characters into a different, wrong username. */
+    const uname = String(username || '').trim().toLowerCase().slice(0, 120);
+    if (!/^[a-z0-9._-]{3,40}$/.test(uname) && !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(uname)) {
+      return { ok: false, why: 'use an email address, or a handle of 3-40 letters, numbers, dots or dashes' };
+    }
     const taken = await this.ctx.storage.get('auth:user:' + uname);
     if (taken && taken !== uid) return { ok: false, why: 'that username is taken' };
     const acct = await this.ctx.storage.get('auth:acct:' + uid);
@@ -3455,7 +3510,8 @@ export default {
       }
       if (path === '/auth/signup') {
         await stub.sweepPending();
-        const begun = await stub.signupBegin(b.email, String(b.verifier || ''), String(b.salt || ''));
+        const begun = await stub.signupBegin(b.email, String(b.verifier || ''), String(b.salt || ''),
+          b.code, env.OPEN_SIGNUP === 'yes');
         if (!begun.ok) return json(begun, 400, origin);
         const sent = await sendCode(env, begun.email, begun.code);
         /* The code is never returned. If the send failed the caller is told
@@ -3479,10 +3535,25 @@ export default {
       }
       if (path === '/auth/password/verify') {
         const out = await stub.passwordVerify(b.username, String(b.verifier || ''));
+        /* A wrong password charges the same tight per-IP budget a wrong access
+           code does. noteFailure() was built for exactly this and was only ever
+           wired to the four-digit code, so passwords had NO brute-force cost at
+           all: 25 guesses in two seconds all came back 401 and none was
+           refused. The general 60/min limiter is not a barrier to an online
+           attack; this one is. */
+        if (!out.ok) {
+          const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+          const gate = await stub.noteFailure(ip);
+          if (gate.blocked) return json({ ok: false, why: 'too many attempts, wait a minute' }, 429, origin);
+        }
         return json(out, out.ok ? 200 : 401, origin);
       }
+      if (path === '/auth/password/change-options') {
+        return json(await stub.passwordSaltFor(bearer), 200, origin);
+      }
       if (path === '/auth/password/add') {
-        const out = await stub.addPassword(bearer, b.username, String(b.verifier || ''), String(b.salt || ''));
+        const out = await stub.addPassword(bearer, b.username, String(b.verifier || ''),
+          String(b.salt || ''), String(b.current_verifier || ''));
         return json(out, out.ok ? 200 : 400, origin);
       }
       if (path === '/auth/login/options') {
@@ -3813,9 +3884,13 @@ export default {
     }
 
     if (path === '/undo' && request.method === 'PUT') {
-      if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
-      if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
-        return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
+      /* Matched to /plan/publish deliberately. Publishing could replace a whole
+         month on a session while undoing it needed the admin key, so anybody
+         could break the plan and only the operator could put it back. The
+         destructive direction must never be easier than the repair. */
+      const adminOk = env.ADMIN_KEY
+        && await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY);
+      if (!session && !adminOk) return json({ ok: false, why: 'sign in first' }, 401, origin);
       return json(await listStub(env).undo(), 200, origin);
     }
 
