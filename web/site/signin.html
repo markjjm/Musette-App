@@ -268,7 +268,10 @@ text-decoration:underline;text-underline-offset:3px}
     var b = document.createElement('b');
     b.textContent = 'Signed in as ' + out.name + '. ';
     var a = document.createElement('a');
-    a.href = APP; a.textContent = 'Open the app →';
+    /* A brand new account goes to setup; somebody signing back in goes to
+       their plan. The server says which, because only it knows. */
+    a.href = out.fresh ? '/welcome' : APP;
+    a.textContent = out.fresh ? 'Set up your plan →' : 'Go to your plan →';
     msg.appendChild(b); msg.appendChild(a);
   }
 

@@ -29,7 +29,12 @@ function env(name, fallback) {
   return fallback;
 }
 
-const URL_BASE = (env('LIST_URL', 'https://api.musetteapp.com')).replace(/\/+$/, '');
+/* Defaults to the workers.dev hostname, not api.musetteapp.com, and that is
+ * deliberate. A corporate web proxy (Netskope, on the Steelcase network) blocks
+ * newly-registered domains as uncategorised, so every call from a work machine
+ * to the custom domain comes back as an HTML interstitial rather than JSON. The
+ * Worker is identical on both hostnames. Set LIST_URL to override. */
+const URL_BASE = (env('LIST_URL', 'https://shopping-list-sync.markpjacobs1.workers.dev')).replace(/\/+$/, '');
 const ADMIN = env('ADMIN_KEY', '');
 if (!ADMIN) {
   console.error('No ADMIN_KEY. Put it in worker/.dev.vars or pass ADMIN_KEY=... in the environment.');

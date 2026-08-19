@@ -46,7 +46,7 @@ const SYNC_ORIGINS = [
  * and only when that page exists. */
 const SITES = [
   { dir: 'web/public', name: 'app',  connect: SYNC_ORIGINS },
-  { dir: 'web/site',   name: 'site', connect: [], perPath: { '/signin': SYNC_ORIGINS, '/account': SYNC_ORIGINS } },
+  { dir: 'web/site',   name: 'site', connect: [], perPath: { '/signin': SYNC_ORIGINS, '/account': SYNC_ORIGINS, '/welcome': SYNC_ORIGINS } },
 ];
 
 const sha256 = (s) => `'sha256-${createHash('sha256').update(s, 'utf8').digest('base64')}'`;

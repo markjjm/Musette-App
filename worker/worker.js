@@ -1490,7 +1490,11 @@ export class ListDO extends DurableObject {
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:cred:' + credId, uid);
     await this.ctx.storage.put(ch.code, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
-    return { ok: true, ...(await this.issue(uid)), name: acct.name };
+    /* `fresh` sends somebody to setup instead of to a plan page with nothing on
+       it. The SERVER decides, because a browser cannot know whether this account
+       has been here before. Only the four methods that CREATE an account set it;
+       passwordVerify and loginFinish are sign-ins and deliberately do not. */
+    return { ok: true, ...(await this.issue(uid)), name: acct.name, fresh: true };
   }
 
 
@@ -1609,7 +1613,7 @@ export class ListDO extends DurableObject {
     });
     await this.ctx.storage.put('auth:user:' + mail, uid);
     await this.ctx.storage.delete(key);
-    return { ok: true, ...(await this.issue(uid)), name: mail };
+    return { ok: true, ...(await this.issue(uid)), name: mail, fresh: true };
   }
 
   /* Expired pending records are swept whenever a new signup starts, so a burst
@@ -1658,7 +1662,7 @@ export class ListDO extends DurableObject {
     };
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:user:' + mail, uid);
-    return { ok: true, ...(await this.issue(uid)), name: mail };
+    return { ok: true, ...(await this.issue(uid)), name: mail, fresh: true };
   }
 
   async passwordRegister(code, username, verifier, salt) {
@@ -1700,7 +1704,7 @@ export class ListDO extends DurableObject {
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:user:' + uname, uid);
     await this.ctx.storage.put(key, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
-    return { ok: true, ...(await this.issue(uid)), name: uname };
+    return { ok: true, ...(await this.issue(uid)), name: uname, fresh: true };
   }
 
   /* The salt has to be handed out BEFORE the password is checked, which is the
@@ -2250,6 +2254,259 @@ function nearestDay(templates, kind, targetKc) {
   const pool = sameKind.length ? sameKind : templates;
   return pool.reduce((best, t) =>
     Math.abs(t.kc - targetKc) < Math.abs(best.kc - targetKc) ? t : best, pool[0]);
+}
+
+
+/* ---- Making a reused day fit a smaller person -------------------------
+   Reusing whole days keeps the arithmetic exact, and it has one failure mode
+   that showed up the moment a walker was tested: the seed block is a cyclist's
+   month, its lightest day is 2,154 kcal, and a 52-year-old woman walking three
+   times a week needs about 1,675. Nearest-match handed her 370 kcal a day too
+   much - for somebody who said they wanted to lose weight, the exact opposite
+   of what they asked for. That is not a rounding error, it is a wrong plan.
+
+   So a day that is too far off is SCALED: the same meals, the same foods, the
+   same shape of the day, in smaller portions. Every ingredient quantity in the
+   text is rescaled too, so "3/4 cup Rolled oats" becomes "1/2 cup" rather than
+   the label saying one thing while the number says another - which is the
+   dishonesty this whole design exists to avoid.
+
+   The day totals are recomputed from the scaled meals rather than multiplied
+   independently, so meals still sum EXACTLY to their day. */
+function scaleIngredientText(text, factor) {
+  const p = parseIngredient(text);
+  if (!p || !p.qty) return text;
+  const q = p.qty * factor;
+  /* Below an eighth of a unit the number stops meaning anything on a plate, so
+     it is floored there rather than printed as "0.03 cup". */
+  const shown = PRETTY(Math.max(0.125, q));
+  return `${shown}${p.unit ? ' ' + p.unit : ''} ${p.name}`;
+}
+
+function scaleDay(day, factor) {
+  if (!(factor > 0) || Math.abs(factor - 1) < 0.02) return day;
+  const meals = day.meals.map((m) => {
+    const kc = Math.max(1, Math.round(m.kc * factor));
+    const cb = Math.max(0, Math.round(m.cb * factor));
+    const i = (m.i || []).map((ing) => ({
+      n: scaleIngredientText(ing.n, factor),
+      c: Math.max(1, Math.round((ing.c || 0) * factor)),
+    }));
+    return { ...m, kc, cb, ...(m.i ? { i } : {}) };
+  });
+  /* Totals follow the meals, never the other way round. */
+  const kc = meals.reduce((a, m) => a + m.kc, 0);
+  const cb = meals.reduce((a, m) => a + m.cb, 0);
+  return {
+    ...day,
+    meals,
+    kc,
+    cb,
+    pr: Math.round((day.pr || 0) * factor),
+    ft: Math.round((day.ft || 0) * factor),
+    scaled: Math.round(factor * 100) / 100,
+  };
+}
+
+/* ---- A first month, for somebody with no history ----------------------
+   generateBlock() carries a block forward. A new account has nothing to carry,
+   so this builds the first one from what the intake asked: a sport, a goal, the
+   days they can train, and their body.
+
+   The same rule still holds and is the reason this is possible at all: DAYS ARE
+   REUSED, never written. The seed block supplies real days whose meals already
+   sum exactly; this decides which one each day of the month should be, by
+   working out what that person needs to eat and finding the nearest match. A
+   walker doing 40 minutes and a cyclist doing four hours land on different days
+   of the same honest set.
+
+   Where that stops being honest is worth stating: the seed block is one
+   household's food. It is a cyclist's month, so the DISHES suit somebody who
+   cooks that way, and the energy targets are what get personalised rather than
+   the cuisine. Anyone whose diet is genuinely different needs their own seed,
+   and that is a content job rather than a code one. */
+
+/* Mifflin-St Jeor: the standard resting figure, and the one a dietitian would
+   recognise. Not a measurement - nobody's metabolism reads off a formula - but
+   it is the honest starting point and it is arithmetic rather than a guess. */
+function restingEnergy(p) {
+  const kg = (Number(p.weight_lb) || 148) * 0.45359237;
+  const cm = (Number(p.height_in) || 70) * 2.54;
+  const age = Number(p.age) || 40;
+  /* The female offset is -161 and the male +5. Where sex is not given, the
+     midpoint is used and the plan is a little less precise rather than the app
+     inventing a body it was not told about. */
+  const off = p.sex === 'female' ? -161 : p.sex === 'male' ? 5 : -78;
+  return Math.round(10 * kg + 6.25 * cm - 5 * age + off);
+}
+
+/* What an hour of each sport costs, and how a week of it is shaped.
+   Figures are the standard MET ranges for a moderate effort, multiplied out for
+   a 70 kg person and scaled by real weight at the call site. Walking is in here
+   on purpose: most people who want to eat better are not training for anything,
+   and a plan that only speaks to cyclists is no use to them. */
+const SPORTS = {
+  cycling:  { label: 'Cycling',        kcalPerHour: 600, long: 'Long day',   hard: 'Key day' },
+  running:  { label: 'Running',        kcalPerHour: 700, long: 'Long day',   hard: 'Key day' },
+  swimming: { label: 'Swimming',       kcalPerHour: 550, long: 'Long day',   hard: 'Key day' },
+  gym:      { label: 'Gym & strength', kcalPerHour: 400, long: 'Key day',    hard: 'Key day' },
+  walking:  { label: 'Walking',        kcalPerHour: 280, long: 'Moderate day', hard: 'Moderate day' },
+  mixed:    { label: 'A bit of everything', kcalPerHour: 450, long: 'Moderate day', hard: 'Key day' },
+};
+
+/* How much, per week, at each level. Hours rather than intensity, because hours
+   are the thing somebody can actually answer honestly about themselves. */
+const LEVELS = {
+  starting: { hoursWk: 2.5, longest: 0.75, label: 'Just starting' },
+  regular:  { hoursWk: 5,   longest: 1.5,  label: 'A few times a week' },
+  serious:  { hoursWk: 9,   longest: 3,    label: 'Most days' },
+  athlete:  { hoursWk: 14,  longest: 4.5,  label: 'Training for something' },
+};
+
+/* Goal moves the daily target, and the size of the move is capped hard.
+   A deficit big enough to work quickly is a deficit big enough to hurt an
+   active person, so this tops out at roughly a pound a week and says so. */
+const GOAL_SHIFT = { lose: -500, hold: 0, gain: 300 };
+
+/* Spread the week's hours across the days somebody said they can train,
+   putting the longest session on their long day. */
+function seedTraining(ym, opts) {
+  const sport = SPORTS[opts.sport] || SPORTS.mixed;
+  const level = LEVELS[opts.level] || LEVELS.regular;
+  const canTrain = (opts.days && opts.days.length) ? opts.days : ['Tue', 'Thu', 'Sat', 'Sun'];
+  const longDay = opts.longDay && canTrain.includes(opts.longDay) ? opts.longDay : canTrain[canTrain.length - 1];
+  const weekly = Number(opts.hoursWk) > 0 ? Number(opts.hoursWk) : level.hoursWk;
+  const longest = Math.min(level.longest, weekly * 0.5);
+  const rest = Math.max(0, weekly - longest);
+  const others = canTrain.filter((d) => d !== longDay);
+  const each = others.length ? rest / others.length : 0;
+
+  const [y, m] = ym.split('-').map(Number);
+  const total = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const out = [];
+  for (let d = 1; d <= total; d++) {
+    const wd = WD[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+    const weekIdx = Math.floor((d - 1) / 7);
+    /* Week four is easier for everybody. A first month that ramps all the way
+       through is how people get hurt or give up. */
+    const factor = weekIdx === 3 ? 0.7 : 1 + 0.05 * weekIdx;
+    let h = 0, kind = 'Rest day';
+    if (wd === longDay) { h = longest * factor; kind = sport.long; }
+    else if (canTrain.includes(wd)) { h = each * factor; kind = sport.hard; }
+    out.push({ d, wd, kind, h: Math.round(h * 4) / 4, wk: `week-${weekIdx + 1}` });
+  }
+  return out;
+}
+
+function seedBlock(seedPlan, ym, opts) {
+  const o = opts || {};
+  if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return { ok: false, why: 'month must look like 2026-09' };
+  if (!seedPlan || !Array.isArray(seedPlan.days) || !seedPlan.days.length) {
+    return { ok: false, why: 'no seed block available to build from' };
+  }
+  const sport = SPORTS[o.sport] || SPORTS.mixed;
+  const profile = o.profile || {};
+  const rest = restingEnergy(profile);
+  /* Everything that is not training: sleeping, working, walking to the car.
+     1.35 is the usual sedentary-to-light figure and the training is added on
+     top rather than being buried inside a single "activity level" multiplier,
+     which is what makes a rest day and a long day differ honestly. */
+  const baseline = Math.round(rest * 1.35) + (GOAL_SHIFT[profile.goal] || 0);
+  const kgScale = ((Number(profile.weight_lb) || 148) * 0.45359237) / 70;
+  const perHour = Math.round(sport.kcalPerHour * kgScale);
+
+  const tr = {};
+  for (const t of seedPlan.training || []) tr[t.d] = t;
+  const templates = seedPlan.days
+    .filter((d) => Array.isArray(d.meals) && d.meals.length)
+    .map((d) => ({ ...d, kind: (tr[d.d] || {}).kind || 'Moderate day' }));
+
+  /* The LEVEL wins, not profile.hours_wk.
+     cleanProfile() defaults hours_wk to 9 - a sensible figure for the rider this
+     app was built for and a nonsense one for somebody who just told us they are
+     starting out. Reading it here gave a beginner walker 40 hours a month and a
+     3,478 kcal day. The intake answer is the more recent and more deliberate
+     statement, so it is the one that counts, and it is written back into the
+     profile below so the two never disagree again. */
+  const level = LEVELS[o.level] || LEVELS.regular;
+  const training = seedTraining(ym, {
+    sport: o.sport, level: o.level, days: o.days, longDay: o.longDay, hoursWk: level.hoursWk,
+  });
+
+  const recent = [];
+  const days = training.map((t) => {
+    const target = baseline + Math.round(perHour * t.h);
+    const pool = templates
+      .filter((x) => !recent.slice(-4).includes(x.d))
+      .sort((a, b) => Math.abs(a.kc - target) - Math.abs(b.kc - target));
+    const pick = pool[0] || templates[0];
+    recent.push(pick.d);
+    const base = {
+      d: t.d, wd: t.wd, kind: t.kind, dish: pick.dish, cook: pick.cook,
+      meals: JSON.parse(JSON.stringify(pick.meals)),
+      kc: pick.kc, cb: pick.cb, pr: pick.pr, ft: pick.ft,
+      from: pick.d, wanted: target,
+    };
+    /* Close enough is left alone - rewriting portions to chase 40 kcal would
+       make the plan look fussier than it is. Further off than 8% and the
+       portions are scaled, because at that distance the plan is simply wrong
+       for this person. Clamped so nobody is ever handed a half or a double of
+       somebody else's day. */
+    const ratio = target / (pick.kc || target);
+    if (Math.abs(ratio - 1) > 0.08) return scaleDay(base, Math.max(0.6, Math.min(1.6, ratio)));
+    return base;
+  });
+
+  const [y, m] = ym.split('-').map(Number);
+  const total = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const weeks = [];
+  for (let i = 0; i * 7 < total; i++) {
+    const from = i * 7 + 1, to = Math.min(total, from + 6);
+    weeks.push({
+      id: `week-${i + 1}`, label: `Week ${i + 1}`,
+      dates: `${MONTHS[m - 1]} ${from}–${to}`,
+      days: Array.from({ length: to - from + 1 }, (_, k) => from + k),
+      cooks: days.slice(from - 1, to).filter((d) => d.cook).length,
+      lists: { A: [], M: [] },
+    });
+  }
+
+  const plan = {
+    block: `${MONTHS[m - 1]} ${y}`,
+    weeks,
+    fuel: seedPlan.fuel || [],
+    training: training.map((t) => ({
+      d: t.d, wd: t.wd, kind: t.kind, h: t.h,
+      kc: baseline + Math.round(perHour * t.h),
+      cb: Math.round((baseline + perHour * t.h) * 0.45 / 4),
+      bk: t.h >= 1.5 ? { kc: Math.round(perHour * t.h * 0.3), cb: Math.round(perHour * t.h * 0.3 / 4) } : null,
+      wk: t.wk,
+    })),
+    days,
+  };
+  const shop = buildShoppingLists(plan, seedPlan, o.foods || null);
+
+  /* How well the reused days actually matched what was wanted. Reported rather
+     than hidden, because a big average gap means the seed block does not suit
+     this person and somebody should know that. */
+  const gaps = days.map((d) => Math.abs(d.kc - d.wanted));
+  return {
+    ok: true,
+    plan,
+    basis: {
+      sport: sport.label,
+      level: (LEVELS[o.level] || LEVELS.regular).label,
+      resting_kcal: rest,
+      baseline_kcal: baseline,
+      kcal_per_hour: perHour,
+      goal: profile.goal || 'hold',
+      hours_wk: level.hoursWk,
+      total_hours: Math.round(training.reduce((a, t) => a + t.h, 0) * 10) / 10,
+      mean_target_gap_kcal: Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length),
+      worst_target_gap_kcal: Math.max(...gaps),
+      shopping_lines: shop.lines,
+    },
+  };
 }
 
 function generateBlock(prev, ym, opts) {
@@ -3082,6 +3339,51 @@ export default {
        session, and it runs the same validator. Replacing a month is still the
        one destructive write in the app, so it takes the same undo snapshot
        every other write does - /undo puts the old block back. */
+    /* The intake: answers in, a first month out. Saves the profile as it goes,
+       because the answers ARE the profile - asking twice would be rude and
+       storing them separately would let the two disagree.
+
+       Returns a draft. A new account has no plan to lose, so publishing here
+       would be safe enough, but showing somebody their month before it becomes
+       theirs is the difference between a tool and a slot machine. */
+    if (path === '/plan/seed' && request.method === 'POST') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const r = await readJson(request);
+      if (r.tooLarge) return json({ ok: false, why: 'payload too large' }, 413, origin);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const b = r.body || {};
+
+      const stub = listStub(env);
+      const state = await stub.read();
+      /* The seed is whatever block this deployment already has. Without one
+         there is nothing honest to build from - inventing 31 days of meals is
+         exactly what this design refuses to do. */
+      if (!state.plan || !Array.isArray(state.plan.days) || !state.plan.days.length) {
+        return json({ ok: false, why: 'this server has no plan to build a first month from yet' }, 400, origin);
+      }
+
+      const merged = await stub.merge({ profile: { ...(b.profile || {}), t: Date.now() } });
+
+      let ym = String(b.month || '');
+      if (!/^\d{4}-\d{2}$/.test(ym)) {
+        const now = new Date();
+        ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+      }
+      const out = seedBlock(state.plan, ym, {
+        sport: b.sport, level: b.level, days: b.days, longDay: b.long_day, profile: merged.profile,
+      });
+      if (!out.ok) return json(out, 400, origin);
+      /* Store the hours the chosen level implies, so the profile agrees with the
+         plan that was just built from it rather than keeping a default nobody
+         chose. */
+      const withHours = await stub.merge({
+        profile: { ...merged.profile, hours_wk: out.basis.hours_wk, t: Date.now() },
+      });
+      const invalid = validatePlan(out.plan);
+      if (invalid) return json({ ok: false, why: `generated plan is not valid: ${invalid}` }, 500, origin);
+      return json({ ...out, profile: withHours.profile }, 200, origin);
+    }
+
     if (path === '/plan/publish' && request.method === 'POST') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);
