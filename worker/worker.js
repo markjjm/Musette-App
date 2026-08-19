@@ -820,7 +820,10 @@ async function sendCode(env, to, code) {
    cron cannot drift apart. Returns a plain result rather than a Response,
    because one caller has a request to answer and the other has nobody to tell. */
 async function regenerateSummary(env, ctx) {
-  const stub = listStub(env);
+  /* The household, explicitly. This runs from a weekly cron with no request and
+     no session, so there is nobody to infer a data object from - and a blanket
+     rename briefly turned this into me(), which does not exist out here. */
+  const stub = dataStub(env, HOUSEHOLD);
   const budget = await stub.spend();
   if (!budget.ok) return { ok: false, why: `daily limit reached (${COACH_MAX_DAY})` };
 
@@ -834,7 +837,7 @@ async function regenerateSummary(env, ctx) {
      call rather than one per question. */
   let rides = await stub.ridesBetween(fromISO, today);
   if (rides.length < 5) {
-    const up = await fetchRides(ownerLink(env), fromISO, today, ctx);
+    const up = await fetchRides(ownerLink(env, HOUSEHOLD), fromISO, today, ctx);
     if (up.ok) rides = up.rides;
   }
   if (!rides.length) return { ok: false, why: 'no rides in the last three months to summarise' };
@@ -1250,13 +1253,23 @@ export class ListDO extends DurableObject {
   async load() {
     let s = await this.ctx.storage.get('state');
     if (!s) {
-      /* One-time adoption of the old KV blob so nothing is lost in the move. */
+      /* Adopting the old KV blob was written when there was exactly one object,
+         and it was correct then. Once every account has its OWN object it turns
+         into a leak: each new one adopted the same blob and a stranger's first
+         sight of the app was the owner's meal plan. Caught by creating two
+         accounts and noticing both reported "August 2026" with zero ticks.
+
+         So adoption is now the household's alone. Everyone else starts empty,
+         which is what a new account should be, and /plan/seed reads the
+         household block as a TEMPLATE without ever handing over its state. */
       let seeded = null;
-      try {
-        const raw = await this.env.LIST.get(KEY);
-        if (raw) seeded = JSON.parse(raw);
-      } catch {
-        seeded = null;
+      if (this.ctx.id.equals(this.env.LIST_DO.idFromName(HOUSEHOLD))) {
+        try {
+          const raw = await this.env.LIST.get(KEY);
+          if (raw) seeded = JSON.parse(raw);
+        } catch {
+          seeded = null;
+        }
       }
       s = seeded && typeof seeded === 'object' ? seeded : empty();
       await this.ctx.storage.put('state', s);
@@ -1486,6 +1499,8 @@ export class ListDO extends DurableObject {
       name: clamp(name) || 'Rider',
       created: new Date().toISOString(),
       cred: { id: credId, spki, counter: 0 },
+      /* Its own object, same as every other way in. */
+      dataId: uid,
     };
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:cred:' + credId, uid);
@@ -1631,7 +1646,7 @@ export class ListDO extends DurableObject {
       if (inv) await this.ctx.storage.put(p.invite, { ...inv, used: true, usedBy: uid, usedAt: Date.now() });
     }
     await this.ctx.storage.put('auth:acct:' + uid, {
-      uid, name: mail, email: mail, email_verified: true,
+      uid, name: mail, email: mail, email_verified: true, dataId: uid,
       created: new Date().toISOString(),
       pw: { salt: p.pw.salt, pepper, hash: await sha256B64(pepper + ':' + p.pw.verifier), iters: PBKDF2_ITERS },
     });
@@ -1683,6 +1698,9 @@ export class ListDO extends DurableObject {
       email_verified: false,
       created: new Date().toISOString(),
       pw: { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS },
+      /* Its own object. Without this a new account lands in the household
+         and reads somebody else's body. */
+      dataId: uid,
     };
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:user:' + mail, uid);
@@ -1724,6 +1742,9 @@ export class ListDO extends DurableObject {
            pepper - what this object hashes the derived key with before storing
                     it, so the stored value is useless if lifted. */
       pw: { salt: String(salt || ''), pepper, hash: await sha256B64(pepper + ':' + verifier), iters: PBKDF2_ITERS },
+      /* Its own object. Without this a new account lands in the household
+         and reads somebody else's body. */
+      dataId: uid,
     };
     await this.ctx.storage.put('auth:acct:' + uid, acct);
     await this.ctx.storage.put('auth:user:' + uname, uid);
@@ -2022,7 +2043,9 @@ export class ListDO extends DurableObject {
     if (!s) return null;
     if (s.exp < Date.now()) { await this.ctx.storage.delete(key); return null; }
     const acct = await this.ctx.storage.get('auth:acct:' + s.uid);
-    return acct ? { uid: s.uid, name: acct.name } : null;
+    /* dataId is absent on accounts that predate the split, and those are the
+       owner's - so they keep opening the household exactly as before. */
+    return acct ? { uid: s.uid, name: acct.name, dataId: acct.dataId || HOUSEHOLD } : null;
   }
 
   async logout(token) {
@@ -2798,7 +2821,28 @@ async function readJson(request) {
 }
 
 /* One household, one list, so one object. */
-const listStub = (env) => env.LIST_DO.get(env.LIST_DO.idFromName('household'));
+/* ---- Whose object is whose -------------------------------------------
+   One object held everything, so every account read and wrote the same plan,
+   the same weight, the same food log. Two accounts were created and one read
+   the other's body straight back. This splits it.
+
+   AUTH STAYS PUT. Session lookup has to happen before anyone knows whose data
+   to open, so it cannot live in a per-user object without a chicken-and-egg
+   problem - and leaving it where it is means the accounts, sessions and invites
+   already stored need no migration whatsoever.
+
+   DATA MOVES. Each account carries a dataId: new ones get their own, and an
+   account without one falls back to the household, which is exactly the two
+   that already exist and the data they already see. Nothing moves on disk and
+   nobody loses anything.
+
+   The four-digit access code still opens the household directly. That is what
+   the phones in the kitchen use, they know nothing about accounts, and they
+   keep working unchanged. */
+const HOUSEHOLD = 'household';
+const authStub = (env) => env.LIST_DO.get(env.LIST_DO.idFromName(HOUSEHOLD));
+const dataStub = (env, id) => env.LIST_DO.get(env.LIST_DO.idFromName(id || HOUSEHOLD));
+const listStub = (env) => dataStub(env, HOUSEHOLD);
 
 /* ---- Rides, via intervals.icu ------------------------------------------
    The plan says how hard a day was *meant* to be. This says how hard it
@@ -3183,7 +3227,7 @@ function ridesTTL(newest) {
    arbitrary probe of someone else's athlete number. */
 const ATHLETE_ID = /^(?:0|i?\d{1,12})$/;
 
-function ownerLink(env) {
+function ownerLink(env, dataId) {
   if (!env.INTERVALS_KEY) return null;
   const athlete = String(env.INTERVALS_ATHLETE || '0');
   if (!ATHLETE_ID.test(athlete)) return null;
@@ -3193,8 +3237,11 @@ function ownerLink(env) {
     /* Attached here so fetchRides still takes one object that says both whose
        rides these are and where they belong. Absent when there is no object to
        write to, so a caller without one fetches and simply does not persist. */
-    persist: env.LIST_DO
-      ? (rides) => env.LIST_DO.get(env.LIST_DO.idFromName('household')).saveRides(rides)
+    /* Whoever asked for these rides is who they are stored for. It used to be
+       a fixed 'household', so one person's history accumulated in everyone's
+       object. */
+    persist: env.LIST_DO && dataId
+      ? (rides) => env.LIST_DO.get(env.LIST_DO.idFromName(dataId)).saveRides(rides)
       : null,
   };
 }
@@ -3334,8 +3381,13 @@ export default {
     let session = null;
     {
       const bearer = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-      if (bearer) session = await listStub(env).session(bearer);
+      if (bearer) session = await authStub(env).session(bearer);
     }
+    /* Which object this request may touch. A session opens that account's own;
+       the four-digit access code opens the household, which is what the phones
+       use and must keep working. `me` exists so no route below has to remember
+       to pass it. */
+    const me = (env2) => dataStub(env2 || env, session ? session.dataId : HOUSEHOLD);
 
     if (path === '/health') return json({ ok: true }, 200, origin);
 
@@ -3362,7 +3414,7 @@ export default {
       const r = await readJson(request);
       if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
       const b = r.body || {};
-      const state = await listStub(env).read();
+      const state = await me().read();
       if (!state.plan) return json({ ok: false, why: 'there is no current block to carry forward' }, 400, origin);
 
       /* Default to the month after the one currently loaded, which is what
@@ -3408,12 +3460,14 @@ export default {
       if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
       const b = r.body || {};
 
-      const stub = listStub(env);
-      const state = await stub.read();
-      /* The seed is whatever block this deployment already has. Without one
-         there is nothing honest to build from - inventing 31 days of meals is
-         exactly what this design refuses to do. */
-      if (!state.plan || !Array.isArray(state.plan.days) || !state.plan.days.length) {
+      const stub = me();
+      /* The seed comes from the HOUSEHOLD, the destination is the caller's own
+         object. A new account's object is empty by design - that is the whole
+         point of the split - so reading the seed from it would mean nobody new
+         could ever be set up. The household block is the template every first
+         month is cut from; it is never written to here. */
+      const seedState = await dataStub(env, HOUSEHOLD).read();
+      if (!seedState.plan || !Array.isArray(seedState.plan.days) || !seedState.plan.days.length) {
         return json({ ok: false, why: 'this server has no plan to build a first month from yet' }, 400, origin);
       }
 
@@ -3424,7 +3478,7 @@ export default {
         const now = new Date();
         ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
       }
-      const out = seedBlock(state.plan, ym, {
+      const out = seedBlock(seedState.plan, ym, {
         sport: b.sport, level: b.level, days: b.days, longDay: b.long_day, profile: merged.profile,
       });
       if (!out.ok) return json(out, 400, origin);
@@ -3448,12 +3502,12 @@ export default {
       if (!blockYM(plan)) return json({ ok: false, why: 'that plan does not name a month' }, 400, origin);
       const invalid = validatePlan(plan);
       if (invalid) return json({ ok: false, why: `that plan is not valid: ${invalid}` }, 400, origin);
-      const state = await listStub(env).setPlan(plan, (r.body || {}).resetTicks !== false);
+      const state = await me().setPlan(plan, (r.body || {}).resetTicks !== false);
       return json({ ok: true, block: plan.block, rev: state.rev, by: session.name }, 200, origin);
     }
 
     if (path === '/summary') {
-      const stub = listStub(env);
+      const stub = me();
       if (request.method === 'GET') {
         const span = await stub.rideSpan();
         const ym = (url.searchParams.get('month') || '').slice(0, 7);
@@ -3482,7 +3536,7 @@ export default {
        nothing from being told which one they are missing. */
     if (path.startsWith('/auth/')) {
       const AUTH_ORIGINS = ['https://musetteapp.com', 'https://www.musetteapp.com', 'https://app.musetteapp.com'];
-      const stub = listStub(env);
+      const stub = authStub(env);
       const bearer = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
 
       if (path === '/auth/me' && request.method === 'GET') {
@@ -3628,7 +3682,7 @@ export default {
            Legitimate use never touches this limiter, because it only runs on a
            failure. Without it, 10,000 combinations fall in minutes. */
         const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-        const gate = await listStub(env).noteFailure(ip);
+        const gate = await authStub(env).noteFailure(ip);
         if (gate.blocked) return json({ error: 'too many attempts, wait a minute' }, 429, origin);
         return json({ error: 'bad or missing access code' }, 401, origin);
       }
@@ -3638,7 +3692,7 @@ export default {
        household code, because "me" is meaningless without one. */
     if (path === '/me' && request.method === 'GET') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
-      const st = await listStub(env).read();
+      const st = await me().read();
       return json({ ok: true, ...session, profile: st.profile || null, block: (st.plan || {}).block || null }, 200, origin);
     }
     if (path === '/me/profile' && request.method === 'PUT') {
@@ -3649,12 +3703,12 @@ export default {
       /* Goes through the same merge every phone uses, so cleanProfile() clamps
          it and the last-write-wins timestamp still decides. The web app is not
          a privileged writer; it is another client. */
-      const merged = await listStub(env).merge({ profile: { ...(r.body || {}), t: Date.now() } });
+      const merged = await me().merge({ profile: { ...(r.body || {}), t: Date.now() } });
       return json({ ok: true, profile: merged.profile }, 200, origin);
     }
 
     if (path === '/rev' && request.method === 'GET') {
-      return json(await listStub(env).rev(), 200, origin);
+      return json(await me().rev(), 200, origin);
     }
 
     /* What was actually ridden, to sit beside what was planned. Behind the
@@ -3677,11 +3731,11 @@ export default {
       if (!isDate(oldest) || !isDate(newest))
         return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
 
-      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);
+      return json(await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);
     }
 
     if (path === '/state' && request.method === 'GET') {
-      return json(await listStub(env).read(), 200, origin);
+      return json(await me().read(), 200, origin);
     }
 
     /* Today's plan, today's actual riding, and one piece of judgement about
@@ -3697,7 +3751,7 @@ export default {
       if (q.length < 3) return json({ ok: false, why: 'ask a question' }, 400, origin);
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
 
-      const budget = await listStub(env).spend();
+      const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       /* One window, FORM_DAYS long, so fitness here matches fitness everywhere
@@ -3706,8 +3760,8 @@ export default {
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - FORM_DAYS);
       const formStart = from.toISOString().slice(0, 10);
-      const hist = await fetchRides(ownerLink(env), formStart, date, ctx);
-      const state = await listStub(env).read();
+      const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), formStart, date, ctx);
+      const state = await me().read();
       const rides = hist.ok ? hist.rides : [];
       const recentFrom = new Date(date + 'T12:00:00Z');
       recentFrom.setUTCDate(recentFrom.getUTCDate() - 42);
@@ -3737,7 +3791,7 @@ export default {
     if (path === '/food' && request.method === 'GET') {
       const q = url.searchParams.get('q') || '';
       if (q.length > 60) return json({ ok: false, why: 'too long' }, 400, origin);
-      const out = await lookupFood(env, listStub(env), q);
+      const out = await lookupFood(env, me(), q);
       return json(out, 200, origin);
     }
 
@@ -3755,7 +3809,7 @@ export default {
          every Coach tap would burn one of the shared daily calls to be told there
          was no plan. The check is a string compare against the stored plan — no
          upstream call, no model. */
-      const state = await listStub(env).read();
+      const state = await me().read();
       const coachYM = blockYM(state.plan);
       if (coachYM && date.slice(0, 7) !== coachYM) {
         return json(
@@ -3764,10 +3818,10 @@ export default {
         );
       }
 
-      const budget = await listStub(env).spend();
+      const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
-      const rideRes = await fetchRides(ownerLink(env), date, date, ctx);
+      const rideRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       const facts = coachFacts(state, rideRes.ok ? rideRes.rides : [], date, nowMins);
       /* Enough load behind it for fitness to have settled, so advice about today
          knows whether he is buried or fresh. Under-fuelling a deeply negative form
@@ -3776,7 +3830,7 @@ export default {
       if (facts) {
         const back = new Date(date + 'T12:00:00Z'); back.setUTCDate(back.getUTCDate() - FORM_DAYS);
         const backISO = back.toISOString().slice(0, 10);
-        const hist = await fetchRides(ownerLink(env), backISO, date, ctx);
+        const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), backISO, date, ctx);
         if (hist.ok) facts.fitness_and_form = trainingForm(hist.rides, date, backISO);
       }
       if (!facts) return json({ ok: false, why: 'no plan for that day' }, 404, origin);
@@ -3794,7 +3848,7 @@ export default {
       const from = new Date(to + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - weeks * 7);
 
-      const budget = await listStub(env).spend();
+      const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       /* Fetch the fixed form window and slice the requested weeks out of it.
@@ -3804,7 +3858,7 @@ export default {
       const formFrom = new Date(to + 'T12:00:00Z');
       formFrom.setUTCDate(formFrom.getUTCDate() - FORM_DAYS);
       const formStart = formFrom.toISOString().slice(0, 10);
-      const rideRes = await fetchRides(ownerLink(env), formStart, to, ctx);
+      const rideRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), formStart, to, ctx);
       if (!rideRes.ok) return json({ ok: false, why: rideRes.why }, 200, origin);
 
       const tableFrom = from.toISOString().slice(0, 10);
@@ -3812,7 +3866,7 @@ export default {
       /* Still judged on the requested weeks, as before — a wider fetch should not
          quietly turn "nothing ridden lately" into an analysis of last spring. */
       if (!tableRides.length) return json({ ok: false, why: 'no rides in that window' }, 200, origin);
-      const state = await listStub(env).read();
+      const state = await me().read();
       const stats = trainingStats(tableRides, state.plan, to, rideRes.rides, formStart);
       /* The trend read is the one that plans a month, so it gets the deeper
          rider block: where the body has been going, not just where it is. */
@@ -3830,19 +3884,19 @@ export default {
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
       const want = url.searchParams.get('why') === '1';
 
-      const dayRes = await fetchRides(ownerLink(env), date, date, ctx);
+      const dayRes = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
       if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
 
-      const budget = await listStub(env).spend();
+      const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, rides: dayRes.rides, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
 
       /* Six weeks of his own riding is the comparison set. */
       const from = new Date(date + 'T12:00:00Z');
       from.setUTCDate(from.getUTCDate() - 42);
-      const hist = await fetchRides(ownerLink(env), from.toISOString().slice(0, 10), date, ctx);
-      const state = await listStub(env).read();
+      const hist = await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), from.toISOString().slice(0, 10), date, ctx);
+      const state = await me().read();
       /* Same month gate as coachFacts: a day-of-month lookup would otherwise
          read September 3's ride against August 3's plan. No plan for the day is
          fine here — the analysis just proceeds without one. */
@@ -3876,7 +3930,7 @@ export default {
       const r = await readJson(request);
       if (r.tooLarge) return json({ error: 'payload too large' }, 413, origin);
       if (r.bad) return json({ error: 'bad json' }, 400, origin);
-      const merged = await listStub(env).merge(r.body);
+      const merged = await me().merge(r.body);
       /* Nothing was stored. 413 rather than 200 so the client keeps its dirty
          flag instead of adopting a state the merge declined to write. */
       if (merged.refused) return json({ error: merged.refused }, 413, origin);
@@ -3891,7 +3945,7 @@ export default {
       const adminOk = env.ADMIN_KEY
         && await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY);
       if (!session && !adminOk) return json({ ok: false, why: 'sign in first' }, 401, origin);
-      return json(await listStub(env).undo(), 200, origin);
+      return json(await me().undo(), 200, origin);
     }
 
     if (path === '/plan' && request.method === 'PUT') {
@@ -3919,7 +3973,7 @@ export default {
       /* Everything else a plan must be, including that its days add up. */
       const invalid = validatePlan(r.body.plan);
       if (invalid) return json({ error: `plan rejected: ${invalid}` }, 400, origin);
-      return json(await listStub(env).setPlan(r.body.plan, r.body.resetTicks), 200, origin);
+      return json(await me().setPlan(r.body.plan, r.body.resetTicks), 200, origin);
     }
 
     return json({ error: 'not found' }, 404, origin);

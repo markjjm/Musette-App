@@ -123,10 +123,10 @@ const CASES = [
   {
     name: 'a cache hit is served by spreading the stored headers',
     mutate: (d) => edit(d, 'worker/worker.js',
-      '      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);',
+      '      return json(await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);',
       '      const hit = await caches.default.match(new Request("https://rides.local/x"));\n' +
       '      if (hit) return new Response(hit.body, { headers: { ...Object.fromEntries(hit.headers) } });\n' +
-      '      return json(await fetchRides(ownerLink(env), oldest, newest, ctx), 200, origin);'),
+      '      return json(await fetchRides(ownerLink(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);'),
     expect: /spreading a cached copy's headers/,
   },
   {
@@ -142,7 +142,7 @@ const CASES = [
   {
     name: 'a paid route loses its budget gate',
     mutate: (d) => edit(d, 'worker/worker.js',
-      '      const budget = await listStub(env).spend();\n      if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);\n\n      /* Fetch the fixed form window',
+      '      const budget = await me().spend();\n      if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);\n\n      /* Fetch the fixed form window',
       '      const budget = { ok: true, n: 0 };\n\n      /* Fetch the fixed form window'),
     expect: /route \/analyze calls askModel\(\) without/,
   },
