@@ -2,10 +2,10 @@
 # Re-run `npm run build` after changing any page, or the hashes go stale and
 # the browser refuses to run what it is served.
 /about
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-UsSEUUcE4NMDklEu1tC55M4vC0F452sU9jju+ZEghD4='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-4P6ArVlmF+akb+ENjGMiwWPAYxF81sDZwnMeu906UUM='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /about.html
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-UsSEUUcE4NMDklEu1tC55M4vC0F452sU9jju+ZEghD4='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-4P6ArVlmF+akb+ENjGMiwWPAYxF81sDZwnMeu906UUM='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /access
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-nZkEOx9Cxnl9crANp0C4j8cNyILAQYcAFS22Me+sYRg='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
