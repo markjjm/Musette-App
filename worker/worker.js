@@ -2041,11 +2041,76 @@ export class ListDO extends DurableObject {
           long_session_h REAL,
           updated_at INTEGER
         );
+
+        CREATE TABLE IF NOT EXISTS activity_analyses (
+          date TEXT NOT NULL,
+          activity_id TEXT NOT NULL,
+          headline TEXT NOT NULL,
+          advice_json TEXT NOT NULL,
+          context_json TEXT,
+          created_at INTEGER,
+          PRIMARY KEY(date, activity_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_activity_analyses_date ON activity_analyses(date);
       `);
       return true;
     } catch {
       return false;
     }
+  }
+
+  async getRideAnalysis(date, activityId) {
+    if (!date) return null;
+    const actId = String(activityId || 'primary');
+    const hasSql = this.initSql();
+    if (hasSql) {
+      try {
+        const cursor = this.ctx.storage.sql.exec(
+          `SELECT headline, advice_json, context_json, created_at FROM activity_analyses WHERE date = ? AND (activity_id = ? OR activity_id = 'primary') ORDER BY created_at DESC LIMIT 1`,
+          date, actId
+        );
+        for (const row of cursor) {
+          if (row.advice_json) {
+            return {
+              advice: JSON.parse(row.advice_json),
+              context: row.context_json ? JSON.parse(row.context_json) : null,
+              created_at: row.created_at,
+            };
+          }
+        }
+      } catch {}
+    }
+    const cached = await this.ctx.storage.get(`ana:${date}:${actId}`);
+    if (cached) return cached;
+    const byDate = await this.ctx.storage.get(`ana:${date}:primary`);
+    if (byDate) return byDate;
+    return null;
+  }
+
+  async saveRideAnalysis(date, activityId, advice, context) {
+    if (!date || !advice) return { ok: false };
+    const actId = String(activityId || 'primary');
+    const record = {
+      date,
+      activity_id: actId,
+      headline: advice.headline || '',
+      advice,
+      context: context || null,
+      created_at: Date.now(),
+    };
+    await this.ctx.storage.put(`ana:${date}:${actId}`, record);
+    await this.ctx.storage.put(`ana:${date}:primary`, record);
+
+    const hasSql = this.initSql();
+    if (hasSql) {
+      try {
+        this.ctx.storage.sql.exec(
+          `INSERT OR REPLACE INTO activity_analyses (date, activity_id, headline, advice_json, context_json, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
+          date, actId, advice.headline || '', JSON.stringify(advice), context ? JSON.stringify(context) : null, Date.now()
+        );
+      } catch {}
+    }
+    return { ok: true };
   }
 
   async saveRides(rides) {
@@ -4336,18 +4401,37 @@ export default {
       return json({ ...out, stats, calls_today: budget.n }, 200, origin);
     }
 
-    /* One day's actual riding, and what it was. Without ?why it is just the
-       activity — free, cached, no model involved — so the app can show what he
-       did every time he opens a day. The analysis is a separate, paid opt-in. */
+    /* One day's actual riding, and what it was.
+       Analyses are saved permanently for future reference so the user can open
+       any workout and see its debrief without duplicate model calls. */
     if (path === '/ride' && request.method === 'GET') {
       const date = url.searchParams.get('date') || '';
       if (!isDate(date)) return json({ ok: false, why: 'expected date=YYYY-MM-DD' }, 400, origin);
       const want = url.searchParams.get('why') === '1';
+      const force = url.searchParams.get('force') === '1';
 
       const dayRes = await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), date, date, ctx);
       if (!dayRes.ok) return json({ ok: false, why: dayRes.why }, 200, origin);
       if (!dayRes.rides.length) return json({ ok: true, rides: [], why: 'no ride that day' }, 200, origin);
-      if (!want) return json({ ok: true, rides: dayRes.rides }, 200, origin);
+
+      const main = dayRes.rides.slice().sort((a, b) => b.secs - a.secs)[0];
+      const actId = main.id || 'primary';
+
+      // Check if this workout was already analyzed and saved
+      const saved = await me().getRideAnalysis(date, actId);
+      if (saved && !force) {
+        return json({
+          ok: true,
+          rides: dayRes.rides,
+          advice: saved.advice,
+          context: saved.context,
+          has_analysis: true,
+          cached: true,
+          created_at: saved.created_at,
+        }, 200, origin);
+      }
+
+      if (!want) return json({ ok: true, rides: dayRes.rides, has_analysis: false }, 200, origin);
 
       const budget = await me().spend();
       if (!budget.ok) return json({ ok: false, rides: dayRes.rides, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
@@ -4367,12 +4451,6 @@ export default {
 
       /* Longest ride of the day is the one worth reading; the 5-minute
          commutes either side of it are not the story. */
-      const main = dayRes.rides.slice().sort((a, b) => b.secs - a.secs)[0];
-      /* Named rideCtx, not ctx: `const ctx` here is block-scoped to the whole
-         `if (path === '/ride')` body, so it shadowed the execution context for
-         every line above it too — any ctx.waitUntil() in this branch threw
-         "Cannot access 'ctx' before initialization" on every request. The wire
-         field below stays `context`, which is what the app reads. */
       const rideCtx = rideContext(
         main, hist.ok ? hist.rides : dayRes.rides,
         day ? { ...day, h: (train && train.h) || day.h } : null,
@@ -4383,7 +4461,10 @@ export default {
       if (dayRes.rides.length > 1) rideCtx.other_rides_that_day = dayRes.rides.filter((r) => r !== main).length;
 
       const out = await askModel(env, RIDE_SYSTEM(riderLine(state.profile)), ANALYST_SCHEMA, 'ride_read', rideCtx);
-      return json({ ...out, rides: dayRes.rides, context: rideCtx, calls_today: budget.n }, 200, origin);
+      if (out.ok && out.advice) {
+        await me().saveRideAnalysis(date, actId, out.advice, rideCtx);
+      }
+      return json({ ...out, rides: dayRes.rides, context: rideCtx, calls_today: budget.n, cached: false }, 200, origin);
     }
 
     if (path === '/state' && request.method === 'PUT') {

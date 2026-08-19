@@ -2945,20 +2945,29 @@ async function runCoach(){
 
 async function loadDayRides(d){
   if (dayRide.day === d && dayRide.rides !== null) return;
-  dayRide = { day: d, rides: null, read: null, busy: false, err: '' };
+  dayRide = { day: d, rides: null, read: null, cached: false, busy: false, err: '' };
   try {
     const r = await api('/ride?date=' + d);
     dayRide.rides = r.ok ? (r.rides || []) : [];
+    if (r.ok && r.advice) {
+      dayRide.read = r.advice;
+      dayRide.cached = !!r.cached;
+    }
   } catch { dayRide.rides = []; }
-  if (tab === 'F') render();
+  if (tab === 'F' || tab === 'T') render();
 }
 
-async function readRide(){
+async function readRide(force = false){
   if (dayRide.busy) return;
   dayRide.busy = true; dayRide.err = ''; render();
   try {
-    const r = await api('/ride?date=' + dayRide.day + '&why=1');
-    if (r.ok) dayRide.read = r.advice; else dayRide.err = r.why || 'unavailable';
+    const r = await api('/ride?date=' + dayRide.day + '&why=1' + (force ? '&force=1' : ''));
+    if (r.ok) {
+      dayRide.read = r.advice;
+      dayRide.cached = !!r.cached;
+    } else {
+      dayRide.err = r.why || 'unavailable';
+    }
   } catch (e) { dayRide.err = e.message; }
   dayRide.busy = false; render();
 }
@@ -3038,9 +3047,16 @@ function rideDetail(){
     + `</div>`;
   if (rs.length > 1) out += `<p class="anone">and ${rs.length - 1} shorter ${rs.length === 2 ? 'ride' : 'rides'} that day</p>`;
   out += rideBreak(big);
-  out += `<button id="ride_go" class="cbtn"${dayRide.busy ? ' disabled' : ''}>${dayRide.busy ? 'Reading it&hellip;' : (dayRide.read ? 'Read it again' : 'What was this ride?')}</button>`;
+  if (dayRide.read) {
+    out += `<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px">`
+      + `<span style="font-size:12px;font-weight:700;color:var(--ok)">\u2713 Coach Debrief Recorded</span>`
+      + `<button id="ride_go" class="bcan" style="padding:5px 9px;font-size:11.5px"${dayRide.busy ? ' disabled' : ''}>${dayRide.busy ? 'Re-analyzing&hellip;' : '\u21bb Re-analyze'}</button>`
+      + `</div>`;
+    out += `<div class="adv">${sectionsHtml(dayRide.read)}</div>`;
+  } else {
+    out += `<button id="ride_go" class="cbtn"${dayRide.busy ? ' disabled' : ''}>${dayRide.busy ? 'Reading it&hellip;' : 'What was this ride?'}</button>`;
+  }
   if (dayRide.err) out += `<p class="cerr">${esc(dayRide.err)}</p>`;
-  if (dayRide.read) out += `<div class="adv">${sectionsHtml(dayRide.read)}</div>`;
   return out + `</div>`;
 }
 
@@ -4242,7 +4258,7 @@ document.addEventListener('click', e => {
 
   if (e.target.closest('#coach_go')){ runCoach(); return; }
   if (e.target.closest('#look_go')){ runAnalyze(); return; }
-  if (e.target.closest('#ride_go')){ readRide(); return; }
+  if (e.target.closest('#ride_go')){ readRide(Boolean(dayRide.read)); return; }
 
   if (e.target.closest('#reset')){
     const w = curWeek();
