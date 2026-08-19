@@ -183,7 +183,7 @@ background:var(--card);box-shadow:var(--sh-1)}
 </div>
 
 <div id="flow" class="hidden">
-  <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
   <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
   <div class="q" data-step="0">
@@ -214,8 +214,18 @@ background:var(--card);box-shadow:var(--sh-1)}
   </div>
 
   <div class="q hidden" data-step="4">
+    <h2>What's this actually for?</h2>
+    <p class="sub">In your own words. It changes none of the arithmetic and it is the single most useful thing the coach can know — the same 2,800 calorie day means something different to someone rebuilding after illness and someone chasing a time.</p>
+    <div class="field"><label for="why">Why you're doing this</label>
+      <input id="why" maxlength="200" placeholder="I want to keep up with my kids on the Saturday club ride"></div>
+    <p class="note">Optional, and you can change it whenever. It goes to the coach and nowhere else.</p>
+  </div>
+
+  <div class="q hidden" data-step="5">
     <h2>A bit about you</h2>
     <p class="sub">Every target is computed from these. They stay on your account and are never sold or shared.</p>
+    <div class="field"><label for="nm">What should we call you?</label>
+      <input id="nm" maxlength="40" autocomplete="given-name" placeholder="Alex"></div>
     <div class="row">
       <div class="field"><label for="w">Weight (lb)</label><input id="w" type="number" min="70" max="400" step="0.1" placeholder="165"></div>
       <div class="field"><label for="h">Height (in)</label><input id="h" type="number" min="48" max="90" placeholder="70"></div>
@@ -239,14 +249,14 @@ background:var(--card);box-shadow:var(--sh-1)}
 
 <div id="done" class="hidden">
   <p class="eyebrow">Your first month</p>
-  <h1 style="font-size:clamp(28px,4vw,40px);margin-bottom:18px">Here is the plan.</h1>
+  <h1 style="font-size:clamp(28px,4vw,40px);margin-bottom:18px">Here it is, <span id="doneName">friend</span>.</h1>
   <div id="msg2" class="msg hidden" role="status" aria-live="polite"></div>
   <div class="card"><div id="summary"></div></div>
   <div class="nav" style="margin-top:20px">
     <button id="redo" class="btn ghost" type="button">Change my answers</button>
     <button id="start" class="btn primary" type="button">Start this plan</button>
   </div>
-  <p class="note">Nothing is saved until you press start. You can regenerate any month later from your plan page.</p>
+  <p class="note">Nothing is saved until you press start. Afterwards everything here — your weight, your goal, why you're doing this, what you won't eat — lives on <a href="/account">your profile</a>, and you can change any of it whenever.</p>
 </div>
 
 </div></div></section></main>
@@ -345,15 +355,17 @@ background:var(--card);box-shadow:var(--sh-1)}
     });
     [].forEach.call(document.querySelectorAll('.dots i'), function (d, i) { d.className = i <= n ? 'on' : ''; });
     $('back').className = n === 0 ? 'btn ghost hidden' : 'btn ghost';
-    $('next').textContent = n === 4 ? 'Build my month' : 'Continue';
+    $('next').textContent = n === 5 ? 'Build my month' : 'Continue';
     $('msg').className = 'msg hidden';
   }
 
   $('back').addEventListener('click', function () { if (step > 0) show(step - 1); });
   $('next').addEventListener('click', async function () {
     if (step === 2 && !A.days.length) { say('msg', 'bad', 'Pick at least one day you can train.'); return; }
-    if (step < 4) { show(step + 1); return; }
+    if (step < 5) { show(step + 1); return; }
+    var nm = ($('nm').value || '').trim();
     var wt = Number($('w').value), ht = Number($('h').value), age = Number($('a').value);
+    if (!nm) { say('msg', 'bad', 'What should we call you?'); return; }
     if (!(wt >= 70 && wt <= 400)) { say('msg', 'bad', 'A weight in pounds, please.'); return; }
     if (!(ht >= 48 && ht <= 90)) { say('msg', 'bad', 'A height in inches, please.'); return; }
     if (!(age >= 14 && age <= 100)) { say('msg', 'bad', 'An age, please.'); return; }
@@ -361,8 +373,8 @@ background:var(--card);box-shadow:var(--sh-1)}
     try {
       var out = await api('/plan/seed', {
         sport: A.sport, level: A.level, days: A.days, long_day: A.longDay,
-        profile: { weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
-          goal: A.goal, avoid: $('av').value, hours_wk: 0 },
+        profile: { name: nm, weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
+          goal: A.goal, motivation: $('why').value, avoid: $('av').value, hours_wk: 0 },
       });
       if (!out.ok) { say('msg', 'bad', out.why || 'Could not build a plan.'); return; }
       draft = out.plan;
@@ -385,6 +397,7 @@ background:var(--card);box-shadow:var(--sh-1)}
       html += '<p class="note">Days are matched to what you need, within about '
         + out.basis.mean_target_gap_kcal + ' kcal on average. Portions are scaled where a day would otherwise be wrong for you.</p>';
       $('summary').innerHTML = html;
+      $('doneName').textContent = nm;
       $('flow').className = 'hidden'; $('done').className = '';
     } catch (e) { if (e.message !== 'out') say('msg', 'bad', 'Could not reach the server.'); }
     finally { $('next').disabled = false; $('next').textContent = 'Build my month'; }

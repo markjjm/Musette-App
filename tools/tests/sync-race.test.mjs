@@ -38,6 +38,12 @@ const fillPlan = (p) => p;
 const jset = () => {};
 const LS = { set: () => {}, get: () => null };
 let pushRefused = false, syncNote = '';
+/* The app can now identify itself as a person as well as a household, so
+   sync() asks how. Stubbed to the household code, which is the path this test
+   is about. */
+let authToken = null;
+const authHeaders = () => (authToken ? { Authorization: 'Bearer ' + authToken } : { 'X-List-Key': cfg.key });
+const signedOutHere = () => { authToken = null; };
 /* One object per selector, so writes to #s_stat are observable rather than
    dropped on the floor — the earlier stub returned a fresh object each call,
    which is why the 413 assertion below was passing vacuously. */

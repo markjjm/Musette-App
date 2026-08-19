@@ -1366,6 +1366,39 @@ let extras = jget('v2.extras', {});
    supported: if one is configured server-side, enter it below and it is sent. */
 const SYNC_URL = 'https://shopping-list-sync.markpjacobs1.workers.dev';
 let cfg    = jget('v2.cfg', null) || {url: SYNC_URL, key: ''};
+
+/* ---- Signing in as a person, not as a household ------------------------
+   This app predates accounts and authenticated with a four-digit code shared
+   by every phone in the kitchen. That still works and is still the fastest way
+   in for two people who both live here.
+
+   But it meant "sign out everywhere" on the website could not reach the phone
+   in your pocket, and the app could never tell WHO was holding it. So a session
+   token is accepted too: the sign-in page hands one over in the fragment, which
+   never leaves the browser, and it is stripped from the address bar at once so
+   it cannot be pasted somewhere by accident.
+
+   A token wins when present, because it says something the code cannot - which
+   person this is - and it is revocable. Losing it falls back to the code rather
+   than locking anyone out of their own shopping list. */
+let authToken = LS.get('v2.token') || null;
+{
+  const m = /[#&]t=([^&]+)/.exec(location.hash || '');
+  if (m) {
+    authToken = decodeURIComponent(m[1]);
+    LS.set('v2.token', authToken);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  }
+}
+/* One place that decides how this phone identifies itself. */
+function authHeaders() {
+  if (authToken) return { Authorization: 'Bearer ' + authToken };
+  return cfg.key ? { 'X-List-Key': cfg.key } : {};
+}
+function signedOutHere() {
+  authToken = null;
+  try { LS.set('v2.token', ''); } catch (e) {}
+}
 if (!cfg.url) cfg.url = SYNC_URL;
 let dirty  = jget('v2.dirty', false);
 let lastSync = LS.get('v2.lastSync') || '';
@@ -1548,7 +1581,7 @@ function setDot(){
   if (!cfg.url) {
     d.className = 'dot';
     txt.textContent = 'Local';
-  } else if (!cfg.key || needCode) {
+  } else if (!authToken && (!cfg.key || needCode)) {
     d.className = 'dot err';
     txt.textContent = 'Tap to enter code';
   } else if (syncNote) {
@@ -1577,7 +1610,7 @@ async function sync(push){
   try {
     const base = cfg.url.replace(/\/+$/,'');
     const h = {'Content-Type':'application/json'};
-    if (cfg.key) h['X-List-Key'] = cfg.key;
+    Object.assign(h, authHeaders());
     /* A tap made while this request is in flight has to survive it. The reply
        predates the tap, and adopting it wholesale — which this did — repainted
        the row un-ticked under his finger, cleared dirty, persisted the reverted
@@ -1611,7 +1644,18 @@ async function sync(push){
     } else {
       r = await fetch(base + '/state', {headers:h});
     }
-    if (r.status === 401){ needCode = true; openSettings(); throw new Error('Access code not accepted'); }
+    if (r.status === 401){
+      /* A revoked or expired token must not lock somebody out of their own
+         shopping list. Drop it, and if this phone still knows the household
+         code it simply carries on as it always did; only if there is no code
+         either does it stop and ask. */
+      if (authToken) {
+        signedOutHere();
+        syncNote = 'Signed out on this device. Still syncing with the household code.';
+        if (cfg.key) { setDot(); throw new Error('Signed out - retrying with the access code'); }
+      }
+      needCode = true; openSettings(); throw new Error('Access code not accepted');
+    }
     if (r.status === 429) throw new Error('Too many attempts — wait a minute');
     /* The Worker declines a merge whose synced maps would not fit in one request.
        Do NOT advise deleting items: a delete is a tombstone, which makes the copy
@@ -1716,7 +1760,7 @@ async function pollRev(){
   if (!cfg.url || !cfg.key || syncing || document.hidden) return;
   try {
     const base = cfg.url.replace(/\/+$/,'');
-    const h = {'X-List-Key': cfg.key};
+    const h = authHeaders();
     const r = await fetch(base + '/rev', {headers: h});
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const { rev } = await r.json();
@@ -2664,7 +2708,7 @@ function todayKey(){
 async function api(pathq){
   const base = (cfg.url || '').replace(/\/+$/, '');
   if (!base || !cfg.key) throw new Error('not connected');
-  const r = await fetch(base + pathq, { headers: { 'X-List-Key': cfg.key } });
+  const r = await fetch(base + pathq, { headers: authHeaders() });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
 }
@@ -3709,7 +3753,7 @@ document.addEventListener('click', e => {
   }
 
   if (e.target.closest('#bsync')){
-    if (!cfg.key || needCode) { openSettings(); return; }
+    if (!authToken && (!cfg.key || needCode)) { openSettings(); return; }
     sync(false); triggerHaptic(); return;
   }
   
@@ -4013,7 +4057,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (cfg.url && !cfg.key) openSettings(); else if (cfg.url) { sync(dirty); startPolling(); }
+if (cfg.url && !cfg.key && !authToken) openSettings(); else if (cfg.url) { sync(dirty); startPolling(); }
 </script>
 </body>
 </html>

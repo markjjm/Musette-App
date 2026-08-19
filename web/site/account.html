@@ -174,6 +174,7 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     <div class="card">
       <h3>About you</h3>
       <p style="margin-bottom:20px">These are what every target is computed from. Change them and the plan follows.</p>
+      <div class="field"><label for="nm">Your name</label><input id="nm" maxlength="40" placeholder="Alex"></div>
       <div class="row">
         <div class="field"><label for="w">Weight (lb)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
         <div class="field"><label for="h">Height (in)</label><input id="h" type="number" min="48" max="90"></div>
@@ -190,6 +191,9 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
         </select></div>
         <div class="field"><label for="hw">Hours a week</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
       </div>
+      <div class="field"><label for="why">Why you're doing this</label>
+        <input id="why" maxlength="200" placeholder="keep up with my kids on the Saturday ride"></div>
+      <p style="font-size:13px;color:var(--ink-3);margin:-8px 0 16px">The coach reads this. It changes no numbers and it changes how everything is said.</p>
       <div class="field"><label for="av">Anything you will not eat</label><input id="av" maxlength="200" placeholder="no shellfish, no coriander"></div>
       <button id="save" class="btn primary" type="button" style="width:100%">Save</button>
     </div>
@@ -268,8 +272,12 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     signedOut();
   });
 
-  var P = ['weight_lb', 'height_in', 'age', 'ftp', 'goal', 'hours_wk', 'avoid'];
-  var FIELD = { weight_lb: 'w', height_in: 'h', age: 'a', ftp: 'f', goal: 'g', hours_wk: 'hw', avoid: 'av' };
+  var P = ['name', 'weight_lb', 'height_in', 'age', 'ftp', 'goal', 'hours_wk', 'motivation', 'avoid'];
+  var FIELD = { name: 'nm', weight_lb: 'w', height_in: 'h', age: 'a', ftp: 'f',
+    goal: 'g', hours_wk: 'hw', motivation: 'why', avoid: 'av' };
+  /* Explicit, because coercing a name to a Number gives NaN and the server's
+     clamp then quietly replaces it with a default. */
+  var NUMERIC = ['weight_lb', 'height_in', 'age', 'ftp', 'hours_wk'];
 
   function fillProfile(p) {
     if (!p) return;
@@ -282,7 +290,7 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
       var body = {};
       P.forEach(function (k) {
         var v = $(FIELD[k]).value;
-        body[k] = (k === 'goal' || k === 'avoid') ? v : Number(v);
+        body[k] = NUMERIC.indexOf(k) >= 0 ? Number(v) : v;
       });
       var out = await api('/me/profile', { method: 'PUT', body: body });
       if (!out.ok) { say('bad', out.why || 'Could not save.'); return; }
@@ -339,7 +347,10 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     var me = await api('/me');
     if (!me.ok) { signedOut(); return; }
     $('gate').className = 'hidden'; $('app').className = '';
-    $('name').textContent = (me.name || '').split('@')[0];
+    /* Their name if they gave one. An email address is an identifier, not a
+       name, and greeting somebody with theirs is the tell that nobody thought
+       about the person on the other side. */
+    $('name').textContent = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
     $('who').textContent = me.name || '';
     fillProfile(me.profile);
 

@@ -262,6 +262,16 @@ function cleanProfile(v) {
     /* Which dinners are in the rotation. Names only — the recipes live in the
        app, so this stays small and cannot smuggle markup. */
     dinners:    Array.isArray(v.dinners) ? v.dinners.slice(0, 60).map(clamp).filter(Boolean) : [],
+    /* What to call them. An email address is an identifier, not a name, and
+       greeting somebody with "hello alex.morgan@gmail.com" is the tell that
+       nobody thought about the person on the other side. */
+    name:       clamp(v.name),
+    /* Why they are doing this, in their own words. It changes nothing
+       arithmetic and it is the single most useful thing the coach can know:
+       the same 2,800 kcal day reads differently to somebody rebuilding after
+       illness and somebody chasing a time. Kept short on purpose - it rides in
+       every prompt. */
+    motivation: clamp(v.motivation),
     avoid:      clamp(v.avoid),
     notes:      clamp(v.notes),
     t,
@@ -422,6 +432,10 @@ function riderNow(profile) {
     r.w_per_kg = Math.round((p.ftp / kg) * 100) / 100;
   }
   if (p.goal !== 'hold' && p.rate_lb_wk > 0) r.target_rate_lb_wk = p.rate_lb_wk;
+  if (p.name) r.called = p.name;
+  /* The one field here that is not a measurement. It is what makes advice sound
+     written for a person rather than for a body of that mass. */
+  if (p.motivation) r.doing_this_because = p.motivation;
   if (p.avoid) r.will_not_eat = p.avoid;
   if (p.notes) r.rider_notes = p.notes;
   return r;
@@ -433,7 +447,11 @@ function riderNow(profile) {
 function riderLine(profile) {
   const r = riderNow(profile);
   const power = r.w_per_kg ? `, ${r.ftp_w} W FTP (${r.w_per_kg} W/kg)` : '';
-  return `You advise one cyclist: ${r.kg} kg, ${r.age}, ${r.goal}${power}.`;
+  const who = r.called ? r.called : 'one cyclist';
+  const why = r.doing_this_because
+    ? ` They are doing this because: ${r.doing_this_because} - answer like somebody who knows that.`
+    : '';
+  return `You advise ${who}: ${r.kg} kg, ${r.age}, ${r.goal}${power}.${why}`;
 }
 
 /* Weight over time, oldest first, at most one point a day.
