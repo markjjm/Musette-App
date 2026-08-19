@@ -1984,6 +1984,179 @@ export class ListDO extends DurableObject {
   }
 }
 
+/* ---- Turning a week of meals into a shopping list ----------------------
+   A generated month used to arrive with empty lists: it told you what to eat
+   and not what to buy, which is half a product.
+
+   The quantities here are EXACT, because they are summed from the same
+   ingredient lines the meals are made of - "3 oz GROUND BEEF" three times is 9
+   oz, not an estimate. The prices are the opposite: there is no price table in
+   this repo, so a cost is carried across from the previous block only when the
+   ingredient clearly matches something that block actually bought, and is
+   OMITTED otherwise. An invented price is worse than a blank one - a blank
+   asks you to look, a wrong one gets trusted and totalled. */
+
+/* "1 1/2 cups RICE, WHITE, COOKED" -> {qty: 1.5, unit: 'cup', name: 'RICE, WHITE, COOKED'}
+   "1 BAGEL, PLAIN"                 -> {qty: 1, unit: '', name: 'BAGEL, PLAIN'} */
+const UNITS = new Set(['oz', 'lb', 'g', 'kg', 'cup', 'cups', 'tbsp', 'tablespoon', 'tablespoons',
+  'tsp', 'teaspoon', 'teaspoons', 'slice', 'slices', 'scoop', 'scoops', 'bottle', 'bottles',
+  'medium', 'large', 'small', 'ml', 'l', 'each', 'pack', 'packs', 'ear', 'ears', 'head', 'clove', 'cloves']);
+const UNIT_CANON = { cups: 'cup', tablespoon: 'tbsp', tablespoons: 'tbsp', teaspoon: 'tsp',
+  teaspoons: 'tsp', slices: 'slice', scoops: 'scoop', bottles: 'bottle', packs: 'pack',
+  ears: 'ear', cloves: 'clove' };
+
+function parseIngredient(text) {
+  const s = String(text || '').trim();
+  /* Leading quantity: "2", "1/2", "1 1/2". */
+  const m = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?)\s+(.*)$/.exec(s);
+  if (!m) return null;
+  let qty = 0;
+  for (const part of m[1].split(/\s+/)) {
+    if (part.includes('/')) { const [a, b] = part.split('/').map(Number); qty += b ? a / b : 0; }
+    else qty += Number(part) || 0;
+  }
+  const rest = m[2];
+  const first = rest.split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, '');
+  if (UNITS.has(first)) {
+    return { qty, unit: UNIT_CANON[first] || first, name: rest.split(/\s+/).slice(1).join(' ').trim() };
+  }
+  /* No unit: a countable thing. "1 BAGEL, PLAIN". */
+  return { qty, unit: '', name: rest.trim() };
+}
+
+/* Where a line belongs in a shop. Tag from the food table when the name is
+   recognised, keywords otherwise, and a catch-all that is honest about being
+   one rather than silently filing everything under Produce. */
+const TAG_SECTION = {
+  veg: 'Produce', fruit: 'Produce', meat: 'Meat & fish', fish: 'Meat & fish',
+  dairy: 'Dairy & eggs', grain: 'Bread & grains', legume: 'Canned & jarred',
+  condiment: 'Canned & jarred', fat: 'Canned & jarred', sugar: 'Canned & jarred',
+  drink: 'Ride fuel', supplement: 'Ride fuel',
+};
+const KEYWORD_SECTION = [
+  [/\b(egg|milk|yogurt|yoghurt|cheese|butter|cottage|greek|casein|whey)\b/i, 'Dairy & eggs'],
+  [/\b(chicken|beef|turkey|pork|bacon|ham|salmon|tuna|tilapia|fish|steak)\b/i, 'Meat & fish'],
+  [/\b(rice|oat|bread|bagel|tortilla|pasta|ziti|penne|quinoa|bun|roll|cracker|granola|muffin|pretzel|cereal|flake)\b/i, 'Bread & grains'],
+  /* No word boundary on the fruit list: BLUEBERRY and STRAWBERRY are one word,
+     and \bberry\b matched neither - which is how a punnet of blueberries ended
+     up filed under "Everything else". */
+  [/(apple|banana|berry|berries|orange|grape|melon|pear|peach|mango|pineapple|date|fruit|avocado|raisin)/i, 'Produce'],
+  [/(carrot|broccoli|pepper|onion|potato|lettuce|salad|greens|cucumber|tomato|cabbage|corn|asparagus|vegetable|slaw|spinach|bean sprout)/i, 'Produce'],
+  [/(bean|lentil|chickpea|salsa|soup|canned)/i, 'Canned & jarred'],
+  [/(dressing|vinaigrette|mayo|mustard|ketchup)/i, 'Canned & jarred'],
+  [/(gel|drink mix|sports drink|electrolyte|energy chew|chews)/i, 'Ride fuel'],
+  /* Named brands and dry goods the generic words miss. Every one of these was
+     landing in "Everything else" on a real generated month. */
+  [/(oikos|chobani|fairlife|skyr|kefir)/i, 'Dairy & eggs'],
+  [/(oats|pancake mix|crouton|pretzel|cracker|crisp|chip)/i, 'Bread & grains'],
+  [/(almond|walnut|cashew|peanut|pecan|pistachio|seed|nut)/i, 'Canned & jarred'],
+  [/\b(oil|honey|syrup|jam|salsa|marinara|sauce|hummus|peanut butter|almond|walnut|seasoning|stock|soy)\b/i, 'Canned & jarred'],
+];
+
+function sectionFor(name, foodTag) {
+  if (foodTag && TAG_SECTION[foodTag]) return TAG_SECTION[foodTag];
+  for (const [re, sec] of KEYWORD_SECTION) if (re.test(name)) return sec;
+  return 'Everything else';
+}
+
+/* A price per unit, learned from what the previous block actually bought.
+   Matching is deliberately conservative: the first significant word of the
+   ingredient has to appear in the item name. A loose match here would price
+   "CHICKEN BREAST" from a line about chicken stock. */
+function priceIndex(prevPlan) {
+  const idx = [];
+  for (const w of (prevPlan && prevPlan.weeks) || []) {
+    for (const store of Object.values(w.lists || {})) {
+      for (const sec of store) {
+        for (const it of sec.items || []) {
+          const p = parseIngredient(`${it.q || '1'} ${it.n}`);
+          if (!it.c || !p || !p.qty) continue;
+          idx.push({ name: String(it.n).toLowerCase(), unit: p.unit, per: it.c / p.qty });
+        }
+      }
+    }
+  }
+  return idx;
+}
+
+const STOP = new Set(['the', 'and', 'of', 'raw', 'cooked', 'fresh', 'frozen', 'plain', 'large', 'medium', 'small', 'whole']);
+function keyWord(name) {
+  for (const w of String(name).toLowerCase().split(/[^a-z]+/)) {
+    if (w.length >= 4 && !STOP.has(w)) return w;
+  }
+  return null;
+}
+
+function priceFor(idx, name, unit) {
+  const k = keyWord(name);
+  if (!k) return null;
+  const hit = idx.find((x) => x.unit === unit && x.name.includes(k));
+  return hit ? Math.round(hit.per * 100) / 100 : null;
+}
+
+const PRETTY = (q) => {
+  const r = Math.round(q * 100) / 100;
+  if (Math.abs(r - Math.round(r)) < 0.01) return String(Math.round(r));
+  const eighths = Math.round(r * 8) / 8;
+  const whole = Math.floor(eighths);
+  const frac = eighths - whole;
+  const names = { 0.125: '1/8', 0.25: '1/4', 0.375: '3/8', 0.5: '1/2', 0.625: '5/8', 0.75: '3/4', 0.875: '7/8' };
+  if (names[frac]) return (whole ? whole + ' ' : '') + names[frac];
+  return String(r);
+};
+
+function buildShoppingLists(plan, prevPlan, foods) {
+  const tagOf = {};
+  for (const f of (foods && foods.foods) || []) tagOf[String(f.n).toLowerCase()] = f.tag;
+  const idx = priceIndex(prevPlan);
+  const byDay = {};
+  for (const d of plan.days || []) byDay[d.d] = d;
+
+  let unpriced = 0, lines = 0;
+  for (const week of plan.weeks || []) {
+    const totals = new Map();
+    for (const dn of week.days || []) {
+      const day = byDay[dn];
+      if (!day) continue;
+      for (const meal of day.meals || []) {
+        for (const ing of meal.i || []) {
+          const p = parseIngredient(ing.n);
+          if (!p || !p.name) continue;
+          const key = p.name.toLowerCase() + '|' + p.unit;
+          const cur = totals.get(key) || { qty: 0, unit: p.unit, name: p.name };
+          cur.qty += p.qty;
+          totals.set(key, cur);
+        }
+      }
+    }
+    const bySection = {};
+    for (const t of totals.values()) {
+      const tag = tagOf[t.name.toLowerCase()] || tagOf[t.name.toLowerCase().split(',')[0]];
+      const sec = sectionFor(t.name, tag);
+      const per = priceFor(idx, t.name, t.unit);
+      lines++;
+      if (per === null) unpriced++;
+      const item = {
+        q: `${PRETTY(t.qty)}${t.unit ? ' ' + t.unit : ''}`,
+        n: t.name,
+        c: per === null ? 0 : Math.round(per * t.qty * 100) / 100,
+      };
+      if (per === null) item.note = 'price not carried over - check at the shop';
+      (bySection[sec] = bySection[sec] || []).push(item);
+    }
+    const order = ['Produce', 'Meat & fish', 'Dairy & eggs', 'Bread & grains', 'Canned & jarred', 'Ride fuel', 'Everything else'];
+    week.lists = {
+      A: order.filter((s) => bySection[s]).map((s) => ({
+        sec: s,
+        items: bySection[s].sort((a, b) => a.n.localeCompare(b.n)),
+      })),
+      M: [],
+    };
+    week.note = 'Quantities are summed from the week\'s meals. Prices carried from the previous block where the item matched.';
+  }
+  return { lines, unpriced };
+}
+
 /* ---- Generating the next block ----------------------------------------
    The hard constraint shapes everything: scan.mjs and validatePlan both refuse
    a plan whose meals do not sum EXACTLY to their day's own totals. That is 31
@@ -2154,19 +2327,23 @@ function generateBlock(prev, ym, opts) {
       days: Array.from({ length: to - from + 1 }, (_, k) => from + k),
       cooks: days.slice(from - 1, to).filter((d) => d.cook).length,
       lists: { A: [], M: [] },
-      note: 'Shopping list not built yet - dinners are carried forward from the previous block.',
     });
   }
 
+  const plan = {
+    block: `${MONTHS[m - 1]} ${y}`,
+    weeks,
+    fuel: prev.fuel || [],
+    training: trainingOut,
+    days,
+  };
+  /* The lists are filled from the days that were just chosen, so what you buy
+     and what you eat cannot disagree. */
+  const shop = buildShoppingLists(plan, prev, o.foods || null);
+
   return {
     ok: true,
-    plan: {
-      block: `${MONTHS[m - 1]} ${y}`,
-      weeks,
-      fuel: prev.fuel || [],
-      training: trainingOut,
-      days,
-    },
+    plan,
     basis: {
       carried_from: prev.block || null,
       targets_fitted: fitv.fitted,
@@ -2174,6 +2351,8 @@ function generateBlock(prev, ym, opts) {
       ramp_percent_per_week: rampPct,
       recovery_week: recoverWeek + 1,
       total_hours: Math.round(trainingOut.reduce((a, t) => a + t.h, 0) * 10) / 10,
+      shopping_lines: shop.lines,
+      shopping_unpriced: shop.unpriced,
     },
   };
 }

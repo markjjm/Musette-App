@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 import { loadWorker } from './load-worker.mjs';
 
-const { generateBlock, validatePlan } = await loadWorker(['generateBlock', 'validatePlan']);
+const { generateBlock, validatePlan, parseIngredient } = await loadWorker(['generateBlock', 'validatePlan', 'parseIngredient']);
 const prev = JSON.parse(readFileSync(join(ROOT, 'plan.json'), 'utf8')).plan;
 
 let pass = 0, failn = 0;
@@ -65,6 +65,42 @@ ok(distinct >= 5, `and they are spread across ${distinct} different source days 
 console.log('\n7. Rubbish in is refused, not guessed at');
 ok(generateBlock(prev, 'next month', {}).ok === false, 'a month that is not YYYY-MM is refused');
 ok(generateBlock({ days: [] }, '2026-09', {}).ok === false, 'a block with no days to carry forward is refused');
+
+console.log('\n8. A generated month tells you what to BUY, not just what to eat');
+/* It used to arrive with empty lists, which is half a product. */
+const items = sep.plan.weeks.flatMap((w) => (w.lists.A || []).flatMap((s) => s.items));
+ok(items.length > 100, `the month has ${items.length} shopping lines`);
+ok(sep.plan.weeks.every((w) => (w.lists.A || []).length > 0), 'every week has a list, not just the first');
+
+console.log('\n   quantities are summed from the meals, so they cannot disagree with them');
+/* Pick one ingredient and add it up by hand from the days, then compare. */
+const wk1 = sep.plan.weeks[0];
+const byDay = {};
+for (const d of sep.plan.days) byDay[d.d] = d;
+let handTotal = 0;
+for (const dn of wk1.days) {
+  for (const meal of (byDay[dn] || {}).meals || []) {
+    for (const ing of meal.i || []) {
+      const p = parseIngredient(ing.n);
+      if (p && p.name.toLowerCase().startsWith('banana')) handTotal += p.qty;
+    }
+  }
+}
+const listed = wk1.lists.A.flatMap((s) => s.items).find((i) => /^banana/i.test(i.n));
+ok(handTotal > 0 && listed && Math.abs(Number(listed.q.split(' ')[0]) - handTotal) < 0.02,
+  `bananas: ${handTotal} eaten in week 1, ${listed ? listed.q : 'none'} on the list`);
+
+console.log('\n   nothing lands in the catch-all section');
+const orphan = items.filter((i) => false).length;
+const orphanSections = sep.plan.weeks.flatMap((w) => (w.lists.A || []).filter((s) => s.sec === 'Everything else'));
+ok(orphanSections.length === 0, `no "Everything else" section survives categorisation (${orphanSections.length})`);
+
+console.log('\n   a price is carried over or omitted, never invented');
+const priced = items.filter((i) => i.c > 0);
+const blank = items.filter((i) => !i.c);
+ok(priced.length > 50, `${priced.length} lines carried a real price from the previous block`);
+ok(blank.every((i) => /price not carried over/.test(i.note || '')),
+  `and all ${blank.length} unpriced lines say so rather than showing $0 as if it were free`);
 
 console.log(`\n${pass} passed, ${failn} failed`);
 process.exit(failn ? 1 : 0);
