@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Athlete Dashboard — Musette</title>
-<meta name="description" content="Manage your training profile, units preference, intervals.icu integration, and upcoming month fueling draft.">
+<title>Athlete Portal & Plan — Musette</title>
+<meta name="description" content="View your complete monthly nutrition plan, daily workout targets, consolidated grocery lists, and intervals.icu integration.">
 <style>:root{
 --ground:#FAF7F2;--surface:#FFFFFF;--surface-2:#F4EFE6;--surface-3:#EAE2D5;
 --line:#E8E1D5;--line-strong:#D6CCC0;--line-subtle:#F3EDE4;
@@ -50,8 +50,17 @@ display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 8
 .mast nav a{font-size:14px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
 .mast nav a:hover{color:var(--accent-hover)}
 @media(max-width:760px){.mast nav a.hide-sm{display:none}}
+/* view mode switcher tabs */
+.view-tabs{display:flex;gap:6px;background:var(--surface-2);padding:5px;border-radius:var(--r-pill);
+border:1px solid var(--line);margin:24px 0 28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.view-tabs::-webkit-scrollbar{display:none}
+.vtab{border:0;background:transparent;padding:10px 18px;border-radius:var(--r-pill);
+font:750 14px/1 inherit;color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:all .14s cubic-bezier(.16,1,.3,1);
+touch-action:manipulation;min-height:40px}
+.vtab:hover{color:var(--ink)}
+.vtab.active{background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs);font-weight:800}
 /* dashboard layout */
-section{padding:clamp(28px,4vw,60px) 0}
+section{padding:clamp(24px,3.5vw,56px) 0}
 .grid{display:grid;gap:20px;grid-template-columns:1fr}
 @media(min-width:880px){.g2{grid-template-columns:1fr 1fr}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
@@ -74,6 +83,7 @@ transition:all .15s cubic-bezier(.16,1,.3,1);touch-action:manipulation}
 .btn.primary:hover{box-shadow:0 5px 16px rgba(255,107,53,.45);transform:translateY(-1px)}
 .btn.ghost{border-color:var(--line-strong);background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs)}
 .btn.ghost:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.btn.full{width:100%}
 .msg{border-radius:10px;padding:12px 14px;font-size:14px;margin:0 0 18px;
 border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--sh-xs)}
 .msg.bad{border-left:4px solid var(--warn);background:var(--warn-bg);color:var(--ink)}
@@ -85,6 +95,32 @@ border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--sh-xs)
 .wk{display:flex;justify-content:space-between;font-size:13px;padding:6px 0}
 .bar{height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:4px;border:1px solid var(--line)}
 .bar i{display:block;height:100%;background:var(--sunset)}
+/* plan calendar list */
+.plan-days{display:grid;gap:16px;margin-top:18px}
+.day-row{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;
+box-shadow:var(--sh-xs);transition:all .15s ease}
+.day-row:hover{box-shadow:var(--sh-md);border-color:var(--line-strong)}
+.day-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.day-date{font:800 16px/1.2 inherit;color:var(--ink)}
+.day-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font:750 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:var(--r-pill)}
+.chip.train{background:var(--train-bg);color:var(--train-ink);border:1px solid var(--train-border)}
+.chip.fuel{background:var(--fuel-bg);color:var(--fuel-ink);border:1px solid var(--fuel-border)}
+.day-dinner{font-size:15px;color:var(--ink);font-weight:700;margin-bottom:6px}
+.day-desc{font-size:13.5px;color:var(--ink-2);margin:0;line-height:1.5}
+/* shopping list view */
+.shop-group{margin-bottom:24px}
+.shop-group h3{font:750 13px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hover);
+margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+.shop-items{display:grid;gap:8px}
+.shop-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);
+border:1px solid var(--line);border-radius:9px;font-size:14.5px;cursor:pointer;user-select:none;touch-action:manipulation}
+.shop-item input[type=checkbox]{width:18px;height:18px;min-height:18px;accent-color:var(--accent);cursor:pointer}
+.shop-item.checked span{text-decoration:line-through;color:var(--ink-3)}
+/* intervals helper accordion */
+.helper-box{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;margin:12px 0}
+.helper-box summary{font:700 13.5px/1 inherit;color:var(--ink);cursor:pointer;outline:none}
+.helper-steps{margin:12px 0 0;padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.6}
 /* footer */
 footer{background:var(--surface-2);color:var(--ink-2);padding:48px 0 36px;font-size:14px;border-top:1px solid var(--line)}
 footer a{color:var(--ink);text-decoration:none;font-weight:600}
@@ -118,103 +154,174 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 </div>
 
 <div id="app" class="hidden">
-  <div class="pill-badge"><i></i>Athlete Dashboard</div>
-  <h1>Hello, <span id="name"></span></h1>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+    <div>
+      <div class="pill-badge"><i></i>Athlete Portal</div>
+      <h1>Welcome back, <span id="name"></span></h1>
+      <p class="lede" style="margin-top:6px">Your personalized fueling plan and live device synchronization.</p>
+    </div>
+    <a id="btnLaunchApp" class="btn primary" href="#" target="_blank" rel="noopener">🚀 Open Full Web App</a>
+  </div>
+
   <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
-  <div class="grid g2" style="margin-top:24px;align-items:start">
-    <div>
-      <div class="card" style="margin-bottom:20px">
-        <h3>Physiological Parameters</h3>
-        <p>Used to calculate daily calories and carbohydrate targets. Update anytime as your fitness and body composition evolve.</p>
-        
-        <div class="field"><label for="nm">Athlete name / handle</label><input id="nm" maxlength="40" placeholder="Alex"></div>
-        <div class="row">
-          <div class="field"><label for="w" id="lblWeight">Weight (lbs)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
-          <div class="field"><label for="h" id="lblHeight">Height (inches)</label><input id="h" type="number" min="48" max="90"></div>
-        </div>
-        <div class="row">
-          <div class="field"><label for="a">Age</label><input id="a" type="number" min="14" max="100"></div>
-          <div class="field"><label for="f">Threshold Power / FTP (Watts)</label><input id="f" type="number" min="0" max="600"></div>
-        </div>
-        <div class="row">
-          <div class="field"><label for="g">Primary Goal</label><select id="g">
-            <option value="hold">Maintain weight steady</option>
-            <option value="lose">Gradual weight loss</option>
-            <option value="gain">Deliberate mass gain</option>
-          </select></div>
-          <div class="field"><label for="hw">Weekly volume (hours)</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
-        </div>
-        <div class="field"><label for="why">Primary motivation or target event</label>
-          <input id="why" maxlength="200" placeholder="e.g. Chicago Marathon, Leadville 100, Fall triathlon"></div>
-        <div class="field"><label for="av">Exclusions (foods you refuse or avoid)</label>
-          <input id="av" maxlength="200" placeholder="e.g. shellfish, cilantro"></div>
-        <button id="save" class="btn primary" type="button" style="width:100%">Save Profile Changes</button>
-      </div>
+  <!-- Primary navigation tabs -->
+  <div class="view-tabs" role="tablist">
+    <button class="vtab active" id="tabOverview" role="tab" aria-selected="true">📊 Profile & Settings</button>
+    <button class="vtab" id="tabPlan" role="tab" aria-selected="false">📅 Full Monthly Plan</button>
+    <button class="vtab" id="tabGroceries" role="tab" aria-selected="false">🛒 Grocery & Aisle List</button>
+    <button class="vtab" id="tabIntervals" role="tab" aria-selected="false">⚡ intervals.icu Sync</button>
+  </div>
 
-      <div class="card">
-        <h3>Units & Measurement Settings</h3>
-        <p>Choose your preferred unit system for distance, bodyweight, and pace across the application.</p>
-        <div class="field"><label for="unitPref">Default Unit System</label>
-          <select id="unitPref">
-            <option value="imperial" selected>Imperial (miles, lbs, ft) — Default</option>
-            <option value="metric">Metric (kilometers, kg, meters)</option>
-          </select>
-        </div>
-        <p style="font-size:13px;color:var(--ink-3);margin:0">Preferences are saved locally and synced with your athlete profile.</p>
-      </div>
-    </div>
-
-    <div>
-      <div class="card" style="margin-bottom:20px">
-        <h3>Active Training Status</h3>
-        <div id="stats" style="margin-top:10px"><p style="margin:0">Loading…</p></div>
-      </div>
-
-      <div class="card" style="margin-bottom:20px">
-        <h3>Device & Training Sync</h3>
-        <div id="icuOff">
-          <p style="margin-bottom:12px">Musette ingests completed workouts from <b>intervals.icu</b> (which connects directly with Garmin, Wahoo, Apple Watch, COROS, Polar, Suunto, and Zwift).</p>
-          <ol style="margin:0 0 14px;padding-left:18px;font-size:13.5px;color:var(--ink-2);line-height:1.6">
-            <li>Open <a href="https://intervals.icu/settings" target="_blank" rel="noopener">intervals.icu/settings</a> and navigate to <b>Developer Settings</b>.</li>
-            <li>Copy your <b>API key</b>, and your <b>athlete id</b> from the top of the page (e.g. <code>i123456</code>).</li>
-            <li>Paste both below. Verified with intervals.icu before storage.</li>
-          </ol>
+  <!-- VIEW 1: Overview & Profile -->
+  <div id="viewOverview">
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <h3>Physiological Parameters</h3>
+          <p>Used to calculate daily calories and carbohydrate targets. Update anytime as your fitness and body composition evolve.</p>
+          
+          <div class="field"><label for="nm">Athlete name / handle</label><input id="nm" maxlength="40" placeholder="Alex"></div>
           <div class="row">
-            <div class="field"><label for="icuA">Athlete ID</label><input id="icuA" placeholder="123456" inputmode="numeric"></div>
-            <div class="field"><label for="icuL">Label (optional)</label><input id="icuL" maxlength="40" placeholder="e.g. Garmin / Apple Watch"></div>
+            <div class="field"><label for="w" id="lblWeight">Weight (lbs)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
+            <div class="field"><label for="h" id="lblHeight">Height (inches)</label><input id="h" type="number" min="48" max="90"></div>
           </div>
-          <div class="field"><label for="icuK">API Key</label>
-            <input id="icuK" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"></div>
-          <button id="icuSave" class="btn primary" type="button" style="width:100%">Connect intervals.icu</button>
-          <p style="font-size:12.5px;color:var(--ink-3);margin:10px 0 0">Encrypted with AES-GCM-256 before storage. Disconnect or rotate anytime.</p>
+          <div class="row">
+            <div class="field"><label for="a">Age</label><input id="a" type="number" min="14" max="100"></div>
+            <div class="field"><label for="f">Threshold Power / FTP (Watts)</label><input id="f" type="number" min="0" max="600"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="g">Primary Goal</label><select id="g">
+              <option value="hold">Maintain weight steady</option>
+              <option value="lose">Gradual weight loss</option>
+              <option value="gain">Deliberate mass gain</option>
+            </select></div>
+            <div class="field"><label for="hw">Weekly volume (hours)</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
+          </div>
+          <div class="field"><label for="why">Primary motivation or target event</label>
+            <input id="why" maxlength="200" placeholder="e.g. Chicago Marathon, Leadville 100, Fall triathlon"></div>
+          <div class="field"><label for="av">Exclusions (foods you refuse or avoid)</label>
+            <input id="av" maxlength="200" placeholder="e.g. shellfish, cilantro"></div>
+          <button id="save" class="btn primary full" type="button">Save Profile Changes</button>
         </div>
-        <div id="icuOn" class="hidden">
-          <div id="icuStat"></div>
-          <button id="icuDrop" class="btn ghost" type="button" style="width:100%;margin-top:14px">Disconnect Integration</button>
+
+        <div class="card">
+          <h3>Units & Measurement Settings</h3>
+          <p>Choose your preferred unit system for distance, bodyweight, and pace across the application.</p>
+          <div class="field"><label for="unitPref">Default Unit System</label>
+            <select id="unitPref">
+              <option value="imperial" selected>Imperial (miles, lbs, ft) — Default</option>
+              <option value="metric">Metric (kilometers, kg, meters)</option>
+            </select>
+          </div>
+          <p style="font-size:13px;color:var(--ink-3);margin:0">Preferences are saved locally and synced with your athlete profile.</p>
         </div>
       </div>
 
-      <div class="card">
-        <h3>Draft Next Month's Plan</h3>
-        <p style="margin-bottom:14px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
-        <div class="row">
-          <div class="field"><label for="rp">Weekly Ramp %</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
-          <div class="field"><label for="rw">Recovery Week (1–5)</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <h3>Active Training Status</h3>
+          <div id="stats" style="margin-top:10px"><p style="margin:0">Loading…</p></div>
         </div>
-        <button id="gen" class="btn primary" type="button" style="width:100%">Draft Next Month</button>
-        <div id="draft" class="hidden" style="margin-top:18px">
-          <div id="draftBody"></div>
-          <button id="pub" class="btn primary" type="button" style="width:100%;margin-top:14px">Publish This Plan</button>
-          <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--ink-3)">Publishing deploys the new plan across all household devices.</p>
+
+        <div class="card" style="margin-bottom:20px">
+          <h3>Draft Next Month's Plan</h3>
+          <p style="margin-bottom:14px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
+          <div class="row">
+            <div class="field"><label for="rp">Weekly Ramp %</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
+            <div class="field"><label for="rw">Recovery Week (1–5)</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
+          </div>
+          <button id="gen" class="btn primary full" type="button">Draft Next Month</button>
+          <div id="draft" class="hidden" style="margin-top:18px">
+            <div id="draftBody"></div>
+            <button id="pub" class="btn primary full" type="button" style="margin-top:14px">Publish This Plan</button>
+            <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--ink-3)">Publishing deploys the new plan across all household devices.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Training & Fueling Synthesis (Last 90 Days)</h3>
+          <div id="sum" style="margin-top:10px"><p style="margin:0">Loading synthesis…</p></div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:20px">
-    <h3>Training & Fueling Synthesis (Last 90 Days)</h3>
-    <div id="sum" style="margin-top:10px"><p style="margin:0">Loading synthesis…</p></div>
+  <!-- VIEW 2: Full Monthly Calendar & Meals -->
+  <div id="viewPlan" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <h3>Full Monthly Training & Nutrition Schedule</h3>
+          <p id="planSubtitle" style="margin:0">Every workout paired with calibrated carbohydrate and dinner recipes.</p>
+        </div>
+        <button id="btnRefreshPlan" class="btn ghost" type="button" style="min-height:38px;padding:8px 16px">↻ Refresh Plan</button>
+      </div>
+      <div id="planDaysContainer" class="plan-days">
+        <p style="margin:20px 0;color:var(--ink-3)">Loading your full plan…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: Grocery & Aisle List -->
+  <div id="viewGroceries" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+        <div>
+          <h3>Consolidated Supermarket Shopping List</h3>
+          <p style="margin:0">Aggregated ingredients grouped by grocery aisle so shopping takes minutes.</p>
+        </div>
+        <button id="btnClearTicks" class="btn ghost" type="button" style="min-height:38px;padding:8px 16px">Reset Checkboxes</button>
+      </div>
+      <div id="groceryContainer">
+        <p style="margin:20px 0;color:var(--ink-3)">Loading your grocery list…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 4: In-Page intervals.icu Sync -->
+  <div id="viewIntervals" class="hidden">
+    <div class="card">
+      <h3>intervals.icu Ingestion (Garmin, Wahoo, Apple Watch, Zwift)</h3>
+      <p>Musette reads your workouts automatically via intervals.icu. Connect your athlete credentials right here without leaving the page.</p>
+
+      <div id="icuOff">
+        <div class="row">
+          <div class="field">
+            <label for="icuA">Athlete ID (Number)</label>
+            <input id="icuA" placeholder="e.g. 123456" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label for="icuL">Device Label (Optional)</label>
+            <input id="icuL" maxlength="40" placeholder="e.g. Garmin Forerunner / Apple Watch">
+          </div>
+        </div>
+        <div class="field">
+          <label for="icuK">API Key</label>
+          <input id="icuK" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your intervals.icu API key">
+        </div>
+
+        <details class="helper-box">
+          <summary><b>Where do I find my API key? (Click to view quick guide)</b></summary>
+          <ol class="helper-steps">
+            <li>Open your intervals.icu profile settings (under <b>Developer Settings</b>).</li>
+            <li>Copy the <b>API Key</b> (a string of letters and numbers).</li>
+            <li>Copy your <b>Athlete ID</b> at the very top of your intervals.icu settings page (e.g. <code>123456</code>).</li>
+            <li>Paste both above and click <b>Connect & Test Synchronization</b>.</li>
+          </ol>
+        </details>
+
+        <button id="icuSave" class="btn primary full" type="button" style="margin-top:10px">Connect & Test Synchronization</button>
+        <p style="font-size:12.5px;color:var(--ink-3);margin:12px 0 0">Credentials are encrypted with AES-GCM-256 before storage. You can disconnect anytime.</p>
+      </div>
+
+      <div id="icuOn" class="hidden">
+        <div id="icuStat" style="margin-bottom:16px"></div>
+        <div id="icuRecentRides" style="margin:16px 0"></div>
+        <button id="icuSyncNow" class="btn primary full" type="button" style="margin-bottom:10px">↻ Sync Recent Workouts Now</button>
+        <button id="icuDrop" class="btn ghost full" type="button">Disconnect Integration</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -234,8 +341,9 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 <script>
 (function () {
   var API = 'https://api.musetteapp.com';
+  var FULL_APP_URL = 'https://shopping-list-app-9an.pages.dev';
   var $ = function (id) { return document.getElementById(id); };
-  var token = null, draft = null;
+  var token = null, draft = null, fullState = null;
 
   try { token = sessionStorage.getItem('musette.token'); } catch (e) {}
   var m = /[#&]t=([^&]+)/.exec(location.hash || '');
@@ -245,6 +353,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     history.replaceState(null, '', location.pathname);
   }
 
+  /* Unit preference handling (defaults to imperial) */
   var unitPref = localStorage.getItem('musette.units') || 'imperial';
   if ($('unitPref')) {
     $('unitPref').value = unitPref;
@@ -252,6 +361,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       unitPref = this.value;
       localStorage.setItem('musette.units', unitPref);
       updateUnitLabels();
+      if (fullState && fullState.plan) renderPlan(fullState.plan);
     });
   }
 
@@ -285,6 +395,22 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     signedOut();
   });
 
+  /* View Switcher */
+  var tabs = ['tabOverview', 'tabPlan', 'tabGroceries', 'tabIntervals'];
+  var views = ['viewOverview', 'viewPlan', 'viewGroceries', 'viewIntervals'];
+  tabs.forEach(function (tid, idx) {
+    var tEl = $(tid);
+    if (!tEl) return;
+    tEl.addEventListener('click', function () {
+      tabs.forEach(function (t) { $(t).classList.remove('active'); $(t).setAttribute('aria-selected', 'false'); });
+      views.forEach(function (v) { $(v).classList.add('hidden'); });
+      tEl.classList.add('active');
+      tEl.setAttribute('aria-selected', 'true');
+      $(views[idx]).classList.remove('hidden');
+    });
+  });
+
+  /* Profile Management */
   var P = ['name', 'weight_lb', 'height_in', 'age', 'ftp', 'goal', 'hours_wk', 'motivation', 'avoid'];
   var FIELD = { name: 'nm', weight_lb: 'w', height_in: 'h', age: 'a', ftp: 'f',
     goal: 'g', hours_wk: 'hw', motivation: 'why', avoid: 'av' };
@@ -311,6 +437,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     finally { busy($('save'), false, 'Save Profile Changes'); }
   });
 
+  /* Plan Generation & Publishing */
   $('gen').addEventListener('click', async function () {
     busy($('gen'), true, 'Drafting…');
     try {
@@ -350,10 +477,11 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     finally { busy($('pub'), false, 'Publish This Plan'); }
   });
 
+  /* intervals.icu Ingestion */
   function paintIcu(v) {
     if (v && v.linked) {
       $('icuOn').className = ''; $('icuOff').className = 'hidden';
-      $('icuStat').innerHTML = '<div class="stat"><span>Integration</span><b>Connected (Athlete ' + v.athlete + ')</b></div>'
+      $('icuStat').innerHTML = '<div class="stat"><span>Integration Status</span><b>Connected (Athlete ' + v.athlete + ')</b></div>'
         + (v.label ? '<div class="stat"><span>Device Label</span><b>' + v.label + '</b></div>' : '')
         + '<div class="stat"><span>Connected Since</span><b>' + (v.since || '').slice(0, 10) + '</b></div>'
         + (v.rides_found !== undefined
@@ -378,7 +506,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
         ? ('Connected successfully! ' + out.rides_found + ' activities synced from the last fortnight.')
         : 'Connected successfully! New workouts will arrive automatically upon completion.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('icuSave'), false, 'Connect intervals.icu'); }
+    finally { busy($('icuSave'), false, 'Connect & Test Synchronization'); }
   });
 
   $('icuDrop').addEventListener('click', async function () {
@@ -390,18 +518,151 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     finally { busy($('icuDrop'), false, 'Disconnect Integration'); }
   });
 
+  if ($('icuSyncNow')) {
+    $('icuSyncNow').addEventListener('click', async function () {
+      busy($('icuSyncNow'), true, 'Syncing…');
+      try {
+        var today = new Date().toISOString().slice(0, 10);
+        var from = new Date(); from.setUTCDate(from.getUTCDate() - 14);
+        var got = await api('/rides?oldest=' + from.toISOString().slice(0, 10) + '&newest=' + today);
+        if (got.ok) {
+          say('ok', 'Successfully synced ' + got.rides.length + ' activities!');
+          var listHtml = '<p class="mono" style="margin:14px 0 6px">Recent Synced Workouts</p><ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)">';
+          got.rides.slice(0, 5).forEach(function (r) {
+            listHtml += '<li><b>' + (r.date || '').slice(5) + ':</b> ' + (r.name || 'Workout') + ' — ' + Math.round(r.kj || 0) + ' kJ (' + (r.hours || 0).toFixed(1) + 'h)</li>';
+          });
+          listHtml += '</ul>';
+          $('icuRecentRides').innerHTML = listHtml;
+        } else {
+          say('bad', got.why || 'Could not fetch recent activities.');
+        }
+      } catch (e) { say('bad', 'Could not sync activities.'); }
+      finally { busy($('icuSyncNow'), false, '↻ Sync Recent Workouts Now'); }
+    });
+  }
+
+  /* Render Full Plan View */
+  function renderPlan(plan) {
+    if (!plan || !plan.days || !plan.days.length) {
+      $('planDaysContainer').innerHTML = '<p style="margin:18px 0;color:var(--ink-3)">No active plan found. Use the setup wizard or draft a new plan above.</p>';
+      return;
+    }
+    if ($('planSubtitle')) $('planSubtitle').textContent = 'Block ' + (plan.block || '') + ' (' + plan.days.length + ' days total)';
+    var isMetric = unitPref === 'metric';
+    var html = '';
+    plan.days.forEach(function (day) {
+      var dName = day.d || 'Day';
+      var dDate = day.dt || '';
+      var trainTag = day.train ? (day.train.label || day.train.zone || 'Training') : 'Rest Day';
+      var kc = day.kc || 2000;
+      var carbs = day.carb || Math.round(kc * 0.55 / 4);
+      var meals = day.meals || [];
+      var dinner = meals.find(function(m){ return m.kind === 'dinner'; }) || meals[0] || { name: 'Balanced Athlete Dinner', desc: 'Calibrated recovery meal' };
+      
+      html += '<div class="day-row">'
+        + '<div class="day-head">'
+        + '<div><span class="day-date">' + dName + (dDate ? ' (' + dDate.slice(5) + ')' : '') + '</span></div>'
+        + '<div class="day-meta">'
+        + '<span class="chip train">' + trainTag + '</span>'
+        + '<span class="chip fuel">' + kc + ' kcal · ' + carbs + 'g carbs</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="day-dinner">🍽️ ' + (dinner.name || 'Calibrated Athlete Dinner') + '</div>'
+        + '<p class="day-desc">' + (dinner.desc || dinner.summary || 'Nutrient-rich dinner planned to replenish glycogen and support recovery.') + '</p>'
+        + '</div>';
+    });
+    $('planDaysContainer').innerHTML = html;
+  }
+
+  /* Render Consolidated Grocery List */
+  function renderGroceries(shopping, ticks) {
+    ticks = ticks || {};
+    if (!shopping || !shopping.length) {
+      $('groceryContainer').innerHTML = '<p style="margin:18px 0;color:var(--ink-3)">No grocery items planned. Generate or publish a plan to view shopping list.</p>';
+      return;
+    }
+    var byAisle = {};
+    shopping.forEach(function (it) {
+      var aisle = it.aisle || 'Pantry & General';
+      if (!byAisle[aisle]) byAisle[aisle] = [];
+      byAisle[aisle].push(it);
+    });
+
+    var html = '';
+    Object.keys(byAisle).sort().forEach(function (aisle) {
+      html += '<div class="shop-group"><h3>' + aisle + '</h3><div class="shop-items">';
+      byAisle[aisle].forEach(function (it, idx) {
+        var id = 'chk_' + aisle.replace(/\s+/g, '_') + '_' + idx;
+        var key = it.key || (aisle + ':' + it.name);
+        var isChecked = !!ticks[key];
+        html += '<label class="shop-item ' + (isChecked ? 'checked' : '') + '" for="' + id + '">'
+          + '<input type="checkbox" id="' + id + '" data-key="' + key + '" ' + (isChecked ? 'checked' : '') + '>'
+          + '<span><b>' + (it.qty ? it.qty + ' ' : '') + (it.unit ? it.unit + ' ' : '') + '</b>' + it.name + '</span>'
+          + '</label>';
+      });
+      html += '</div></div>';
+    });
+    $('groceryContainer').innerHTML = html;
+
+    $('groceryContainer').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var p = cb.closest('.shop-item');
+        if (p) p.classList.toggle('checked', cb.checked);
+        var k = cb.dataset.key;
+        if (k && fullState) {
+          if (!fullState.ticks) fullState.ticks = {};
+          fullState.ticks[k] = cb.checked ? Date.now() : 0;
+          api('/sync', { method: 'PUT', body: { ticks: fullState.ticks } }).catch(function(){});
+        }
+      });
+    });
+  }
+
+  if ($('btnClearTicks')) {
+    $('btnClearTicks').addEventListener('click', async function () {
+      if (confirm('Reset all checked grocery items?')) {
+        fullState.ticks = {};
+        renderGroceries(fullState.plan ? fullState.plan.shopping : [], {});
+        try { await api('/sync', { method: 'PUT', body: { ticks: {} } }); } catch(e){}
+      }
+    });
+  }
+
+  if ($('btnRefreshPlan')) {
+    $('btnRefreshPlan').addEventListener('click', function () { load(); });
+  }
+
+  /* Main State Loading */
   async function load() {
     var me = await api('/me');
     if (!me.ok) { signedOut(); return; }
     $('gate').className = 'hidden'; $('app').className = '';
-    $('name').textContent = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
+    var athleteName = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
+    $('name').textContent = athleteName;
     $('who').textContent = me.name || '';
     fillProfile(me.profile);
 
+    /* Update Launch Full App Button with authentication hash */
+    if ($('btnLaunchApp') && token) {
+      $('btnLaunchApp').href = FULL_APP_URL + '#t=' + encodeURIComponent(token);
+    }
+
     paintIcu(await api('/me/intervals'));
 
+    /* Fetch full state including plan, meals, and shopping list */
+    try {
+      var st = await api('/state');
+      if (st) {
+        fullState = st;
+        if (st.plan) {
+          renderPlan(st.plan);
+          renderGroceries(st.plan.shopping, st.ticks);
+        }
+      }
+    } catch(e) {}
+
     var s = await api('/summary');
-    var stats = '<div class="stat"><span>Active Plan Block</span><b>' + (me.block || 'None active') + '</b></div>';
+    var stats = '<div class="stat"><span>Active Plan Block</span><b>' + (me.block || (fullState && fullState.plan ? fullState.plan.block : 'Active')) + '</b></div>';
     if (s.stored_rides) {
       stats += '<div class="stat"><span>Activities Recorded</span><b>' + s.stored_rides.count + ' activities</b></div>';
       if (s.stored_rides.oldest) stats += '<div class="stat"><span>History Since</span><b>' + s.stored_rides.oldest + '</b></div>';

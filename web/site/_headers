@@ -14,10 +14,10 @@
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-nZkEOx9Cxnl9crANp0C4j8cNyILAQYcAFS22Me+sYRg='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-VrJCAjx1/sAZuzOCk90OTG2TxwMSJcvp4tiVbNFc3tY='; style-src 'sha256-I+H0TgX9rLI2SBdzvayXeCk0Ruu/eWtTh80V1aoNwm0='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-BM2PbulBqtrULSE7lEOiu9aKLrqDv0lNkWL9ktqmYoU='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-VrJCAjx1/sAZuzOCk90OTG2TxwMSJcvp4tiVbNFc3tY='; style-src 'sha256-I+H0TgX9rLI2SBdzvayXeCk0Ruu/eWtTh80V1aoNwm0='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-BM2PbulBqtrULSE7lEOiu9aKLrqDv0lNkWL9ktqmYoU='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /how
   Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-sSwLTsP3VJgIOT2BP1CIysmzVmD0aVuZsg3M2wlsbJI='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
