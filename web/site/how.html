@@ -1,0 +1,324 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How it Works — Musette</title>
+<meta name="description" content="The physiology and engineering behind Musette: how training kilojoules convert to metabolic calories, periodized carbohydrates, and real grocery lists.">
+<style>:root{
+--ground:#FAF7F2;--surface:#FFFFFF;--surface-2:#F4EFE6;--surface-3:#EAE2D5;
+--line:#E8E1D5;--line-strong:#D6CCC0;--line-subtle:#F3EDE4;
+--ink:#2C2219;--ink-2:#59493B;--ink-3:#857567;--ink-4:#B0A294;
+--navy:#2C2219;--navy-2:#3D3125;--navy-3:#4D3E30;--navy-ink:#FAF7F2;--navy-sub:#A89B8D;
+--accent:#FF7A00;--accent-hover:#E65100;--accent-light:rgba(255,122,0,.12);--accent-ink:#1C1000;
+--sunset:linear-gradient(135deg,#FF6B35 0%,#FFA800 100%);
+--sun-soft:linear-gradient(180deg,rgba(255,168,0,.15) 0%,rgba(250,247,242,0) 100%);
+--train:#10B981;--train-bg:rgba(16,185,129,.12);--train-border:rgba(16,185,129,.28);--train-ink:#065F46;
+--fuel:#8B5CF6;--fuel-bg:rgba(139,92,246,.12);--fuel-border:rgba(139,92,246,.28);--fuel-ink:#5B21B6;
+--sh-xs:0 1px 3px rgba(44,34,25,.04);
+--sh-sm:0 3px 10px rgba(44,34,25,.05),0 1px 2px rgba(44,34,25,.03);
+--sh-md:0 12px 28px rgba(44,34,25,.07),0 2px 6px rgba(44,34,25,.04);
+--sh-lg:0 20px 48px rgba(44,34,25,.09),0 4px 12px rgba(44,34,25,.04);
+--r-sm:10px;--r:18px;--r-lg:26px;--r-pill:999px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);
+font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.narrow{max-width:780px}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
+h1{font-size:clamp(38px,5vw,58px);letter-spacing:-.038em}
+h2{font-size:clamp(26px,3.2vw,40px);letter-spacing:-.028em}
+h3{font-size:19px;letter-spacing:-.02em;font-weight:750;line-height:1.25}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
+a{color:inherit;text-underline-offset:3px}
+.mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:var(--r-pill);
+background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
+font:750 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:20px}
+.pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.lede{font-size:clamp(18.5px,2.2vw,22px);line-height:1.5;color:var(--ink-2);max-width:62ch;font-weight:420}
+/* masthead */
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
+.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
+.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mast nav a:hover{color:var(--accent-hover)}
+.mast nav a.active{color:var(--accent-hover);font-weight:750}
+@media(max-width:760px){.mast nav a.hide-sm{display:none}}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 24px;border-radius:var(--r-pill);
+font:750 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--sunset);color:#fff;box-shadow:0 4px 14px rgba(255,107,53,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn.primary:hover{box-shadow:0 6px 20px rgba(255,107,53,.48);transform:translateY(-1px)}
+.btn.ghost{border-color:var(--line-strong);background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs)}
+.btn.ghost:hover{background:var(--surface-2);border-color:var(--ink-3);transform:translateY(-1px)}
+/* sections */
+section{padding:clamp(54px,7vw,98px) 0;position:relative}
+.rule{border-top:1px solid var(--line)}
+.step-hd{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.step-num{width:36px;height:36px;border-radius:12px;background:var(--sunset);color:#fff;
+display:grid;place-items:center;font:800 15px/1 ui-monospace,Menlo,monospace;box-shadow:0 3px 10px rgba(255,107,53,.3)}
+/* interactive calculator */
+.calc-box{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-lg);
+padding:28px;box-shadow:var(--sh-md);margin:28px 0}
+.unit-toggle{display:inline-flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:var(--r-pill);
+border:1px solid var(--line);margin-bottom:18px}
+.unit-btn{border:0;background:transparent;padding:6px 14px;border-radius:var(--r-pill);
+font:700 12px/1 ui-monospace,Menlo,monospace;cursor:pointer;color:var(--ink-2);transition:all .12s}
+.unit-btn.active{background:var(--sunset);color:#fff;box-shadow:0 2px 6px rgba(255,107,53,.3)}
+.calc-grid{display:grid;gap:22px;grid-template-columns:1fr}
+@media(min-width:760px){.calc-grid{grid-template-columns:1fr 1.1fr}}
+.calc-inputs{display:grid;gap:14px}
+.field-inline{display:grid;gap:6px}
+.field-inline label{font:700 12px/1 ui-monospace,Menlo,monospace;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em}
+.field-inline input{width:100%;padding:11px 14px;font:750 16px/1 ui-monospace,Menlo,monospace;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink)}
+.calc-results{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:grid;gap:12px}
+.calc-row{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14.5px}
+.calc-row:last-child{border-bottom:0}
+.calc-row dt{color:var(--ink-2)}
+.calc-row dd{margin:0;font:800 16px/1 ui-monospace,Menlo,monospace;color:var(--ink)}
+/* table */
+.table-wrap{overflow-x:auto;margin:22px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
+th{background:var(--surface-2);font:750 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+/* cards */
+.grid{display:grid;gap:22px;grid-template-columns:1fr}
+@media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;box-shadow:var(--sh-xs)}
+.card h3{margin-bottom:8px}
+.card p{font-size:14.5px;color:var(--ink-2);margin:0;line-height:1.55}
+/* footer */
+footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer a{color:var(--ink);text-decoration:none;font-weight:600}
+footer a:hover{color:var(--accent-hover);text-decoration:underline}
+.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
+@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:14px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
+color:var(--ink-3);max-width:84ch;line-height:1.65}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<header class="mast"><div class="wrap">
+<a class="mark" href="/"><span class="mark-icon"></span>Musette</a>
+<nav>
+<a class="active" href="/how">How it works</a>
+<a class="hide-sm" href="/access">Access</a>
+<a class="hide-sm" href="/about">About</a>
+<a class="hide-sm" href="/privacy">Privacy</a>
+<a class="btn primary" href="/signin">Sign in</a>
+</nav>
+</div></header>
+
+<main>
+
+<section><div class="wrap">
+  <div class="pill-badge"><i></i>The Nutrition & Physiology Engine</div>
+  <h1>Physics first. The food follows.</h1>
+  <p class="lede" style="margin-top:18px">Every athlete knows the frustration of under-fueling a big training session, bonking miles from home, and raiding the kitchen at 4pm. Musette solves this with exact metabolic physics and delicious whole food recipes.</p>
+</div></section>
+
+<section class="rule"><div class="wrap">
+  <div class="step-hd">
+    <div class="step-num">1</div>
+    <h2>Training Measures Output. Energy is the Result.</h2>
+  </div>
+  <p>A power meter, GPS running watch, or heart rate monitor measures physical effort continuously. In endurance exercise, $1\text{ kJ of mechanical work} \approx 1\text{ kcal of metabolic expenditure}$ because human muscular efficiency is approximately 21% to 24%.</p>
+
+  <div class="calc-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <h3>Interactive Training Fuel Calculator</h3>
+      <div class="unit-toggle">
+        <button class="unit-btn active" id="btnImperial">Imperial (lbs / mi)</button>
+        <button class="unit-btn" id="btnMetric">Metric (kg / km)</button>
+      </div>
+    </div>
+
+    <div class="calc-grid">
+      <div class="calc-inputs">
+        <div class="field-inline">
+          <label for="cWeight" id="lblWeight">Athlete Bodyweight (lbs)</label>
+          <input id="cWeight" type="number" value="155" min="80" max="350">
+        </div>
+        <div class="field-inline">
+          <label for="cHours">Workout Duration (hours)</label>
+          <input id="cHours" type="number" value="3.5" min="0.5" max="12" step="0.5">
+        </div>
+        <div class="field-inline">
+          <label for="cWatts" id="lblWatts">Intensity (Average Watts or Pace Output)</label>
+          <input id="cWatts" type="number" value="210" min="50" max="500" step="5">
+        </div>
+      </div>
+      <div class="calc-results">
+        <div class="calc-row"><dt>Mechanical Work Output</dt><dd id="resKj">2,646 kJ</dd></div>
+        <div class="calc-row"><dt>Workout Energy Burn</dt><dd id="resBurn">~2,646 kcal</dd></div>
+        <div class="calc-row"><dt>Resting Baseline (BMR)</dt><dd id="resBmr">1,960 kcal</dd></div>
+        <div class="calc-row"><dt>Total Daily Target</dt><dd id="resTotal" style="color:var(--accent-hover);font-size:19px">4,606 kcal</dd></div>
+        <div class="calc-row"><dt>Carbohydrate Requirement</dt><dd id="resCarbs" style="color:var(--train);font-size:19px">735 g (4.7 g/lb)</dd></div>
+        <div class="calc-row"><dt>During-Workout Fuel</dt><dd id="resOnBike">280 g (80 g/h)</dd></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="rule"><div class="wrap">
+  <div class="step-hd">
+    <div class="step-num">2</div>
+    <h2>Carbohydrate Periodization</h2>
+  </div>
+  <p>Muscle and liver glycogen stores hold approximately 400g to 500g of carbohydrate. An intense multi-hour workout drains those stores nearly dry. Musette periodizes your daily carbohydrate targets to match your actual training load:</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Day Type</th>
+          <th>Training Intensity</th>
+          <th>Carb Target (Imperial)</th>
+          <th>During-Workout Fuel</th>
+          <th>Dinner Goal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Rest / Light Recovery</b></td>
+          <td>Zone 0 – 1 (Easy spin/walk)</td>
+          <td>1.4 – 1.8 g/lb (3–4 g/kg)</td>
+          <td>Hydration only</td>
+          <td>Pan-Seared Salmon & Quinoa Avocado Bowl</td>
+        </tr>
+        <tr>
+          <td><b>Aerobic Base (1–2h)</b></td>
+          <td>Zone 2 (Endurance)</td>
+          <td>2.3 – 3.2 g/lb (5–7 g/kg)</td>
+          <td>45 – 60 g/h</td>
+          <td>Honey-Ginger Chicken & Jasmine Rice Bowl</td>
+        </tr>
+        <tr>
+          <td><b>Intervals / Hard Tempo</b></td>
+          <td>Zone 4 – 5 (Threshold)</td>
+          <td>3.4 – 4.3 g/lb (7.5–9.5 g/kg)</td>
+          <td>60 – 90 g/h</td>
+          <td>Rigatoni Bolognese with Garlic Sourdough</td>
+        </tr>
+        <tr>
+          <td><b>Long Endurance (3h+)</b></td>
+          <td>Zone 2 – 3 (Epic volume)</td>
+          <td>4.5+ g/lb (10+ g/kg)</td>
+          <td>80 – 100 g/h</td>
+          <td>Smash Burgers on Brioche with Crispy Wedges</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div></section>
+
+<section class="rule"><div class="wrap">
+  <div class="step-hd">
+    <div class="step-num">3</div>
+    <h2>Curated Dinners & Consolidated Grocery Lists</h2>
+  </div>
+  <div class="grid g3" style="margin-top:20px">
+    <div class="card">
+      <h3>Monthly Dinner Blueprint</h3>
+      <p>30 curated, tested dinner recipes built specifically for active athletes. Every dinner delivers 40–55g of high-quality protein and calibrated starch.</p>
+    </div>
+    <div class="card">
+      <h3>Dynamic Scaling</h3>
+      <p>When you complete a big 50-mile ride or 15-mile long run, dinner starch and portion sizes automatically scale up without you doing kitchen math.</p>
+    </div>
+    <div class="card">
+      <h3>Aisle-Organized Shopping</h3>
+      <p>Ingredients roll up automatically into weekly shopping lists categorized by supermarket aisle (Produce, Dairy, Meat, Bakery, Pantry).</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="rule" style="background:var(--surface-2);border-bottom:1px solid var(--line);text-align:center;padding:54px 0"><div class="wrap">
+  <div class="pill-badge"><i></i>Start fueling with intention</div>
+  <h2 style="max-width:20ch;margin:0 auto">Ready to build your month?</h2>
+  <p class="lede" style="margin:16px auto 28px">Get started with your invite code or sign in to your dashboard.</p>
+  <a class="btn primary" href="/signin">Sign in or Redeem Invite →</a>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+<div class="fcols">
+<div><a class="mark" href="/" style="margin-bottom:12px"><span class="mark-icon"></span>Musette</a>
+<p style="color:var(--ink-2);max-width:32ch;margin:0">Sports nutrition that keeps up with your training. Built for endurance athletes who cook for themselves.</p></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li><li><a href="/access">Access</a></li><li><a href="/signin">Sign in</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div>
+<div><h4>Contact</h4><ul><li><a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a></li></ul></div>
+</div>
+<p class="fine">Musette plans food around endurance training. It is not a medical device, it does not provide medical advice, and it is not a substitute for a doctor, registered dietitian, or certified coach. If you are managing a health condition or have any history of disordered eating, please speak with a clinician.</p>
+</div></footer>
+
+<script>
+(function() {
+  var isMetric = false;
+  var wEl = document.getElementById('cWeight');
+  var hEl = document.getElementById('cHours');
+  var pEl = document.getElementById('cWatts');
+  var bImp = document.getElementById('btnImperial');
+  var bMet = document.getElementById('btnMetric');
+  var lblW = document.getElementById('lblWeight');
+
+  bImp.addEventListener('click', function() {
+    if (!isMetric) return;
+    isMetric = false;
+    bImp.classList.add('active'); bMet.classList.remove('active');
+    lblW.textContent = 'Athlete Bodyweight (lbs)';
+    wEl.value = Math.round(Number(wEl.value) * 2.20462) || 155;
+    recalc();
+  });
+
+  bMet.addEventListener('click', function() {
+    if (isMetric) return;
+    isMetric = true;
+    bMet.classList.add('active'); bImp.classList.remove('active');
+    lblW.textContent = 'Athlete Bodyweight (kg)';
+    wEl.value = Math.round(Number(wEl.value) / 2.20462) || 70;
+    recalc();
+  });
+
+  function recalc() {
+    var rawW = Number(wEl.value) || (isMetric ? 70 : 155);
+    var kg = isMetric ? rawW : rawW / 2.20462;
+    var lbs = isMetric ? rawW * 2.20462 : rawW;
+    var hrs = Math.max(0.5, Number(hEl.value) || 3.5);
+    var w = Math.max(50, Number(pEl.value) || 210);
+
+    var kj = Math.round((w * (hrs * 3600)) / 1000);
+    var bmr = Math.round(10 * kg + 600 + 400);
+    var totalKc = bmr + kj;
+    var carbRateKg = hrs >= 3.5 ? 10.5 : hrs >= 2 ? 8.0 : 6.0;
+    var totalCarbs = Math.round(kg * carbRateKg);
+    var carbRateLb = (totalCarbs / lbs).toFixed(1);
+    var onBikeG = Math.round(hrs * (w > 220 ? 85 : 75));
+
+    document.getElementById('resKj').textContent = kj.toLocaleString() + ' kJ';
+    document.getElementById('resBurn').textContent = '~' + kj.toLocaleString() + ' kcal';
+    document.getElementById('resBmr').textContent = bmr.toLocaleString() + ' kcal';
+    document.getElementById('resTotal').textContent = totalKc.toLocaleString() + ' kcal';
+    document.getElementById('resCarbs').textContent = totalCarbs + ' g (' + (isMetric ? carbRateKg.toFixed(1) + ' g/kg' : carbRateLb + ' g/lb') + ')';
+    document.getElementById('resOnBike').textContent = onBikeG + ' g (~' + Math.round(onBikeG / hrs) + ' g/h)';
+  }
+
+  wEl.addEventListener('input', recalc);
+  hEl.addEventListener('input', recalc);
+  pEl.addEventListener('input', recalc);
+  recalc();
+})();
+</script>
+</body></html>

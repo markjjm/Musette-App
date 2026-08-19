@@ -1,261 +1,233 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Your plan — Musette</title><style>:root{
---ink:#0E1116;--ink-2:#59616E;--ink-3:#8A93A1;
---paper:#FBFAF8;--card:#fff;--line:#E7E4DE;
---navy:#101C2E;--navy-2:#1B2C45;--cream:#F4F1EA;
---amber:#E8A33D;--amber-deep:#C97F14;
---moss:#2E6B4F;--plum:#6B3A63;--clay:#B4543A;
---sh-1:0 1px 2px rgba(16,28,46,.06),0 4px 12px rgba(16,28,46,.05);
---sh-2:0 2px 6px rgba(16,28,46,.08),0 18px 44px rgba(16,28,46,.10);
---r:14px}
-@media(prefers-color-scheme:dark){:root{
---ink:#ECEFF3;--ink-2:#A6AEBB;--ink-3:#727B89;
---paper:#0B0F15;--card:#141A22;--line:#232C38;
---navy:#080D14;--navy-2:#121C2A;--cream:#161D26;
---sh-1:0 1px 2px rgba(0,0,0,.4);--sh-2:0 2px 8px rgba(0,0,0,.5),0 20px 50px rgba(0,0,0,.4)}}
+<title>Athlete Dashboard — Musette</title>
+<meta name="description" content="Manage your training profile, units preference, intervals.icu integration, and upcoming month fueling draft.">
+<style>:root{
+--ground:#FAF7F2;--surface:#FFFFFF;--surface-2:#F4EFE6;--surface-3:#EAE2D5;
+--line:#E8E1D5;--line-strong:#D6CCC0;--line-subtle:#F3EDE4;
+--ink:#2C2219;--ink-2:#59493B;--ink-3:#857567;--ink-4:#B0A294;
+--navy:#2C2219;--navy-2:#3D3125;--navy-3:#4D3E30;--navy-ink:#FAF7F2;--navy-sub:#A89B8D;
+--accent:#FF7A00;--accent-hover:#E65100;--accent-light:rgba(255,122,0,.12);--accent-ink:#1C1000;
+--sunset:linear-gradient(135deg,#FF6B35 0%,#FFA800 100%);
+--train:#10B981;--train-bg:rgba(16,185,129,.12);--train-border:rgba(16,185,129,.28);--train-ink:#065F46;
+--fuel:#8B5CF6;--fuel-bg:rgba(139,92,246,.12);--fuel-border:rgba(139,92,246,.28);--fuel-ink:#5B21B6;
+--warn:#C85124;--warn-bg:rgba(200,81,36,.09);
+--sh-xs:0 1px 3px rgba(44,34,25,.04);
+--sh-sm:0 3px 10px rgba(44,34,25,.05),0 1px 2px rgba(44,34,25,.03);
+--sh-md:0 12px 28px rgba(44,34,25,.07),0 2px 6px rgba(44,34,25,.04);
+--sh-lg:0 20px 48px rgba(44,34,25,.09),0 4px 12px rgba(44,34,25,.04);
+--r-sm:10px;--r:18px;--r-lg:26px;--r-pill:999px}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);
-font:17px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
-font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
-.wrap{max-width:1140px;margin:0 auto;padding:0 28px}
+body{margin:0;background:var(--ground);color:var(--ink);
+font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .narrow{max-width:760px}
-h1,h2,h3,h4{margin:0;letter-spacing:-.03em;line-height:1.08;font-weight:760}
-h1{font-size:clamp(40px,6.2vw,72px)}
-h2{font-size:clamp(27px,3.4vw,42px);letter-spacing:-.028em}
-h3{font-size:20px;letter-spacing:-.018em;font-weight:700;line-height:1.25}
-p{margin:0 0 18px;max-width:64ch}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
+h1{font-size:clamp(30px,4.2vw,46px)}
+h2{font-size:clamp(24px,3vw,34px)}
+h3{font-size:18.5px;letter-spacing:-.016em;font-weight:750;line-height:1.3}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
 a{color:inherit;text-underline-offset:3px}
-.eyebrow{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;
-text-transform:uppercase;color:var(--amber-deep);margin:0 0 20px;display:flex;align-items:center;gap:10px}
-.eyebrow:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent);max-width:120px}
-.lede{font-size:clamp(18px,2.1vw,21px);line-height:1.55;color:var(--ink-2);max-width:56ch;font-weight:420}
+.mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);
+background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
+font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.lede{font-size:clamp(16px,1.8vw,18px);line-height:1.55;color:var(--ink-2);font-weight:420}
 /* masthead */
-.mast{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.86);
-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
-@media(prefers-color-scheme:dark){.mast{background:rgba(11,15,21,.86)}}
-.mast .wrap{display:flex;align-items:center;gap:30px;height:70px}
-.mark{display:flex;align-items:center;gap:10px;font-weight:780;font-size:19px;
-letter-spacing:-.03em;text-decoration:none}
-.mark i{width:26px;height:26px;border-radius:8px;flex:0 0 26px;
-background:linear-gradient(145deg,var(--amber),var(--amber-deep));display:block;
-box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
-.mast nav{margin-left:auto;display:flex;gap:26px;align-items:center}
-.mast nav a{font-size:15px;font-weight:520;text-decoration:none;color:var(--ink-2)}
-.mast nav a:hover{color:var(--ink)}
-@media(max-width:720px){.mast nav a.hide-sm{display:none}}
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:11px;
-font:650 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
-transition:transform .12s ease,box-shadow .12s ease}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber-deep));
-color:#22160A;box-shadow:var(--sh-1),inset 0 1px 0 rgba(255,255,255,.45)}
-.btn.primary:hover{box-shadow:var(--sh-2),inset 0 1px 0 rgba(255,255,255,.45)}
-.btn.ghost{border-color:var(--line);background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
-.btn.onnavy{background:rgba(255,255,255,.1);color:var(--cream);border-color:rgba(255,255,255,.22)}
-/* sections */
-section{padding:clamp(64px,8vw,116px) 0;position:relative}
-.rule{border-top:1px solid var(--line)}
-.dark{background:var(--navy);color:var(--cream)}
-.dark h2,.dark h3{color:#fff}
-.dark .lede,.dark p{color:#B9C4D4}
-.dark .eyebrow{color:var(--amber)}
-/* hero */
-.hero{padding-top:clamp(56px,7vw,92px);padding-bottom:clamp(48px,6vw,84px);overflow:hidden}
-.hero-grid{display:grid;gap:clamp(36px,5vw,64px);align-items:center;grid-template-columns:1fr}
-@media(min-width:940px){.hero-grid{grid-template-columns:1.05fr .95fr}}
-.hero h1 em{font-style:normal;background:linear-gradient(180deg,transparent 62%,rgba(232,163,61,.34) 62%)}
-.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
-.trust{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-3)}
-.trust span{display:flex;align-items:center;gap:7px}
-.tick{width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:var(--moss);
-position:relative;opacity:.9}
-.tick:after{content:"";position:absolute;left:4.5px;top:2.5px;width:4px;height:7px;
-border:solid #fff;border-width:0 1.7px 1.7px 0;transform:rotate(45deg)}
-/* the ride/plate panel */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-box-shadow:var(--sh-2);overflow:hidden}
-.panel-hd{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;
-border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.015),transparent)}
-.panel-hd b{font-size:15px;letter-spacing:-.01em}
-.chip{font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;
-padding:6px 10px;border-radius:99px;background:var(--cream);color:var(--ink-2)}
-.chip.train{background:rgba(46,107,79,.12);color:var(--moss)}
-.chip.fuel{background:rgba(107,58,99,.12);color:var(--plum)}
-.panel-bd{padding:6px 20px 18px}
-.dl{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
-padding:13px 0;border-bottom:1px dashed var(--line)}
-.dl:last-child{border-bottom:0}
-.dl dt{color:var(--ink-2);font-size:15px}
-.dl dd{margin:0;font:650 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
-letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.big{font-size:26px!important;letter-spacing:-.03em}
-.arrow{display:grid;place-items:center;padding:14px 0}
-.arrow span{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);
-display:grid;place-items:center;color:var(--ink-3);box-shadow:var(--sh-1);font-size:15px}
-@media(min-width:940px){.stack{display:grid;gap:0}}
-/* cards */
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
+.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
+.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:18px;align-items:center}
+.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mast nav a:hover{color:var(--accent-hover)}
+@media(max-width:760px){.mast nav a.hide-sm{display:none}}
+/* dashboard layout */
+section{padding:clamp(36px,4.5vw,68px) 0}
 .grid{display:grid;gap:22px;grid-template-columns:1fr}
-@media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-padding:28px;box-shadow:var(--sh-1);position:relative}
-.dark .card{background:var(--navy-2);border-color:rgba(255,255,255,.09)}
-.card p{font-size:15.5px;color:var(--ink-2);margin:0}
-.card h3{margin-bottom:9px}
-.num{width:32px;height:32px;border-radius:9px;background:var(--cream);color:var(--ink-2);
-display:grid;place-items:center;font:700 14px/1 ui-monospace,Menlo,monospace;margin-bottom:16px}
-.dark .num{background:rgba(255,255,255,.09);color:var(--amber)}
-/* denial list */
-.nope{display:grid;gap:0;margin:34px 0 0;padding:0;list-style:none;
-border-top:1px solid var(--line)}
-.nope li{padding:20px 0 20px 38px;border-bottom:1px solid var(--line);position:relative;
-font-size:16.5px;color:var(--ink-2);max-width:70ch}
-.nope li b{color:var(--ink);font-weight:680}
-.nope li:before{content:"";position:absolute;left:6px;top:27px;width:15px;height:1.5px;
-background:var(--clay);opacity:.65}
-.dark .nope{border-color:rgba(255,255,255,.12)}
-.dark .nope li{border-color:rgba(255,255,255,.12);color:#B9C4D4}
-.dark .nope li b{color:#fff}
-/* quote */
-.pull{font-size:clamp(21px,2.6vw,29px);line-height:1.35;letter-spacing:-.02em;
-font-weight:600;max-width:22ch}
-/* footer */
-footer{background:var(--navy);color:#93A1B5;padding:56px 0 40px;font-size:14.5px}
-footer a{color:#C6D0DE;text-decoration:none}
-footer a:hover{color:#fff;text-decoration:underline}
-.fcols{display:grid;gap:28px;grid-template-columns:1fr;margin-bottom:34px}
-@media(min-width:720px){.fcols{grid-template-columns:2fr 1fr 1fr}}
-.fcols h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6B7A8F;
-margin-bottom:14px;font-weight:640}
-.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.fine{border-top:1px solid rgba(255,255,255,.1);padding-top:22px;font-size:13px;
-color:#6B7A8F;max-width:78ch;line-height:1.6}
-:focus-visible{outline:2.5px solid var(--amber);outline-offset:3px;border-radius:4px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.row{display:grid;gap:16px;grid-template-columns:1fr 1fr}
-@media(max-width:640px){.row{grid-template-columns:1fr}}
-label{display:block;font-size:13px;font-weight:620;margin:0 0 6px;color:var(--ink-2)}
-input,select{width:100%;padding:11px 13px;font-size:16px;border:1px solid var(--line);border-radius:10px;
-background:var(--card);color:var(--ink);font-family:inherit}
-input:focus,select:focus{outline:2.5px solid var(--amber);outline-offset:1px;border-color:transparent}
+@media(min-width:880px){.g2{grid-template-columns:1fr 1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+padding:24px;box-shadow:var(--sh-xs);position:relative}
+.card h3{margin-bottom:8px}
+.card p{font-size:14px;color:var(--ink-2);margin:0 0 16px}
+.row{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+@media(max-width:540px){.row{grid-template-columns:1fr}}
+label{display:block;font-size:13px;font-weight:700;margin:0 0 6px;color:var(--ink-2)}
+input,select{width:100%;padding:11px 13px;font-size:15px;border:1px solid var(--line);border-radius:9px;
+background:var(--surface-2);color:var(--ink);font-family:inherit;transition:border-color .12s}
+input:focus,select:focus{outline:2.5px solid var(--accent);outline-offset:1px;border-color:transparent;background:#fff}
 .field{margin-bottom:16px}
-.msg{border-radius:11px;padding:13px 15px;font-size:15px;margin:0 0 20px;border:1px solid var(--line);
-background:var(--card);box-shadow:var(--sh-1)}
-.msg.bad{border-left:4px solid var(--clay)}.msg.ok{border-left:4px solid var(--moss)}
-.hidden{display:none}
-.stat{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px dashed var(--line);font-size:15px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:var(--r-pill);
+font:750 14.5px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--sunset);color:#fff;box-shadow:0 3px 10px rgba(255,107,53,.3)}
+.btn.primary:hover{box-shadow:0 5px 16px rgba(255,107,53,.45);transform:translateY(-1px)}
+.btn.ghost{border-color:var(--line-strong);background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs)}
+.btn.ghost:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.msg{border-radius:10px;padding:12px 14px;font-size:14.5px;margin:0 0 20px;
+border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--sh-xs)}
+.msg.bad{border-left:4px solid var(--warn);background:var(--warn-bg);color:var(--ink)}
+.msg.ok{border-left:4px solid var(--train);background:var(--train-bg);color:var(--ink)}
+.hidden{display:none!important}
+.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14.5px}
 .stat:last-child{border-bottom:0}
-.stat b{font:650 15px/1 ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
-pre{background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:16px;overflow:auto;
-font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
-.wk{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
-.bar{height:6px;background:var(--cream);border-radius:3px;overflow:hidden;margin-top:4px}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber-deep))}
+.stat b{font:750 14.5px/1 ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;color:var(--ink)}
+.wk{display:flex;justify-content:space-between;font-size:13.5px;padding:8px 0}
+.bar{height:7px;background:var(--surface-2);border-radius:4px;overflow:hidden;margin-top:4px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--sunset)}
+/* footer */
+footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer a{color:var(--ink);text-decoration:none;font-weight:600}
+footer a:hover{color:var(--accent-hover);text-decoration:underline}
+.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
+@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:14px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
+color:var(--ink-3);max-width:84ch;line-height:1.65}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <header class="mast"><div class="wrap">
-<a class="mark" href="/"><i></i>Musette</a>
-<nav><a class="hide-sm" href="/how">How it works</a><a id="who" class="hide-sm"></a><button id="out" class="btn ghost" type="button">Sign out</button></nav>
+<a class="mark" href="/"><span class="mark-icon"></span>Musette</a>
+<nav>
+<a class="hide-sm" href="/how">How it works</a>
+<span id="who" class="hide-sm mono" style="color:var(--ink-2)"></span>
+<button id="out" class="btn ghost" type="button">Sign out</button>
+</nav>
 </div></header>
+
 <main><section><div class="wrap">
 
 <div id="gate">
-  <h1 style="font-size:32px">Sign in to see your plan</h1>
-  <p class="lede" style="margin:14px 0 26px">This page needs an account.</p>
+  <div class="pill-badge"><i></i>Authentication Required</div>
+  <h1>Sign in to access your plan</h1>
+  <p class="lede" style="margin:12px 0 24px">This dashboard requires an active athlete session.</p>
   <a class="btn primary" href="/signin">Sign in →</a>
 </div>
 
 <div id="app" class="hidden">
-  <p class="eyebrow">Your plan</p>
-  <h1 style="font-size:clamp(30px,4vw,44px)">Hello, <span id="name"></span></h1>
+  <div class="pill-badge"><i></i>Athlete Dashboard</div>
+  <h1>Hello, <span id="name"></span></h1>
   <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
-  <div class="grid g2" style="margin-top:34px;align-items:start">
-    <div class="card">
-      <h3>About you</h3>
-      <p style="margin-bottom:20px">These are what every target is computed from. Change them and the plan follows.</p>
-      <div class="field"><label for="nm">Your name</label><input id="nm" maxlength="40" placeholder="Alex"></div>
-      <div class="row">
-        <div class="field"><label for="w">Weight (lb)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
-        <div class="field"><label for="h">Height (in)</label><input id="h" type="number" min="48" max="90"></div>
+  <div class="grid g2" style="margin-top:28px;align-items:start">
+    <div>
+      <div class="card" style="margin-bottom:22px">
+        <h3>Physiological Parameters</h3>
+        <p>Used to calculate daily calories and carbohydrate targets. Update anytime as your fitness and body composition evolve.</p>
+        
+        <div class="field"><label for="nm">Athlete name / handle</label><input id="nm" maxlength="40" placeholder="Alex"></div>
+        <div class="row">
+          <div class="field"><label for="w" id="lblWeight">Weight (lbs)</label><input id="w" type="number" min="70" max="400" step="0.1"></div>
+          <div class="field"><label for="h" id="lblHeight">Height (inches)</label><input id="h" type="number" min="48" max="90"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="a">Age</label><input id="a" type="number" min="14" max="100"></div>
+          <div class="field"><label for="f">Threshold Power / FTP (Watts)</label><input id="f" type="number" min="0" max="600"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="g">Primary Goal</label><select id="g">
+            <option value="hold">Maintain weight steady</option>
+            <option value="lose">Gradual weight loss</option>
+            <option value="gain">Deliberate mass gain</option>
+          </select></div>
+          <div class="field"><label for="hw">Weekly volume (hours)</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
+        </div>
+        <div class="field"><label for="why">Primary motivation or target event</label>
+          <input id="why" maxlength="200" placeholder="e.g. Chicago Marathon, Leadville 100, Fall triathlon"></div>
+        <div class="field"><label for="av">Exclusions (foods you refuse or avoid)</label>
+          <input id="av" maxlength="200" placeholder="e.g. shellfish, cilantro"></div>
+        <button id="save" class="btn primary" type="button" style="width:100%">Save Profile Changes</button>
       </div>
-      <div class="row">
-        <div class="field"><label for="a">Age</label><input id="a" type="number" min="14" max="100"></div>
-        <div class="field"><label for="f">FTP (watts)</label><input id="f" type="number" min="0" max="600"></div>
+
+      <div class="card">
+        <h3>Units & Measurement Settings</h3>
+        <p>Choose your preferred unit system for distance, bodyweight, and pace across the application.</p>
+        <div class="field"><label for="unitPref">Default Unit System</label>
+          <select id="unitPref">
+            <option value="imperial" selected>Imperial (miles, lbs, ft) — Default</option>
+            <option value="metric">Metric (kilometers, kg, meters)</option>
+          </select>
+        </div>
+        <p style="font-size:13px;color:var(--ink-3);margin:0">Preferences are saved locally and synced with your athlete profile.</p>
       </div>
-      <div class="row">
-        <div class="field"><label for="g">Goal</label><select id="g">
-          <option value="hold">Hold weight steady</option>
-          <option value="lose">Lose slowly</option>
-          <option value="gain">Gain deliberately</option>
-        </select></div>
-        <div class="field"><label for="hw">Hours a week</label><input id="hw" type="number" min="0" max="30" step="0.5"></div>
-      </div>
-      <div class="field"><label for="why">Why you're doing this</label>
-        <input id="why" maxlength="200" placeholder="keep up with my kids on the Saturday ride"></div>
-      <p style="font-size:13px;color:var(--ink-3);margin:-8px 0 16px">The coach reads this. It changes no numbers and it changes how everything is said.</p>
-      <div class="field"><label for="av">Anything you will not eat</label><input id="av" maxlength="200" placeholder="no shellfish, no coriander"></div>
-      <button id="save" class="btn primary" type="button" style="width:100%">Save</button>
     </div>
 
     <div>
       <div class="card" style="margin-bottom:22px">
-        <h3>Where you are</h3>
-        <div id="stats" style="margin-top:14px"><p style="margin:0">Loading…</p></div>
+        <h3>Active Training Status</h3>
+        <div id="stats" style="margin-top:12px"><p style="margin:0">Loading…</p></div>
       </div>
+
       <div class="card" style="margin-bottom:22px">
-        <h3>Your training</h3>
+        <h3>Device & Training Sync</h3>
         <div id="icuOff">
-          <p style="margin-bottom:16px">Musette reads your rides, runs and walks from <b>intervals.icu</b>, which already syncs from Garmin, Wahoo, Coros, Polar, Suunto and Zwift. Connect once and they arrive on their own.</p>
-          <ol style="margin:0 0 18px;padding-left:20px;font-size:15px;color:var(--ink-2);line-height:1.75">
-            <li>Open <a href="https://intervals.icu/settings" target="_blank" rel="noopener">intervals.icu/settings</a> and scroll to <b>Developer Settings</b>.</li>
-            <li>Copy your <b>API key</b>, and your <b>athlete id</b> from the top of the same page (it looks like <code>i123456</code>).</li>
-            <li>Paste both below. We check them with intervals.icu before saving.</li>
+          <p style="margin-bottom:14px">Musette ingests completed workouts from <b>intervals.icu</b> (which connects directly with Garmin, Wahoo, Apple Watch, COROS, Polar, Suunto, and Zwift).</p>
+          <ol style="margin:0 0 16px;padding-left:18px;font-size:14px;color:var(--ink-2);line-height:1.65">
+            <li>Open <a href="https://intervals.icu/settings" target="_blank" rel="noopener">intervals.icu/settings</a> and navigate to <b>Developer Settings</b>.</li>
+            <li>Copy your <b>API key</b>, and your <b>athlete id</b> from the top of the page (e.g. <code>i123456</code>).</li>
+            <li>Paste both below. Verified with intervals.icu before storage.</li>
           </ol>
           <div class="row">
-            <div class="field"><label for="icuA">Athlete id</label><input id="icuA" placeholder="123456" inputmode="numeric"></div>
-            <div class="field"><label for="icuL">Label (optional)</label><input id="icuL" maxlength="40" placeholder="my Garmin"></div>
+            <div class="field"><label for="icuA">Athlete ID</label><input id="icuA" placeholder="123456" inputmode="numeric"></div>
+            <div class="field"><label for="icuL">Label (optional)</label><input id="icuL" maxlength="40" placeholder="e.g. Garmin / Apple Watch"></div>
           </div>
-          <div class="field"><label for="icuK">API key</label>
-            <input id="icuK" type="password" autocomplete="off" spellcheck="false" placeholder="paste it here"></div>
-          <button id="icuSave" class="btn primary" type="button" style="width:100%">Connect</button>
-          <p style="font-size:13px;color:var(--ink-3);margin:14px 0 0">Your key is encrypted before it is stored and is never shown again, not even to you. Disconnect any time, or change it at intervals.icu to revoke it instantly.</p>
+          <div class="field"><label for="icuK">API Key</label>
+            <input id="icuK" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"></div>
+          <button id="icuSave" class="btn primary" type="button" style="width:100%">Connect intervals.icu</button>
+          <p style="font-size:12.5px;color:var(--ink-3);margin:12px 0 0">Encrypted with AES-GCM-256 before storage. Disconnect or rotate anytime.</p>
         </div>
         <div id="icuOn" class="hidden">
           <div id="icuStat"></div>
-          <button id="icuDrop" class="btn ghost" type="button" style="width:100%;margin-top:16px">Disconnect</button>
+          <button id="icuDrop" class="btn ghost" type="button" style="width:100%;margin-top:16px">Disconnect Integration</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>Next month</h3>
-        <p style="margin-bottom:18px">Carries your current block forward onto next month's calendar, ramped, with a recovery week. Nothing is saved until you say so.</p>
+        <h3>Draft Next Month's Plan</h3>
+        <p style="margin-bottom:16px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
         <div class="row">
-          <div class="field"><label for="rp">Ramp % a week</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
-          <div class="field"><label for="rw">Recovery week</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
+          <div class="field"><label for="rp">Weekly Ramp %</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
+          <div class="field"><label for="rw">Recovery Week (1–5)</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
         </div>
-        <button id="gen" class="btn primary" type="button" style="width:100%">Draft next month</button>
-        <div id="draft" class="hidden" style="margin-top:22px">
+        <button id="gen" class="btn primary" type="button" style="width:100%">Draft Next Month</button>
+        <div id="draft" class="hidden" style="margin-top:20px">
           <div id="draftBody"></div>
-          <button id="pub" class="btn primary" type="button" style="width:100%;margin-top:16px">Publish this plan</button>
-          <p class="alt" style="text-align:center;margin-top:12px;font-size:13.5px;color:var(--ink-3)">Publishing replaces the current block on every device.</p>
+          <button id="pub" class="btn primary" type="button" style="width:100%;margin-top:16px">Publish This Plan</button>
+          <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--ink-3)">Publishing deploys the new plan across all household devices.</p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="card" style="margin-top:22px">
-    <h3>The last three months</h3>
-    <div id="sum" style="margin-top:12px"><p style="margin:0">Loading…</p></div>
+    <h3>Training & Fueling Synthesis (Last 90 Days)</h3>
+    <div id="sum" style="margin-top:12px"><p style="margin:0">Loading synthesis…</p></div>
   </div>
 </div>
 
 </div></section></main>
-<footer><div class="wrap"><div class="fcols"><div><a class="mark" href="/" style="color:#fff"><i></i>Musette</a></div>
-<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li></ul></div>
-<div><h4>Company</h4><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div></div>
-<p class="fine">Musette plans food around training. It is not a medical device and does not give medical advice.</p>
+
+<footer><div class="wrap">
+<div class="fcols">
+<div><a class="mark" href="/" style="margin-bottom:12px"><span class="mark-icon"></span>Musette</a>
+<p style="color:var(--ink-2);max-width:32ch;margin:0">Sports nutrition that keeps up with your training. Built for endurance athletes who cook for themselves.</p></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li><li><a href="/access">Access</a></li><li><a href="/signin">Sign in</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div>
+<div><h4>Contact</h4><ul><li><a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a></li></ul></div>
+</div>
+<p class="fine">Musette plans food around endurance training. It is not a medical device, it does not provide medical advice, and it is not a substitute for a doctor, registered dietitian, or certified coach. If you are managing a health condition or have any history of disordered eating, please speak with a clinician.</p>
 </div></footer>
+
 <script>
 (function () {
   var API = 'https://api.musetteapp.com';
@@ -263,15 +235,30 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
   var token = null, draft = null;
 
   try { token = sessionStorage.getItem('musette.token'); } catch (e) {}
-  /* The sign-in page can also hand the token over in the fragment, which never
-     leaves the browser and is stripped immediately so it does not sit in the
-     address bar or get pasted into a chat by accident. */
   var m = /[#&]t=([^&]+)/.exec(location.hash || '');
   if (m) {
     token = decodeURIComponent(m[1]);
     try { sessionStorage.setItem('musette.token', token); } catch (e) {}
     history.replaceState(null, '', location.pathname);
   }
+
+  /* Unit preference handling (defaults to imperial) */
+  var unitPref = localStorage.getItem('musette.units') || 'imperial';
+  if ($('unitPref')) {
+    $('unitPref').value = unitPref;
+    $('unitPref').addEventListener('change', function() {
+      unitPref = this.value;
+      localStorage.setItem('musette.units', unitPref);
+      updateUnitLabels();
+    });
+  }
+
+  function updateUnitLabels() {
+    var isMetric = unitPref === 'metric';
+    if ($('lblWeight')) $('lblWeight').textContent = isMetric ? 'Weight (kg)' : 'Weight (lbs)';
+    if ($('lblHeight')) $('lblHeight').textContent = isMetric ? 'Height (cm)' : 'Height (inches)';
+  }
+  updateUnitLabels();
 
   function say(kind, text) { var e = $('msg'); e.className = 'msg ' + kind; e.textContent = text; }
   function busy(el, on, label) { el.disabled = on; el.textContent = on ? 'Working…' : label; }
@@ -299,8 +286,6 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
   var P = ['name', 'weight_lb', 'height_in', 'age', 'ftp', 'goal', 'hours_wk', 'motivation', 'avoid'];
   var FIELD = { name: 'nm', weight_lb: 'w', height_in: 'h', age: 'a', ftp: 'f',
     goal: 'g', hours_wk: 'hw', motivation: 'why', avoid: 'av' };
-  /* Explicit, because coercing a name to a Number gives NaN and the server's
-     clamp then quietly replaces it with a default. */
   var NUMERIC = ['weight_lb', 'height_in', 'age', 'ftp', 'hours_wk'];
 
   function fillProfile(p) {
@@ -309,7 +294,7 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
   }
 
   $('save').addEventListener('click', async function () {
-    busy($('save'), true, 'Save');
+    busy($('save'), true, 'Saving…');
     try {
       var body = {};
       P.forEach(function (k) {
@@ -317,64 +302,60 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
         body[k] = NUMERIC.indexOf(k) >= 0 ? Number(v) : v;
       });
       var out = await api('/me/profile', { method: 'PUT', body: body });
-      if (!out.ok) { say('bad', out.why || 'Could not save.'); return; }
+      if (!out.ok) { say('bad', out.why || 'Could not save profile changes.'); return; }
       fillProfile(out.profile);
-      say('ok', 'Saved. Every target is computed from these.');
+      say('ok', 'Profile saved! Daily energy and carbohydrate targets updated.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('save'), false, 'Save'); }
+    finally { busy($('save'), false, 'Save Profile Changes'); }
   });
 
   $('gen').addEventListener('click', async function () {
-    busy($('gen'), true, 'Draft next month');
+    busy($('gen'), true, 'Drafting…');
     try {
       var out = await api('/plan/generate', { method: 'POST',
         body: { ramp_percent: Number($('rp').value), recovery_week: Number($('rw').value) } });
-      if (!out.ok) { say('bad', out.why || out.error || 'Could not draft it.'); return; }
+      if (!out.ok) { say('bad', out.why || out.error || 'Could not draft the next block.'); return; }
       draft = out.plan;
       var wk = {};
       out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
-      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; }));
-      var html = '<div class="stat"><span>Block</span><b>' + out.plan.block + '</b></div>'
-        + '<div class="stat"><span>Days</span><b>' + out.plan.days.length + '</b></div>'
-        + '<div class="stat"><span>Total riding</span><b>' + out.basis.total_hours + ' h</b></div>'
-        + '<div class="stat"><span>Targets</span><b>' + out.basis.kcal_model + '</b></div>'
-        + '<p class="eyebrow" style="margin:18px 0 8px">By week</p>';
+      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; })) || 1;
+      var html = '<div class="stat"><span>Target Block</span><b>' + out.plan.block + '</b></div>'
+        + '<div class="stat"><span>Total Days</span><b>' + out.plan.days.length + '</b></div>'
+        + '<div class="stat"><span>Total Volume</span><b>' + out.basis.total_hours + ' hours</b></div>'
+        + '<div class="stat"><span>Energy Model</span><b>' + out.basis.kcal_model + '</b></div>'
+        + '<p class="mono" style="margin:18px 0 8px">Weekly Volume Breakdown</p>';
       Object.keys(wk).sort().forEach(function (k) {
         html += '<div class="wk"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
           + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
       });
       $('draftBody').innerHTML = html;
       $('draft').className = '';
-      say('ok', 'Drafted. Nothing is saved yet — look it over, then publish.');
+      say('ok', 'Draft created! Review the volume targets and publish when ready.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('gen'), false, 'Draft next month'); }
+    finally { busy($('gen'), false, 'Draft Next Month'); }
   });
 
   $('pub').addEventListener('click', async function () {
     if (!draft) return;
-    busy($('pub'), true, 'Publish this plan');
+    busy($('pub'), true, 'Publishing…');
     try {
-      /* PUT /plan is admin-only on purpose: replacing a whole month is the one
-         destructive write in the app. The signed-in page can DRAFT freely and
-         asks the server to publish; if the account is not an admin the server
-         says so rather than the page pretending it worked. */
       var out = await api('/plan/publish', { method: 'POST', body: { plan: draft, resetTicks: true } });
-      if (!out.ok) { say('bad', out.why || 'Could not publish.'); return; }
-      say('ok', 'Published. Every device picks it up on the next sync.');
+      if (!out.ok) { say('bad', out.why || 'Could not publish plan.'); return; }
+      say('ok', 'Plan published successfully! All devices will sync the new block.');
       $('draft').className = 'hidden';
       load();
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('pub'), false, 'Publish this plan'); }
+    finally { busy($('pub'), false, 'Publish This Plan'); }
   });
 
   function paintIcu(v) {
     if (v && v.linked) {
       $('icuOn').className = ''; $('icuOff').className = 'hidden';
-      $('icuStat').innerHTML = '<div class="stat"><span>Connected</span><b>athlete ' + v.athlete + '</b></div>'
-        + (v.label ? '<div class="stat"><span>Label</span><b>' + v.label + '</b></div>' : '')
-        + '<div class="stat"><span>Since</span><b>' + (v.since || '').slice(0, 10) + '</b></div>'
+      $('icuStat').innerHTML = '<div class="stat"><span>Integration</span><b>Connected (Athlete ' + v.athlete + ')</b></div>'
+        + (v.label ? '<div class="stat"><span>Device Label</span><b>' + v.label + '</b></div>' : '')
+        + '<div class="stat"><span>Connected Since</span><b>' + (v.since || '').slice(0, 10) + '</b></div>'
         + (v.rides_found !== undefined
-            ? '<div class="stat"><span>Found straight away</span><b>' + v.rides_found + ' in 14 days</b></div>' : '');
+            ? '<div class="stat"><span>Recent Activities</span><b>' + v.rides_found + ' found in last 14 days</b></div>' : '');
     } else {
       $('icuOn').className = 'hidden'; $('icuOff').className = '';
     }
@@ -383,39 +364,34 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
   $('icuSave').addEventListener('click', async function () {
     var key = ($('icuK').value || '').trim();
     var ath = ($('icuA').value || '').trim().replace(/^i/i, '');
-    if (!/^\d{1,12}$/.test(ath)) { say('bad', 'The athlete id is the number from your intervals.icu settings, like 123456.'); return; }
-    if (key.length < 8) { say('bad', 'That API key looks too short — copy the whole thing.'); return; }
-    busy($('icuSave'), true, 'Connect');
+    if (!/^\d{1,12}$/.test(ath)) { say('bad', 'The athlete ID is the number from your intervals.icu settings (e.g. 123456).'); return; }
+    if (key.length < 8) { say('bad', 'Please enter your complete intervals.icu API key.'); return; }
+    busy($('icuSave'), true, 'Connecting…');
     try {
       var out = await api('/me/intervals', { method: 'PUT', body: { key: key, athlete: ath, label: $('icuL').value } });
-      if (!out.linked) { say('bad', out.why || 'Could not connect.'); return; }
-      /* Cleared immediately: there is no reason for a key to sit in a form
-         field after it has been stored. */
+      if (!out.linked) { say('bad', out.why || 'Could not connect to intervals.icu.'); return; }
       $('icuK').value = '';
       paintIcu(out);
       say('ok', out.rides_found
-        ? ('Connected. ' + out.rides_found + ' activities from the last fortnight are in already.')
-        : 'Connected. Nothing in the last fortnight, but new activities will arrive on their own.');
+        ? ('Connected successfully! ' + out.rides_found + ' activities synced from the last fortnight.')
+        : 'Connected successfully! New workouts will arrive automatically upon completion.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('icuSave'), false, 'Connect'); }
+    finally { busy($('icuSave'), false, 'Connect intervals.icu'); }
   });
 
   $('icuDrop').addEventListener('click', async function () {
-    busy($('icuDrop'), true, 'Disconnect');
+    busy($('icuDrop'), true, 'Disconnecting…');
     try {
       paintIcu(await api('/me/intervals', { method: 'DELETE' }));
-      say('ok', 'Disconnected. Activities already stored stay; no new ones will arrive.');
+      say('ok', 'intervals.icu disconnected. Stored activity data remains intact.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('icuDrop'), false, 'Disconnect'); }
+    finally { busy($('icuDrop'), false, 'Disconnect Integration'); }
   });
 
   async function load() {
     var me = await api('/me');
     if (!me.ok) { signedOut(); return; }
     $('gate').className = 'hidden'; $('app').className = '';
-    /* Their name if they gave one. An email address is an identifier, not a
-       name, and greeting somebody with theirs is the tell that nobody thought
-       about the person on the other side. */
     $('name').textContent = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
     $('who').textContent = me.name || '';
     fillProfile(me.profile);
@@ -423,22 +399,22 @@ font:12.5px/1.5 ui-monospace,Menlo,monospace;max-height:340px}
     paintIcu(await api('/me/intervals'));
 
     var s = await api('/summary');
-    var stats = '<div class="stat"><span>Current block</span><b>' + (me.block || 'none') + '</b></div>';
+    var stats = '<div class="stat"><span>Active Plan Block</span><b>' + (me.block || 'None active') + '</b></div>';
     if (s.stored_rides) {
-      stats += '<div class="stat"><span>Activities stored</span><b>' + s.stored_rides.count + '</b></div>';
-      if (s.stored_rides.oldest) stats += '<div class="stat"><span>Going back to</span><b>' + s.stored_rides.oldest + '</b></div>';
+      stats += '<div class="stat"><span>Activities Recorded</span><b>' + s.stored_rides.count + ' activities</b></div>';
+      if (s.stored_rides.oldest) stats += '<div class="stat"><span>History Since</span><b>' + s.stored_rides.oldest + '</b></div>';
     }
     $('stats').innerHTML = stats;
 
     if (s.ok && s.summary) {
       var w = (s.summary.watch || []).map(function (x) { return '<li>' + x + '</li>'; }).join('');
-      $('sum').innerHTML = '<p style="font-size:17px;font-weight:600;margin-bottom:14px">' + s.summary.headline + '</p>'
+      $('sum').innerHTML = '<p style="font-size:16px;font-weight:750;color:var(--ink);margin-bottom:10px">' + s.summary.headline + '</p>'
         + '<p>' + s.summary.training + '</p><p>' + s.summary.fuelling + '</p>'
-        + (w ? '<p class="eyebrow" style="margin:18px 0 6px">Worth watching</p><ul style="margin:0;padding-left:20px;color:var(--ink-2);font-size:15px">' + w + '</ul>' : '')
-        + '<p style="font-size:13px;color:var(--ink-3);margin-top:16px">From ' + s.basis.rides + ' rides over '
-        + s.basis.window_days + ' days · ' + (s.age_days === 0 ? 'made today' : s.age_days + ' days old') + '</p>';
+        + (w ? '<p class="mono" style="margin:16px 0 6px">Key Observations</p><ul style="margin:0;padding-left:20px;color:var(--ink-2);font-size:14.5px">' + w + '</ul>' : '')
+        + '<p style="font-size:12.5px;color:var(--ink-3);margin-top:14px">Based on ' + s.basis.rides + ' activities over '
+        + s.basis.window_days + ' days (' + (s.age_days === 0 ? 'generated today' : s.age_days + ' days old') + ')</p>';
     } else {
-      $('sum').innerHTML = '<p style="margin:0">' + (s.why || 'No summary yet.') + '</p>';
+      $('sum').innerHTML = '<p style="margin:0">' + (s.why || 'No synthesis generated yet.') + '</p>';
     }
   }
 

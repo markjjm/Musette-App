@@ -87,7 +87,7 @@ function policy(html, connect, formAction) {
       "default-src 'none'",
       `script-src ${scripts.join(' ') || "'none'"}`,
       `style-src ${styles.join(' ') || "'none'"}`,
-      'img-src data:',
+      "img-src 'self' data:",
       `connect-src ${connect.length ? connect.join(' ') : "'none'"}`,
       "base-uri 'none'",
       /* form-action is 'none' everywhere except the pages that post: the CSP

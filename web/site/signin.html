@@ -1,168 +1,111 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign in — Musette</title><style>:root{
---ink:#0E1116;--ink-2:#59616E;--ink-3:#8A93A1;
---paper:#FBFAF8;--card:#fff;--line:#E7E4DE;
---navy:#101C2E;--navy-2:#1B2C45;--cream:#F4F1EA;
---amber:#E8A33D;--amber-deep:#C97F14;
---moss:#2E6B4F;--plum:#6B3A63;--clay:#B4543A;
---sh-1:0 1px 2px rgba(16,28,46,.06),0 4px 12px rgba(16,28,46,.05);
---sh-2:0 2px 6px rgba(16,28,46,.08),0 18px 44px rgba(16,28,46,.10);
---r:14px}
-@media(prefers-color-scheme:dark){:root{
---ink:#ECEFF3;--ink-2:#A6AEBB;--ink-3:#727B89;
---paper:#0B0F15;--card:#141A22;--line:#232C38;
---navy:#080D14;--navy-2:#121C2A;--cream:#161D26;
---sh-1:0 1px 2px rgba(0,0,0,.4);--sh-2:0 2px 8px rgba(0,0,0,.5),0 20px 50px rgba(0,0,0,.4)}}
+<title>Sign in — Musette</title>
+<meta name="description" content="Sign in to your Musette training nutrition plan using passkeys or passwords.">
+<style>:root{
+--ground:#FAF7F2;--surface:#FFFFFF;--surface-2:#F4EFE6;--surface-3:#EAE2D5;
+--line:#E8E1D5;--line-strong:#D6CCC0;--line-subtle:#F3EDE4;
+--ink:#2C2219;--ink-2:#59493B;--ink-3:#857567;--ink-4:#B0A294;
+--navy:#2C2219;--navy-2:#3D3125;--navy-3:#4D3E30;--navy-ink:#FAF7F2;--navy-sub:#A89B8D;
+--accent:#FF7A00;--accent-hover:#E65100;--accent-light:rgba(255,122,0,.12);--accent-ink:#1C1000;
+--sunset:linear-gradient(135deg,#FF6B35 0%,#FFA800 100%);
+--train:#10B981;--train-bg:rgba(16,185,129,.12);--train-border:rgba(16,185,129,.28);--train-ink:#065F46;
+--fuel:#8B5CF6;--fuel-bg:rgba(139,92,246,.12);--fuel-border:rgba(139,92,246,.28);--fuel-ink:#5B21B6;
+--warn:#C85124;--warn-bg:rgba(200,81,36,.09);
+--sh-xs:0 1px 3px rgba(44,34,25,.04);
+--sh-sm:0 3px 10px rgba(44,34,25,.05),0 1px 2px rgba(44,34,25,.03);
+--sh-md:0 12px 28px rgba(44,34,25,.07),0 2px 6px rgba(44,34,25,.04);
+--sh-lg:0 20px 48px rgba(44,34,25,.09),0 4px 12px rgba(44,34,25,.04);
+--r-sm:10px;--r:18px;--r-lg:26px;--r-pill:999px}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);
-font:17px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
-font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
-.wrap{max-width:1140px;margin:0 auto;padding:0 28px}
+body{margin:0;background:var(--ground);color:var(--ink);
+font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .narrow{max-width:760px}
-h1,h2,h3,h4{margin:0;letter-spacing:-.03em;line-height:1.08;font-weight:760}
-h1{font-size:clamp(40px,6.2vw,72px)}
-h2{font-size:clamp(27px,3.4vw,42px);letter-spacing:-.028em}
-h3{font-size:20px;letter-spacing:-.018em;font-weight:700;line-height:1.25}
-p{margin:0 0 18px;max-width:64ch}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
+h1{font-size:clamp(30px,4.5vw,44px)}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
 a{color:inherit;text-underline-offset:3px}
-.eyebrow{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em;
-text-transform:uppercase;color:var(--amber-deep);margin:0 0 20px;display:flex;align-items:center;gap:10px}
-.eyebrow:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line),transparent);max-width:120px}
-.lede{font-size:clamp(18px,2.1vw,21px);line-height:1.55;color:var(--ink-2);max-width:56ch;font-weight:420}
+.mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);
+background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
+font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.lede{font-size:clamp(16px,1.8vw,18px);line-height:1.55;color:var(--ink-2);font-weight:420}
 /* masthead */
-.mast{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.86);
-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
-@media(prefers-color-scheme:dark){.mast{background:rgba(11,15,21,.86)}}
-.mast .wrap{display:flex;align-items:center;gap:30px;height:70px}
-.mark{display:flex;align-items:center;gap:10px;font-weight:780;font-size:19px;
-letter-spacing:-.03em;text-decoration:none}
-.mark i{width:26px;height:26px;border-radius:8px;flex:0 0 26px;
-background:linear-gradient(145deg,var(--amber),var(--amber-deep));display:block;
-box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
-.mast nav{margin-left:auto;display:flex;gap:26px;align-items:center}
-.mast nav a{font-size:15px;font-weight:520;text-decoration:none;color:var(--ink-2)}
-.mast nav a:hover{color:var(--ink)}
-@media(max-width:720px){.mast nav a.hide-sm{display:none}}
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:11px;
-font:650 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
-transition:transform .12s ease,box-shadow .12s ease}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:linear-gradient(180deg,var(--amber),var(--amber-deep));
-color:#22160A;box-shadow:var(--sh-1),inset 0 1px 0 rgba(255,255,255,.45)}
-.btn.primary:hover{box-shadow:var(--sh-2),inset 0 1px 0 rgba(255,255,255,.45)}
-.btn.ghost{border-color:var(--line);background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
-.btn.onnavy{background:rgba(255,255,255,.1);color:var(--cream);border-color:rgba(255,255,255,.22)}
-/* sections */
-section{padding:clamp(64px,8vw,116px) 0;position:relative}
-.rule{border-top:1px solid var(--line)}
-.dark{background:var(--navy);color:var(--cream)}
-.dark h2,.dark h3{color:#fff}
-.dark .lede,.dark p{color:#B9C4D4}
-.dark .eyebrow{color:var(--amber)}
-/* hero */
-.hero{padding-top:clamp(56px,7vw,92px);padding-bottom:clamp(48px,6vw,84px);overflow:hidden}
-.hero-grid{display:grid;gap:clamp(36px,5vw,64px);align-items:center;grid-template-columns:1fr}
-@media(min-width:940px){.hero-grid{grid-template-columns:1.05fr .95fr}}
-.hero h1 em{font-style:normal;background:linear-gradient(180deg,transparent 62%,rgba(232,163,61,.34) 62%)}
-.acts{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
-.trust{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;font-size:14px;color:var(--ink-3)}
-.trust span{display:flex;align-items:center;gap:7px}
-.tick{width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:var(--moss);
-position:relative;opacity:.9}
-.tick:after{content:"";position:absolute;left:4.5px;top:2.5px;width:4px;height:7px;
-border:solid #fff;border-width:0 1.7px 1.7px 0;transform:rotate(45deg)}
-/* the ride/plate panel */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-box-shadow:var(--sh-2);overflow:hidden}
-.panel-hd{padding:15px 20px;display:flex;justify-content:space-between;align-items:center;
-border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(0,0,0,.015),transparent)}
-.panel-hd b{font-size:15px;letter-spacing:-.01em}
-.chip{font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;
-padding:6px 10px;border-radius:99px;background:var(--cream);color:var(--ink-2)}
-.chip.train{background:rgba(46,107,79,.12);color:var(--moss)}
-.chip.fuel{background:rgba(107,58,99,.12);color:var(--plum)}
-.panel-bd{padding:6px 20px 18px}
-.dl{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
-padding:13px 0;border-bottom:1px dashed var(--line)}
-.dl:last-child{border-bottom:0}
-.dl dt{color:var(--ink-2);font-size:15px}
-.dl dd{margin:0;font:650 17px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
-letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.big{font-size:26px!important;letter-spacing:-.03em}
-.arrow{display:grid;place-items:center;padding:14px 0}
-.arrow span{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--line);
-display:grid;place-items:center;color:var(--ink-3);box-shadow:var(--sh-1);font-size:15px}
-@media(min-width:940px){.stack{display:grid;gap:0}}
-/* cards */
-.grid{display:grid;gap:22px;grid-template-columns:1fr}
-@media(min-width:860px){.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:1fr 1fr}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-padding:28px;box-shadow:var(--sh-1);position:relative}
-.dark .card{background:var(--navy-2);border-color:rgba(255,255,255,.09)}
-.card p{font-size:15.5px;color:var(--ink-2);margin:0}
-.card h3{margin-bottom:9px}
-.num{width:32px;height:32px;border-radius:9px;background:var(--cream);color:var(--ink-2);
-display:grid;place-items:center;font:700 14px/1 ui-monospace,Menlo,monospace;margin-bottom:16px}
-.dark .num{background:rgba(255,255,255,.09);color:var(--amber)}
-/* denial list */
-.nope{display:grid;gap:0;margin:34px 0 0;padding:0;list-style:none;
-border-top:1px solid var(--line)}
-.nope li{padding:20px 0 20px 38px;border-bottom:1px solid var(--line);position:relative;
-font-size:16.5px;color:var(--ink-2);max-width:70ch}
-.nope li b{color:var(--ink);font-weight:680}
-.nope li:before{content:"";position:absolute;left:6px;top:27px;width:15px;height:1.5px;
-background:var(--clay);opacity:.65}
-.dark .nope{border-color:rgba(255,255,255,.12)}
-.dark .nope li{border-color:rgba(255,255,255,.12);color:#B9C4D4}
-.dark .nope li b{color:#fff}
-/* quote */
-.pull{font-size:clamp(21px,2.6vw,29px);line-height:1.35;letter-spacing:-.02em;
-font-weight:600;max-width:22ch}
-/* footer */
-footer{background:var(--navy);color:#93A1B5;padding:56px 0 40px;font-size:14.5px}
-footer a{color:#C6D0DE;text-decoration:none}
-footer a:hover{color:#fff;text-decoration:underline}
-.fcols{display:grid;gap:28px;grid-template-columns:1fr;margin-bottom:34px}
-@media(min-width:720px){.fcols{grid-template-columns:2fr 1fr 1fr}}
-.fcols h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6B7A8F;
-margin-bottom:14px;font-weight:640}
-.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.fine{border-top:1px solid rgba(255,255,255,.1);padding-top:22px;font-size:13px;
-color:#6B7A8F;max-width:78ch;line-height:1.6}
-:focus-visible{outline:2.5px solid var(--amber);outline-offset:3px;border-radius:4px}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.auth{max-width:440px;margin:0 auto}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--cream);padding:6px;
-border-radius:12px;margin-bottom:26px}
-.tabs button{padding:11px;border:0;border-radius:8px;background:transparent;cursor:pointer;
-font:640 15px/1 inherit;color:var(--ink-2)}
-.tabs button[aria-selected=true]{background:var(--card);color:var(--ink);box-shadow:var(--sh-1)}
-label{display:block;font-size:13.5px;font-weight:620;margin:0 0 7px;color:var(--ink-2)}
-input{width:100%;padding:13px 15px;font-size:16px;border:1px solid var(--line);border-radius:11px;
-background:var(--card);color:var(--ink);font-family:inherit}
-input:focus{outline:2.5px solid var(--amber);outline-offset:1px;border-color:transparent}
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
+.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
+.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mast nav a:hover{color:var(--accent-hover)}
+@media(max-width:760px){.mast nav a.hide-sm{display:none}}
+/* auth container */
+section{padding:clamp(48px,6vw,80px) 0}
+.auth-box{max-width:440px;margin:0 auto;background:var(--surface);border:1px solid var(--line);
+border-radius:var(--r-lg);padding:32px 28px;box-shadow:var(--sh-lg)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface-2);padding:5px;
+border-radius:var(--r-pill);margin:22px 0 26px;border:1px solid var(--line)}
+.tabs button{padding:10px;border:0;border-radius:var(--r-pill);background:transparent;cursor:pointer;
+font:750 14px/1 inherit;color:var(--ink-2);transition:all .12s}
+.tabs button[aria-selected=true]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs);font-weight:800}
+label{display:block;font-size:13px;font-weight:700;margin:0 0 6px;color:var(--ink-2)}
+input{width:100%;padding:12px 14px;font-size:15px;border:1px solid var(--line);border-radius:9px;
+background:var(--surface-2);color:var(--ink);font-family:inherit;transition:border-color .12s}
+input:focus{outline:2.5px solid var(--accent);outline-offset:1px;border-color:transparent;background:#fff}
 .field{margin-bottom:18px}
-.btn{width:100%;justify-content:center}
-.msg{border-radius:11px;padding:13px 15px;font-size:15px;margin-bottom:20px;
-border:1px solid var(--line);background:var(--card);box-shadow:var(--sh-1)}
-.msg.bad{border-left:4px solid var(--clay)}
-.msg.ok{border-left:4px solid var(--moss)}
-.hidden{display:none}
-.alt{text-align:center;margin-top:24px;font-size:14.5px;color:var(--ink-2)}
-.alt button{background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer;
-text-decoration:underline;text-underline-offset:3px}
-.hint{font-size:13.5px;color:var(--ink-3);margin:-8px 0 18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--r-pill);
+font:750 15px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;width:100%;
+transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--sunset);color:#fff;box-shadow:0 3px 10px rgba(255,107,53,.3)}
+.btn.primary:hover{box-shadow:0 5px 16px rgba(255,107,53,.45);transform:translateY(-1px)}
+.btn.ghost{border-color:var(--line-strong);background:var(--surface);color:var(--ink);box-shadow:var(--sh-xs)}
+.btn.ghost:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.msg{border-radius:10px;padding:12px 14px;font-size:14.5px;margin-bottom:20px;
+border:1px solid var(--line);background:var(--surface-2);box-shadow:var(--sh-xs)}
+.msg.bad{border-left:4px solid var(--warn);background:var(--warn-bg);color:var(--ink)}
+.msg.ok{border-left:4px solid var(--train);background:var(--train-bg);color:var(--ink)}
+.hidden{display:none!important}
+.alt{text-align:center;margin-top:20px;font-size:14px;color:var(--ink-2)}
+.alt button{background:none;border:0;padding:0;font:inherit;color:var(--accent-hover);cursor:pointer;
+text-decoration:underline;text-underline-offset:3px;font-weight:700}
+.hint{font-size:13px;color:var(--ink-3);margin:-6px 0 16px;line-height:1.45}
+/* footer */
+footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer a{color:var(--ink);text-decoration:none;font-weight:600}
+footer a:hover{color:var(--accent-hover);text-decoration:underline}
+.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
+@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:14px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
+color:var(--ink-3);max-width:84ch;line-height:1.65}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <header class="mast"><div class="wrap">
-<a class="mark" href="/"><i></i>Musette</a>
-<nav><a class="hide-sm" href="/how">How it works</a><a class="hide-sm" href="/privacy">Privacy</a></nav>
+<a class="mark" href="/"><span class="mark-icon"></span>Musette</a>
+<nav>
+<a class="hide-sm" href="/how">How it works</a>
+<a class="hide-sm" href="/access">Access</a>
+<a class="hide-sm" href="/about">About</a>
+<a class="hide-sm" href="/privacy">Privacy</a>
+</nav>
 </div></header>
-<main><section><div class="wrap"><div class="auth">
 
-<h1 style="font-size:36px;margin-bottom:10px">Welcome back</h1>
-<p class="lede" style="font-size:17px;margin-bottom:30px">Sign in to see today's plan.</p>
+<main><section><div class="wrap"><div class="auth-box">
+
+<div class="pill-badge"><i></i>Athlete Portal</div>
+<h1>Welcome back</h1>
+<p class="lede" style="margin-top:6px">Sign in to view and fuel today's plan.</p>
 
 <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
@@ -172,80 +115,84 @@ text-decoration:underline;text-underline-offset:3px}
 </div>
 
 <div id="paneSignin">
-  <div class="field"><label for="u">Email</label>
+  <div class="field"><label for="u">Email address</label>
     <input id="u" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
   <div class="field"><label for="p">Password</label>
     <input id="p" type="password" autocomplete="current-password" placeholder="••••••••"></div>
   <button id="goIn" class="btn primary" type="button">Sign in</button>
   <p class="alt"><button id="forgot" type="button">Forgotten your password?</button></p>
-  <p class="alt">or <button id="usePk" type="button">use a passkey instead</button></p>
+  <p class="alt">or <button id="usePk" type="button">sign in with a passkey</button></p>
 </div>
 
 <div id="paneNew" class="hidden">
-  <div class="field"><label for="ne">Email</label>
+  <div class="field"><label for="ne">Email address</label>
     <input id="ne" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
   <div class="field"><label for="np">Choose a password</label>
     <input id="np" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
-  <p class="hint">Long beats complicated — three or four words you will remember is plenty. There is no reset yet, so pick something you will not lose.</p>
+  <p class="hint">Long beats complex — a few memorable words is ideal. Stretched client-side with 600,000 PBKDF2 rounds.</p>
   <button id="goNew" class="btn primary" type="button">Create account</button>
-  <p class="alt">Got an invite code? <button id="haveCode" type="button">Use it instead</button></p>
-  <p class="hint" style="text-align:center;margin-top:14px">You don't need one — anyone can sign up. We'll email you a code to check the address is yours.</p>
-</div>
-
-<div id="paneForgot" class="hidden">
-  <p class="lede" style="font-size:16px;margin-bottom:20px">Tell us the address on your account and we'll email you a code.</p>
-  <div class="field"><label for="fe">Email</label>
-    <input id="fe" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
-  <button id="goForgot" class="btn primary" type="button">Email me a code</button>
-  <p class="alt"><button id="backIn" type="button">Back to sign in</button></p>
-</div>
-
-<div id="paneReset" class="hidden">
-  <p class="lede" style="font-size:16px;margin-bottom:20px">Enter the code we sent to <b id="resetTo"></b>, and choose a new password.</p>
-  <div class="field"><label for="rc">Code</label>
-    <input id="rc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
-      style="font:650 24px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
-  <div class="field"><label for="rp">New password</label>
-    <input id="rp" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
-  <p class="hint">Setting a new password signs you out on every other device.</p>
-  <button id="goReset" class="btn primary" type="button">Set new password</button>
-  <p class="alt"><button id="backIn2" type="button">Back to sign in</button></p>
-</div>
-
-<div id="paneVerify" class="hidden">
-  <p class="lede" style="font-size:16px;margin-bottom:20px">We sent a six-digit code to <b id="sentTo"></b>. It is good for 15 minutes.</p>
-  <div class="field"><label for="vc">Verification code</label>
-    <input id="vc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
-      style="font:650 24px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
-  <button id="goVerify" class="btn primary" type="button">Verify and finish</button>
-  <p class="alt">Nothing arrived? Check spam, then <button id="again" type="button">start again</button></p>
+  <p class="alt">Holding an invite code? <button id="haveCode" type="button">Enter invite code</button></p>
+  <p class="hint" style="text-align:center;margin-top:14px">We'll email you a six-digit verification code to confirm ownership.</p>
 </div>
 
 <div id="paneCode" class="hidden">
   <div class="field"><label for="code">Invite code</label>
     <input id="code" autocapitalize="characters" spellcheck="false" placeholder="ABCD1234" maxlength="16"></div>
-  <div class="field"><label for="cu">Email</label>
+  <div class="field"><label for="cu">Email address</label>
     <input id="cu" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
   <div class="field"><label for="cp">Choose a password</label>
     <input id="cp" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
   <button id="goCode" class="btn primary" type="button">Redeem invite</button>
+  <p class="alt" style="margin-top:14px">or <button id="newPk" type="button">enroll a passkey with this invite</button></p>
   <p class="alt"><button id="noCode" type="button">Back</button></p>
 </div>
 
-<p class="alt" style="margin-top:30px;font-size:13.5px;color:var(--ink-3)">By continuing you agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.</p>
+<div id="paneForgot" class="hidden">
+  <p class="lede" style="font-size:15px;margin-bottom:16px">Enter your account email and we will send a 15-minute reset code.</p>
+  <div class="field"><label for="fe">Email address</label>
+    <input id="fe" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
+  <button id="goForgot" class="btn primary" type="button">Send reset code</button>
+  <p class="alt"><button id="backIn" type="button">Back to sign in</button></p>
+</div>
+
+<div id="paneReset" class="hidden">
+  <p class="lede" style="font-size:15px;margin-bottom:16px">Enter the code sent to <b id="resetTo"></b> and choose a new password.</p>
+  <div class="field"><label for="rc">Six-digit code</label>
+    <input id="rc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
+      style="font:750 22px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
+  <div class="field"><label for="rp">New password</label>
+    <input id="rp" type="password" autocomplete="new-password" placeholder="At least 10 characters"></div>
+  <p class="hint">Setting a new password immediately revokes active sessions on other devices.</p>
+  <button id="goReset" class="btn primary" type="button">Set new password</button>
+  <p class="alt"><button id="backIn2" type="button">Back to sign in</button></p>
+</div>
+
+<div id="paneVerify" class="hidden">
+  <p class="lede" style="font-size:15px;margin-bottom:16px">We sent a six-digit code to <b id="sentTo"></b> (valid for 15 minutes).</p>
+  <div class="field"><label for="vc">Verification code</label>
+    <input id="vc" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456" maxlength="6"
+      style="font:750 22px/1 ui-monospace,Menlo,monospace;letter-spacing:.3em;text-align:center"></div>
+  <button id="goVerify" class="btn primary" type="button">Verify and finish</button>
+  <p class="alt">Did not arrive? Check spam, then <button id="again" type="button">start again</button></p>
+</div>
+
+<p class="alt" style="margin-top:28px;font-size:13px;color:var(--ink-3)">By continuing you agree to the <a href="/terms">terms</a> and <a href="/privacy">privacy policy</a>.</p>
 </div></div></section></main>
+
 <footer><div class="wrap">
-<div class="fcols"><div><a class="mark" href="/" style="color:#fff"><i></i>Musette</a></div>
-<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li></ul></div>
-<div><h4>Company</h4><ul><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div></div>
-<p class="fine">Musette plans food around training. It is not a medical device and does not give medical advice.</p>
+<div class="fcols">
+<div><a class="mark" href="/" style="margin-bottom:12px"><span class="mark-icon"></span>Musette</a>
+<p style="color:var(--ink-2);max-width:32ch;margin:0">Sports nutrition that keeps up with your training. Built for endurance athletes who cook for themselves.</p></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li><li><a href="/access">Access</a></li><li><a href="/signin">Sign in</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div>
+<div><h4>Contact</h4><ul><li><a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a></li></ul></div>
+</div>
+<p class="fine">Musette plans food around endurance training. It is not a medical device, it does not provide medical advice, and it is not a substitute for a doctor, registered dietitian, or certified coach. If you are managing a health condition or have any history of disordered eating, please speak with a clinician.</p>
 </div></footer>
+
 <script>
 (function () {
   var API = 'https://api.musetteapp.com';
-  /* Where the app lives. app.musetteapp.com is the intended home; until that
-     custom domain is attached it resolves to nothing, and sending someone there
-     stranded them on a browser error holding a valid session. */
   var APP = '/account';
   var $ = function (id) { return document.getElementById(id); };
   var msg = $('msg');
@@ -271,10 +218,6 @@ text-decoration:underline;text-underline-offset:3px}
     return await r.json();
   }
 
-  /* The work factor lives HERE, in the browser. The Worker gets 10 ms of CPU on
-     the free plan and 600k PBKDF2 rounds is 150-350 ms, so the stretching that
-     protects the password against offline cracking is done on the device that
-     can afford it. The Worker only ever sees the derived key. */
   async function derive(password, saltB64, iters) {
     var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password),
       'PBKDF2', false, ['deriveBits']);
@@ -288,17 +231,14 @@ text-decoration:underline;text-underline-offset:3px}
     msg.className = 'msg ok';
     msg.textContent = '';
     var b = document.createElement('b');
-    b.textContent = 'Signed in as ' + out.name + '. ';
+    b.textContent = 'Signed in as ' + (out.name || out.username || 'athlete') + '. ';
     var a = document.createElement('a');
-    /* A brand new account goes to setup; somebody signing back in goes to
-       their plan. The server says which, because only it knows. */
     a.href = out.fresh ? '/welcome' : APP;
-    a.textContent = out.fresh ? 'Set up your plan →' : 'Go to your plan →';
+    a.textContent = out.fresh ? 'Set up your plan →' : 'Go to your dashboard →';
     msg.appendChild(b); msg.appendChild(a);
   }
 
-  /* tabs */
-  function show(which) {
+  function show(which, setHash) {
     var isNew = which === 'new';
     $('paneNew').className = isNew ? '' : 'hidden';
     $('paneCode').className = 'hidden';
@@ -309,50 +249,71 @@ text-decoration:underline;text-underline-offset:3px}
     $('tNew').setAttribute('aria-selected', String(isNew));
     $('tSignin').setAttribute('aria-selected', String(!isNew));
     msg.className = 'msg hidden';
+    if (setHash !== false && history.replaceState) {
+      history.replaceState(null, '', isNew ? '#new' : '#signin');
+    }
   }
+
+  function only(id, setHash) {
+    ['paneSignin','paneNew','paneCode','paneVerify','paneForgot','paneReset'].forEach(function (p) {
+      var el = $(p); if (el) el.className = (p === id) ? '' : 'hidden';
+    });
+    msg.className = 'msg hidden';
+    if (setHash !== false && history.replaceState) {
+      history.replaceState(null, '', '#' + id.replace(/^pane/, '').toLowerCase());
+    }
+  }
+
   $('tNew').addEventListener('click', function () { show('new'); });
   $('tSignin').addEventListener('click', function () { show('in'); });
 
+  function syncHash() {
+    var h = (location.hash || '').toLowerCase().replace(/^#/, '');
+    if (h === 'new') show('new', false);
+    else if (h === 'code') only('paneCode', false);
+    else if (h === 'forgot') only('paneForgot', false);
+    else if (h === 'reset') only('paneReset', false);
+    else if (h === 'verify') only('paneVerify', false);
+    else show('in', false);
+  }
+  window.addEventListener('popstate', syncHash);
+  syncHash();
+
   $('goIn').addEventListener('click', async function () {
     var u = ($('u').value || '').trim().toLowerCase(), p = $('p').value || '';
-    if (!u || !p) { say('bad', 'Username and password, please.'); return; }
+    if (!u || !p) { say('bad', 'Email address and password required.'); return; }
     busy($('goIn'), true, 'Sign in');
     try {
       var opt = await post('/auth/password/options', { username: u });
       var out = await post('/auth/password/verify',
         { username: u, verifier: await derive(p, opt.salt, opt.iterations) });
-      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      if (!out.ok) { say('bad', out.why || 'Could not sign in with those credentials.'); return; }
       land(out);
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
     finally { busy($('goIn'), false, 'Sign in'); }
   });
 
   var pendingEmail = null;
+  var resetEmail = null;
 
   async function createWith(emailEl, passEl, btn, label, extra) {
     var mail = ($(emailEl).value || '').trim().toLowerCase();
     var p = $(passEl).value || '';
-    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'That does not look like an email address.'); return; }
-    if (p.length < 10) { say('bad', 'Make the password at least 10 characters — a few words you will remember is ideal.'); return; }
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'Please enter a valid email address.'); return; }
+    if (p.length < 10) { say('bad', 'Make the password at least 10 characters.'); return; }
     busy($(btn), true, label);
     try {
-      /* The salt comes from the server before the password is stretched, and the
-         same salt is sent back with the derived key so login can reproduce it. */
       var opt = await post('/auth/password/options', { username: mail });
       var body = { email: mail, username: mail, salt: opt.salt,
         verifier: await derive(p, opt.salt, opt.iterations) };
       var out = await post(extra ? '/auth/password/register' : '/auth/signup',
         extra ? Object.assign(body, extra) : body);
-      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
-      /* An invite redemption is already trusted and lands straight in. An open
-         signup does not: it has only created a pending record, and the account
-         does not exist until the code comes back. */
+      if (!out.ok) { say('bad', out.why || 'Could not complete registration.'); return; }
       if (extra) { land(out); return; }
       pendingEmail = mail;
       $('sentTo').textContent = out.sent_to || mail;
-      $('paneNew').className = 'hidden';
-      $('paneVerify').className = '';
-      say('ok', 'Code sent. Enter it below to finish.');
+      only('paneVerify');
+      say('ok', 'Verification code sent. Enter it below to complete setup.');
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
     finally { busy($(btn), false, label); }
   }
@@ -362,48 +323,39 @@ text-decoration:underline;text-underline-offset:3px}
   });
   $('goCode').addEventListener('click', function () {
     var code = ($('code').value || '').trim().toUpperCase();
-    if (code.length < 4) { say('bad', 'That invite code looks too short.'); return; }
+    if (code.length < 4) { say('bad', 'Please enter a valid invite code.'); return; }
     createWith('cu', 'cp', 'goCode', 'Redeem invite', { code: code });
   });
-  var resetEmail = null;
-  function only(id) {
-    ['paneSignin','paneNew','paneCode','paneVerify','paneForgot','paneReset'].forEach(function (p) {
-      var el = $(p); if (el) el.className = (p === id) ? '' : 'hidden';
-    });
-    msg.className = 'msg hidden';
-  }
+
   $('forgot').addEventListener('click', function () { only('paneForgot'); });
   $('backIn').addEventListener('click', function () { only('paneSignin'); });
   $('backIn2').addEventListener('click', function () { only('paneSignin'); });
 
   $('goForgot').addEventListener('click', async function () {
     var mail = ($('fe').value || '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'That does not look like an email address.'); return; }
-    busy($('goForgot'), true, 'Email me a code');
+    if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(mail)) { say('bad', 'Please enter a valid email address.'); return; }
+    busy($('goForgot'), true, 'Send reset code');
     try {
       var out = await post('/auth/reset/request', { email: mail });
-      /* The server answers the same whether or not the account exists, and so
-         does this - saying "no such account" would hand anyone a way to test
-         which addresses are registered. */
       resetEmail = mail;
       $('resetTo').textContent = mail;
       only('paneReset');
       say('ok', out.message || 'If that address has an account, a code is on its way.');
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
-    finally { busy($('goForgot'), false, 'Email me a code'); }
+    finally { busy($('goForgot'), false, 'Send reset code'); }
   });
 
   $('goReset').addEventListener('click', async function () {
     var code = ($('rc').value || '').trim();
     var pw = $('rp').value || '';
-    if (!/^\d{6}$/.test(code)) { say('bad', 'The code is six digits.'); return; }
+    if (!/^\d{6}$/.test(code)) { say('bad', 'The verification code must be six digits.'); return; }
     if (pw.length < 10) { say('bad', 'Make the new password at least 10 characters.'); return; }
     busy($('goReset'), true, 'Set new password');
     try {
       var opt = await post('/auth/password/options', { username: resetEmail });
       var out = await post('/auth/reset/confirm', { email: resetEmail, code: code,
         salt: opt.salt, verifier: await derive(pw, opt.salt, opt.iterations) });
-      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      if (!out.ok) { say('bad', out.why || 'Could not reset password with that code.'); return; }
       land(out);
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
     finally { busy($('goReset'), false, 'Set new password'); }
@@ -411,31 +363,24 @@ text-decoration:underline;text-underline-offset:3px}
 
   $('goVerify').addEventListener('click', async function () {
     var code = ($('vc').value || '').trim();
-    if (!/^\d{6}$/.test(code)) { say('bad', 'The code is six digits.'); return; }
+    if (!/^\d{6}$/.test(code)) { say('bad', 'The verification code must be six digits.'); return; }
     busy($('goVerify'), true, 'Verify and finish');
     try {
       var out = await post('/auth/signup/verify', { email: pendingEmail, code: code });
-      if (!out.ok) { say('bad', out.why || 'That code did not work.'); return; }
+      if (!out.ok) { say('bad', out.why || 'That verification code did not work.'); return; }
       land(out);
       $('paneVerify').className = 'hidden';
     } catch (e) { say('bad', 'Could not reach the server. Try again in a moment.'); }
     finally { busy($('goVerify'), false, 'Verify and finish'); }
   });
-  $('again').addEventListener('click', function () {
-    $('paneVerify').className = 'hidden'; $('paneNew').className = ''; msg.className = 'msg hidden';
-  });
 
-  $('haveCode').addEventListener('click', function () {
-    $('paneNew').className = 'hidden'; $('paneCode').className = ''; msg.className = 'msg hidden';
-  });
-  $('noCode').addEventListener('click', function () {
-    $('paneCode').className = 'hidden'; $('paneNew').className = ''; msg.className = 'msg hidden';
-  });
+  $('again').addEventListener('click', function () { only('paneNew'); });
+  $('haveCode').addEventListener('click', function () { only('paneCode'); });
+  $('noCode').addEventListener('click', function () { only('paneNew'); });
 
-  /* Passkeys stay available for anyone who wants one - they are better - but
-     nobody is required to have a compatible device to get in. */
+  /* Passkeys */
   async function passkeyLogin() {
-    if (!window.PublicKeyCredential) { say('bad', 'This browser cannot do passkeys. Use a password.'); return; }
+    if (!window.PublicKeyCredential) { say('bad', 'This browser does not support passkeys. Please use a password.'); return; }
     try {
       var opt = await post('/auth/login/options');
       var cred = await navigator.credentials.get({ publicKey: {
@@ -443,11 +388,11 @@ text-decoration:underline;text-underline-offset:3px}
       var out = await post('/auth/login/verify', { challenge: opt.challenge, credId: cred.id,
         authData: enc(cred.response.authenticatorData), clientData: enc(cred.response.clientDataJSON),
         signature: enc(cred.response.signature) });
-      if (!out.ok) { say('bad', out.why || 'That passkey did not work.'); return; }
+      if (!out.ok) { say('bad', out.why || 'Passkey authentication was not accepted.'); return; }
       land(out);
     } catch (e) {
-      say('bad', e && e.name === 'NotAllowedError' ? 'Cancelled — nothing happened.'
-        : 'No passkey for this site on this device. Use a password.');
+      say('bad', e && e.name === 'NotAllowedError' ? 'Passkey prompt was cancelled.'
+        : 'No passkey found for this account on this device.');
     }
   }
   $('usePk').addEventListener('click', passkeyLogin);
@@ -456,11 +401,11 @@ text-decoration:underline;text-underline-offset:3px}
     var code = ($('code').value || '').trim().toUpperCase();
     var u = ($('cu').value || $('ne').value || '').trim();
     if (code.length < 4) { say('bad', 'Enter your invite code first.'); return; }
-    if (!u) { say('bad', 'Choose a username first.'); return; }
-    if (!window.PublicKeyCredential) { say('bad', 'This browser cannot do passkeys. Use a password.'); return; }
+    if (!u) { say('bad', 'Enter your email address first.'); return; }
+    if (!window.PublicKeyCredential) { say('bad', 'This browser does not support passkeys. Please use a password.'); return; }
     try {
       var opt = await post('/auth/register/options', { code: code });
-      if (!opt.ok) { say('bad', opt.why || 'That invite did not work.'); return; }
+      if (!opt.ok) { say('bad', opt.why || 'That invite code is invalid.'); return; }
       var cred = await navigator.credentials.create({ publicKey: {
         challenge: dec(opt.challenge), rp: { id: opt.rp.id, name: opt.rp.name },
         user: { id: dec(opt.uid), name: u, displayName: u },
@@ -468,13 +413,13 @@ text-decoration:underline;text-underline-offset:3px}
         authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
         attestation: 'none', timeout: 60000 } });
       var spki = cred.response.getPublicKey && cred.response.getPublicKey();
-      if (!spki) { say('bad', 'That device offered a key we cannot read. Use a password.'); return; }
+      if (!spki) { say('bad', 'Could not retrieve passkey credentials. Use a password instead.'); return; }
       var out = await post('/auth/register/verify', { challenge: opt.challenge, name: u,
         credId: cred.id, publicKey: enc(spki), clientData: enc(cred.response.clientDataJSON) });
-      if (!out.ok) { say('bad', out.why || 'That did not work.'); return; }
+      if (!out.ok) { say('bad', out.why || 'Passkey registration failed.'); return; }
       land(out);
     } catch (e) {
-      say('bad', e && e.name === 'NotAllowedError' ? 'Cancelled — nothing was created.' : 'Passkey setup failed. Use a password.');
+      say('bad', e && e.name === 'NotAllowedError' ? 'Passkey setup cancelled.' : 'Passkey registration failed.');
     }
   });
 })();

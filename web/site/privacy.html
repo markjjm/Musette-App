@@ -1,113 +1,152 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Privacy — Musette</title><style>:root{--ground:#F7F8FA;--surface:#fff;--line:#E1E5EB;--ink:#0F1620;--ink-2:#4A5666;--navy:#12305C;--navy-ink:#F2F5FA;--accent:#F0B429;--train:#1F6B4A;--fuel:#7A3E86}
-@media(prefers-color-scheme:dark){:root{--ground:#0C1118;--surface:#141B25;--line:#232C39;--ink:#E8ECF2;--ink-2:#A3AEBD;--navy:#0A1626;--navy-ink:#E8ECF2;--train:#6BC79B;--fuel:#C79BD2}}
+<title>Privacy Policy — Musette</title>
+<meta name="description" content="Musette's transparent privacy policy: what health data is held, who processes it, retention rules, export, and deletion.">
+<style>:root{
+--ground:#FAF7F2;--surface:#FFFFFF;--surface-2:#F4EFE6;--surface-3:#EAE2D5;
+--line:#E8E1D5;--line-strong:#D6CCC0;--line-subtle:#F3EDE4;
+--ink:#2C2219;--ink-2:#59493B;--ink-3:#857567;--ink-4:#B0A294;
+--navy:#2C2219;--navy-2:#3D3125;--navy-3:#4D3E30;--navy-ink:#FAF7F2;--navy-sub:#A89B8D;
+--accent:#FF7A00;--accent-hover:#E65100;--accent-light:rgba(255,122,0,.12);--accent-ink:#1C1000;
+--sunset:linear-gradient(135deg,#FF6B35 0%,#FFA800 100%);
+--train:#10B981;--train-bg:rgba(16,185,129,.12);--train-border:rgba(16,185,129,.28);--train-ink:#065F46;
+--fuel:#8B5CF6;--fuel-bg:rgba(139,92,246,.12);--fuel-border:rgba(139,92,246,.28);--fuel-ink:#5B21B6;
+--warn:#C85124;--warn-bg:rgba(200,81,36,.09);
+--sh-xs:0 1px 3px rgba(44,34,25,.04);
+--sh-sm:0 3px 10px rgba(44,34,25,.05),0 1px 2px rgba(44,34,25,.03);
+--sh-md:0 12px 28px rgba(44,34,25,.07),0 2px 6px rgba(44,34,25,.04);
+--sh-lg:0 20px 48px rgba(44,34,25,.09),0 4px 12px rgba(44,34,25,.04);
+--r-sm:10px;--r:18px;--r-lg:26px;--r-pill:999px}
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-h1,h2,h3{letter-spacing:-.025em;font-weight:700;line-height:1.15;margin:0}
-h1{font-size:clamp(32px,5vw,52px)}h2{font-size:clamp(24px,3vw,38px)}h3{font-size:18px;font-weight:650}
-p{margin:0 0 16px;max-width:68ch}
-a{color:inherit}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-header.mast{background:var(--navy);color:var(--navy-ink)}
-.mast .wrap{display:flex;align-items:center;gap:28px;height:64px}
-.mark{font-weight:700;font-size:18px;letter-spacing:-.02em;text-decoration:none}
-.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.mast nav a{font-size:14px;text-decoration:none;opacity:.85}
-.mast nav a:hover,.mast nav a:focus{opacity:1;text-decoration:underline}
-.btn{display:inline-block;padding:10px 18px;border-radius:6px;font-size:14px;font-weight:650;text-decoration:none;border:1px solid transparent;cursor:pointer}
-.btn.primary{background:var(--accent);color:#1a1200;border-color:var(--accent)}
-.btn.quiet{border-color:currentColor;opacity:.9}
-section{padding:clamp(48px,7vw,96px) 0}
-section+section{border-top:1px solid var(--line)}
-.lede{font-size:clamp(18px,2vw,22px);color:var(--ink-2);max-width:60ch}
-.grid{display:grid;gap:24px;grid-template-columns:1fr}
-@media(min-width:900px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px}
-.card h3{margin-bottom:8px}
-.card p{font-size:15px;color:var(--ink-2);margin-bottom:0}
-.surface{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.surface .hd{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.surface .bd{padding:18px}
-.row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
-.row:last-child{border-bottom:0}
-.row b{font-weight:650}
-.num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
-.train{color:var(--train)}.fuel{color:var(--fuel)}
-ul.plain{list-style:none;padding:0;margin:0}
-ul.plain li{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink-2)}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);
+font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+letter-spacing:-.011em;font-feature-settings:"kern","liga";text-rendering:optimizeLegibility}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.narrow{max-width:760px}
+h1,h2,h3,h4{margin:0;letter-spacing:-.034em;line-height:1.08;font-weight:800;color:var(--ink)}
+h1{font-size:clamp(34px,4.8vw,52px)}
+h2{font-size:clamp(22px,2.8vw,32px);margin:36px 0 14px}
+h3{font-size:18px;letter-spacing:-.016em;font-weight:750;line-height:1.3}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
+a{color:inherit;text-underline-offset:3px}
+.mono{font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}
+.pill-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);
+background:var(--accent-light);border:1px solid rgba(255,122,0,.3);color:var(--accent-hover);
+font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.pill-badge i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.lede{font-size:clamp(17px,1.9vw,20px);line-height:1.55;color:var(--ink-2);max-width:62ch;font-weight:420}
+/* masthead */
+.mast{position:sticky;top:0;z-index:50;background:rgba(250,247,242,.88);
+backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+.mast .wrap{display:flex;align-items:center;gap:24px;height:68px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:850;font-size:20px;
+letter-spacing:-.035em;text-decoration:none;color:var(--ink)}
+.mark-icon{width:30px;height:30px;border-radius:10px;background:var(--sunset);
+display:inline-flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(255,107,53,.32),inset 0 1px 0 rgba(255,255,255,.5)}
+.mark-icon:after{content:"";width:8px;height:8px;border-radius:2px;background:#2C2219}
+.mast nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+.mast nav a{font-size:14.5px;font-weight:600;text-decoration:none;color:var(--ink-2);transition:color .12s}
+.mast nav a:hover{color:var(--accent-hover)}
+.mast nav a.active{color:var(--accent-hover);font-weight:750}
+@media(max-width:760px){.mast nav a.hide-sm{display:none}}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:var(--r-pill);
+font:750 14.5px/1 inherit;text-decoration:none;border:1px solid transparent;cursor:pointer;
+transition:all .15s cubic-bezier(.16,1,.3,1)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--sunset);color:#fff;box-shadow:0 3px 10px rgba(255,107,53,.3)}
+.btn.primary:hover{box-shadow:0 5px 16px rgba(255,107,53,.45);transform:translateY(-1px)}
+/* content styling */
+section{padding:clamp(48px,6vw,84px) 0}
+.q{border-left:3px solid var(--accent);padding-left:18px;margin:24px 0;background:var(--surface-2);
+border-radius:0 var(--r-sm) var(--r-sm) 0;padding:16px 20px}
+.scroll{overflow-x:auto;margin:20px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+tr:last-child td{border-bottom:0}
+ul.plain{list-style:none;padding:0;margin:16px 0}
+ul.plain li{padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--ink-2)}
 ul.plain li:last-child{border-bottom:0}
-ul.plain b{color:var(--ink);font-weight:650}
-footer{background:var(--navy);color:var(--navy-ink);padding:40px 0;font-size:14px}
-footer a{opacity:.85}
-footer .fl{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px}
-footer p{opacity:.7;font-size:13px;max-width:none;margin:0}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+ul.plain b{color:var(--ink);font-weight:750}
+/* footer */
+footer{background:var(--surface-2);color:var(--ink-2);padding:58px 0 40px;font-size:14px;border-top:1px solid var(--line)}
+footer a{color:var(--ink);text-decoration:none;font-weight:600}
+footer a:hover{color:var(--accent-hover);text-decoration:underline}
+.fcols{display:grid;gap:30px;grid-template-columns:1fr;margin-bottom:36px}
+@media(min-width:740px){.fcols{grid-template-columns:2fr 1fr 1fr 1fr}}
+.fcols h4{font:750 11.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+margin-bottom:14px}
+.fcols ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.fine{border-top:1px solid var(--line);padding-top:22px;font-size:13px;
+color:var(--ink-3);max-width:84ch;line-height:1.65}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-.q{border-left:3px solid var(--accent);padding-left:18px;margin:28px 0}
-table{border-collapse:collapse;width:100%;font-size:14px;margin:18px 0}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);font-weight:650}
-.scroll{overflow-x:auto}
 </style></head><body>
 <header class="mast"><div class="wrap">
-<a class="mark" href="/">Musette</a>
-<nav><a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/about">About</a><a class="btn primary" href="/signin">Sign in</a></nav>
+<a class="mark" href="/"><span class="mark-icon"></span>Musette</a>
+<nav>
+<a class="hide-sm" href="/how">How it works</a>
+<a class="hide-sm" href="/access">Access</a>
+<a class="hide-sm" href="/about">About</a>
+<a class="active" href="/privacy">Privacy</a>
+<a class="btn primary" href="/signin">Sign in</a>
+</nav>
 </div></header>
-<main><section><div class="wrap">
-<p class="mono">Last updated 18 August 2026</p>
-<h1>Privacy</h1>
-<p class="lede">Musette holds your bodyweight, your training and what you ate. That is health data, and this page says plainly what happens to it.</p>
 
-<div class="q"><p style="margin:0"><b>The short version.</b> Your data is used to compute your plan and nothing else. It is never sold, and never shared for advertising. Three companies process it on our behalf, named below. You can export or delete everything yourself, at any time, without asking us.</p></div>
+<main><section><div class="wrap narrow">
+<div class="pill-badge"><i></i>Updated 19 August 2026</div>
+<h1>Privacy Policy</h1>
+<p class="lede">Musette holds your bodyweight, your workout metrics, and what you ate. That is health data, and this page states plainly what happens to it.</p>
 
-<h2>What is held</h2>
+<div class="q"><p style="margin:0"><b>The short version:</b> Your data is used solely to compute your fueling plan and shopping lists. It is never sold, and never shared for advertising or marketing. Three sub-processors process it on our behalf, named below. You can export or erase your data anytime with one tap.</p></div>
+
+<h2>What Data is Held</h2>
 <div class="scroll"><table>
-<tr><th>What</th><th>Why</th><th>Kept for</th></tr>
-<tr><td>Bodyweight, height, age, sex</td><td>The energy targets cannot be computed without them</td><td>Until you delete your account</td></tr>
-<tr><td>Training: hours, load, power, heart rate</td><td>Sets each day's calories and carbohydrate</td><td>Until you delete your account</td></tr>
-<tr><td>What you ate, and what you ticked off</td><td>Shows the plan against reality</td><td><b>90 days</b>, then deleted automatically</td></tr>
-<tr><td>Your passkey's public key</td><td>So you can sign in without a password</td><td>Until you delete your account</td></tr>
-<tr><td>Your intervals.icu authorisation</td><td>To read your rides</td><td>Until you disconnect it</td></tr>
+<tr><th>Category</th><th>Purpose</th><th>Retention Window</th></tr>
+<tr><td>Bodyweight, height, age, sex</td><td>Calculates resting metabolic rate (BMR) and carb targets</td><td>Until account deletion</td></tr>
+<tr><td>Workouts: hours, load, power, heart rate</td><td>Calculates daily energy expenditure and recovery status</td><td>Until account deletion</td></tr>
+<tr><td>What you ate & checked off</td><td>Reconciles planned intake against actual consumption</td><td><b>90 days</b> (pruned automatically)</td></tr>
+<tr><td>Passkey credentials (public key)</td><td>Enables secure, passwordless authentication</td><td>Until account deletion</td></tr>
+<tr><td>intervals.icu API credentials</td><td>Syncs completed workouts</td><td>Until you disconnect the integration</td></tr>
 </table></div>
-<p>The 90-day limit on the food log is a real retention policy, not an aspiration — old entries are pruned by the server whether or not you ask.</p>
+<p>The 90-day retention limit on the food log is enforced by automated code in the sync engine — old items age out automatically.</p>
 
-<h2>Legal basis</h2>
-<p>Bodyweight and training load are special-category data under Article 9 of the UK and EU GDPR. We rely on your <b>explicit consent</b>, given at signup and recorded with a timestamp. You can withdraw it at any time by deleting your account, which erases the data rather than hiding it.</p>
+<h2>Legal Basis (GDPR Article 9)</h2>
+<p>Bodyweight and physiological training load constitute special-category health data under Article 9 of the UK and EU GDPR. We rely on your <b>explicit consent</b>, provided during enrollment and recorded with a timestamp. You may withdraw consent at any time by deleting your account, which erases your stored record.</p>
 
-<h2>Who else processes it</h2>
+<h2>Sub-Processors & Data Flow</h2>
 <div class="scroll"><table>
-<tr><th>Processor</th><th>What they see</th><th>Why</th></tr>
-<tr><td>Cloudflare</td><td>Everything, at rest and in transit</td><td>Hosting, storage and the network</td></tr>
-<tr><td>intervals.icu</td><td>Your rides, read-only</td><td>Supplies the training data</td></tr>
-<tr><td>OpenAI</td><td>A small fixed set of derived figures — the day's targets, training load, what you logged. Not your name, not your email, not raw ride files</td><td>Writes the plain-language explanation of your plan</td></tr>
+<tr><th>Processor</th><th>Data Exposed</th><th>Function</th></tr>
+<tr><td>Cloudflare</td><td>Encrypted database rows & edge requests</td><td>Serverless hosting, Durable Object storage, and network transport</td></tr>
+<tr><td>intervals.icu</td><td>Activity streams (read-only)</td><td>Retrieves completed training activities from head units and devices</td></tr>
+<tr><td>OpenAI</td><td>Derived daily targets, training load & logged meals (anonymized)</td><td>Generates plain-language synthesis and coaching explanations</td></tr>
 </table></div>
-<p>OpenAI's default abuse-monitoring retention is 30 days. We do not use your data to train any model, and our agreement does not permit them to either.</p>
+<p>OpenAI data is processed under zero-data-retention / 30-day abuse monitoring agreements and is never used to train machine learning models.</p>
 
-<h2>Your rights</h2>
+<h2>Your Rights</h2>
 <ul class="plain">
-<li><b>Export.</b> Everything held about you, as JSON, from inside the app. No request, no waiting.</li>
-<li><b>Deletion.</b> Erases your profile, targets, food log and credentials. Household items others still rely on — a shared shopping list — are handed over rather than destroyed.</li>
-<li><b>Correction.</b> Every figure in your profile is editable by you.</li>
-<li><b>Complaint.</b> To your data protection authority; in the UK, the ICO.</li>
+<li><b>Export:</b> Download your full data record as JSON directly from inside the app.</li>
+<li><b>Deletion:</b> Permanently erases your athlete profile, energy targets, food logs, and credentials.</li>
+<li><b>Correction:</b> Every figure in your profile is directly editable by you at any time.</li>
+<li><b>Direct Breach Notification:</b> Because accounts require a verified email address, in the event of any security incident you will be notified directly by email within 72 hours.</li>
 </ul>
-<p><b>What deletion does not immediately reach:</b> Cloudflare's request logs, which expire on their own schedule, and any backup made before you deleted. Both age out; neither is used for anything.</p>
-
-<h2>If something goes wrong</h2>
-<p>Your account is an email address, verified at signup, so if there is ever a breach affecting your data <b>we will email you directly</b> — within 72 hours of becoming aware, saying what happened, what was exposed and what to do about it. There will also be a notice on this site and a banner in the app, because an email that lands in spam is not a notification.</p>
-<p>Your address is used for exactly three things: signing in, verifying it is yours, and telling you if something goes wrong. It is never used for marketing, and there is no mailing list to be on.</p>
-
-<h2>Forgetting your password</h2>
-<p>Reset it yourself from the sign-in page: we email a six-digit code, good for fifteen minutes. Using it signs you out on every other device, deliberately — people usually reset a password because they think somebody else has it, and leaving the other sessions alive would defeat the point.</p>
 
 <h2>Cookies</h2>
-<p>None before you sign in. This page sets nothing. After sign-in there is one cookie, which keeps you signed in, and it is not shared with anyone.</p>
+<p>Zero tracking cookies. The public site sets no cookies. After signing in, a single session token is held in browser memory to authenticate requests.</p>
 
 <h2>Contact</h2>
-<p>The data controller is the operator of Musette, reachable at <a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a>.</p>
+<p>For questions or data requests, contact the operator at <a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a>.</p>
 </div></section></main>
+
 <footer><div class="wrap">
-<div class="fl"><a href="/how">How it works</a><a href="/access">Access</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/about">About</a><a href="mailto:hello@musetteapp.com">Contact</a></div>
-<p>Musette is not a medical device and does not give medical advice. It plans food around training. If you are managing a health condition, or have any history of disordered eating, talk to a clinician rather than to this.</p>
+<div class="fcols">
+<div><a class="mark" href="/" style="margin-bottom:12px"><span class="mark-icon"></span>Musette</a>
+<p style="color:var(--ink-2);max-width:32ch;margin:0">Sports nutrition that keeps up with your training. Built for endurance athletes who cook for themselves.</p></div>
+<div><h4>Product</h4><ul><li><a href="/how">How it works</a></li><li><a href="/access">Access</a></li><li><a href="/signin">Sign in</a></li></ul></div>
+<div><h4>Company</h4><ul><li><a href="/about">About</a></li><li><a href="/privacy">Privacy</a></li><li><a href="/terms">Terms</a></li></ul></div>
+<div><h4>Contact</h4><ul><li><a href="mailto:hello@musetteapp.com">hello@musetteapp.com</a></li></ul></div>
+</div>
+<p class="fine">Musette plans food around endurance training. It is not a medical device, it does not provide medical advice, and it is not a substitute for a doctor, registered dietitian, or certified coach. If you are managing a health condition or have any history of disordered eating, please speak with a clinician.</p>
 </div></footer>
 </body></html>
