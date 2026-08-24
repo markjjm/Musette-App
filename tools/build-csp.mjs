@@ -14,6 +14,14 @@
  * its own path, and a page is only allowed what it actually needs.
  *
  * Pass --check to verify without writing (used by CI and the pre-commit hook).
+ *
+ * The policy is hash-only, and hashes cover ELEMENTS, never ATTRIBUTES: a
+ * style="..." written into markup is discarded by the browser at parse time,
+ * and an onclick="..." is refused outright. Both have shipped here already —
+ * zone bars rendering at zero width, segment colours vanishing — with nothing
+ * on screen to say why. So the generator refuses any page that carries them,
+ * in build and --check alike: the failure moves from a silent blank in
+ * production to a red line in CI, where it can actually be fixed.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
@@ -59,6 +67,52 @@ function inlineHashes(html, tag) {
     if (/\b(src|href)=/i.test(m[1])) continue;
     out.push(sha256(m[2]));
   }
+  return out;
+}
+
+/* ---- Source-level CSP compliance ---------------------------------------
+   Two patterns are fatal under the emitted policy, so they are fatal here:
+
+     style="..."    style-src carries element hashes only. Attributes are
+                    governed by style-src-attr, which falls back to style-src,
+                    and a hash NEVER authorises an attribute - the declaration
+                    is parsed and thrown away.
+     onclick="..."  script-src likewise; inline handlers are refused.
+
+   The escape hatch this repo already uses is the CSSOM: emit data-* and set
+   .style from script (paintBars/paintMonth in index.html do exactly this),
+   because assigning .style from script is unaffected by the policy. Anything
+   reaching for an inline attribute belongs there instead.
+
+   <style> element BODIES are legal - they are what the hashes cover - so they
+   are masked out before scanning: blanked in place with newlines preserved,
+   which keeps every reported line number true to the source file. */
+const HANDLER_NAMES = [
+  'click', 'dblclick', 'change', 'input', 'submit', 'load', 'error',
+  'keydown', 'keyup', 'keypress', 'mousedown', 'mouseup', 'mousemove',
+  'mouseover', 'mouseout', 'mouseenter', 'mouseleave', 'touchstart',
+  'touchend', 'touchmove', 'focus', 'blur', 'scroll',
+  'pointerdown', 'pointerup', 'contextmenu',
+];
+
+/* Whitespace-or-start before the name, so data-style= and ?style= in a URL
+   cannot trip it; a quoted OR bare value, because both are legal HTML and both
+   are equally dead under this policy. Built fresh per call: a /g regex keeps
+   lastIndex between calls, and a stale one skips matches. */
+function cspViolations(html) {
+  const src = html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,
+    (block) => block.replace(/[^\n]/g, ' '));
+  const styleAttr = /(?:^|\s)style\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi;
+  const onAttr = new RegExp(
+    '(?:^|\\s)on(?:' + HANDLER_NAMES.join('|') + ')\\s*=\\s*(?:"[^"]*"|\'[^\']*\')', 'gi');
+  const out = [];
+  const record = (m, kind) => {
+    const line = src.slice(0, m.index).split('\n').length;
+    out.push({ line, kind, detail: m[0].replace(/\s+/g, ' ').slice(0, 72) });
+  };
+  let m;
+  while ((m = styleAttr.exec(src))) record(m, 'inline style attribute');
+  while ((m = onAttr.exec(src))) record(m, 'inline event handler');
   return out;
 }
 
@@ -108,13 +162,22 @@ function build(site) {
   const report = [];
   for (const file of files) {
     const html = readFileSync(join(dir, file), 'utf8');
-    if (site.name === 'app') {
-      const htmlWithoutStyleTags = html.replace(/<style[\s\S]*?<\/style>/gi, '');
-      const badStyle = htmlWithoutStyleTags.match(/<[^>]*\bstyle\s*=\s*["'][^"']*["'][^>]*>/i);
-      if (badStyle) {
-        console.error(`build-csp: ${file} contains inline style attribute "${badStyle[0]}" - disallowed under strict element-hash CSP.`);
-        process.exit(1);
+    /* Refuse the page before hashing it. Shipping it would mean the browser
+       silently discards whatever the attribute carried - styling, behaviour -
+       and nothing anywhere would say why. Fatal in BOTH modes: this is a
+       defect in the source, not staleness in the output. */
+    const bad = cspViolations(html);
+    if (bad.length) {
+      console.error(`build-csp: ${site.dir}/${file} breaks its own hash-only CSP:`);
+      for (const v of bad) {
+        console.error(`  line ${v.line}: ${v.kind} — ${v.detail}`);
       }
+      console.error(
+        '  A hash authorises <style> ELEMENTS, never attributes. Move the\n' +
+        '  declarations into the stylesheet, or emit data-* and assign .style\n' +
+        '  from script (see paintBars/paintMonth in index.html).'
+      );
+      process.exit(1);
     }
     const route = routeOf(file);
     const connect = (site.perPath && site.perPath[route]) || site.connect;
@@ -122,15 +185,6 @@ function build(site) {
     if (!p.scripts.length && site.name === 'app') {
       console.error(`build-csp: ${file} has no inline <script> - refusing to emit a CSP that blocks the app`);
       process.exit(1);
-    }
-    const scriptMatches = html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi);
-    for (const sm of scriptMatches) {
-      try {
-        new Function(sm[1]);
-      } catch (err) {
-        console.error(`build-csp: SyntaxError in inline <script> in ${file}:`, err.message);
-        process.exit(1);
-      }
     }
     report.push({ file, route, scripts: p.scripts, styles: p.styles, connect });
     /* CSP only on the page's own path. Cloudflare Pages applies EVERY matching
