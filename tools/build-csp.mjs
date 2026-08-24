@@ -108,12 +108,29 @@ function build(site) {
   const report = [];
   for (const file of files) {
     const html = readFileSync(join(dir, file), 'utf8');
+    if (site.name === 'app') {
+      const htmlWithoutStyleTags = html.replace(/<style[\s\S]*?<\/style>/gi, '');
+      const badStyle = htmlWithoutStyleTags.match(/<[^>]*\bstyle\s*=\s*["'][^"']*["'][^>]*>/i);
+      if (badStyle) {
+        console.error(`build-csp: ${file} contains inline style attribute "${badStyle[0]}" - disallowed under strict element-hash CSP.`);
+        process.exit(1);
+      }
+    }
     const route = routeOf(file);
     const connect = (site.perPath && site.perPath[route]) || site.connect;
     const p = policy(html, connect, "'none'");
     if (!p.scripts.length && site.name === 'app') {
       console.error(`build-csp: ${file} has no inline <script> - refusing to emit a CSP that blocks the app`);
       process.exit(1);
+    }
+    const scriptMatches = html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi);
+    for (const sm of scriptMatches) {
+      try {
+        new Function(sm[1]);
+      } catch (err) {
+        console.error(`build-csp: SyntaxError in inline <script> in ${file}:`, err.message);
+        process.exit(1);
+      }
     }
     report.push({ file, route, scripts: p.scripts, styles: p.styles, connect });
     /* CSP only on the page's own path. Cloudflare Pages applies EVERY matching
