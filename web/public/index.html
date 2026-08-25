@@ -3043,6 +3043,15 @@ footer {
   letter-spacing: .14em; text-transform: uppercase;
   padding: 5px 14px;
 }
+.acc-status-box { margin-bottom: 14px; }
+.acc-signed-in { display: none; }
+.acc-signed-in.active { display: block; }
+.acc-signed-in p { color: var(--ok); font-weight: 700; margin-bottom: 8px; font-size: 13.5px; }
+.acc-signout-btn { width: 100%; margin-bottom: 14px; }
+.acc-signed-out { display: block; }
+.acc-signed-out.hidden { display: none; }
+.acc-signed-out p { margin-bottom: 10px; font-size: 13px; color: var(--ink-soft); line-height: 1.45; }
+.acc-signin-link { display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 10px; margin-bottom: 14px; font-weight: 750; background: var(--mark); color: #3D2900; }
 </style>
 </head>
 <body>
@@ -3140,17 +3149,23 @@ footer {
 </div></div>
 
 <div class="sheet" id="setsheet"><div class="panel">
-  <h2>Sync Configuration</h2>
-  <label>Worker URL</label>
-  <input id="s_url" placeholder="https://shopping-list-sync.you.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>Access code</label>
-  <input id="s_key" inputmode="numeric" autocomplete="one-time-code" maxlength="12"
-         placeholder="4-digit code" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <h2>Account &amp; Sync</h2>
+  <div class="acc-status-box" id="acc_status_box">
+    <div class="acc-signed-in" id="acc_signed_in">
+      <p>✓ Account Active &amp; Synced</p>
+      <button class="cancel acc-signout-btn" id="s_signout">Sign out</button>
+    </div>
+    <div class="acc-signed-out" id="acc_signed_out">
+      <p>Sign in with your email and password or passkey to sync your meals, workouts, and grocery list across devices.</p>
+      <a class="acc-signin-link" id="s_signin_btn" href="https://musetteapp.com/signin" target="_blank">Sign In to Musette →</a>
+    </div>
+  </div>
+  <label>Worker API URL</label>
+  <input id="s_url" placeholder="https://api.musetteapp.com" autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="rowbtn">
     <button class="cancel" data-close>Close</button>
-    <button class="go" id="s_go">Save &amp; Sync</button>
+    <button class="go" id="s_go">Save Settings</button>
   </div>
-  <p class="small">Enter the access code once on each phone and the list stays in step between them. Clear the Worker URL to go local-only.</p>
   <div class="status" id="s_stat"></div>
   <div class="rowbtn"><button class="danger" id="reset">Clear this week's check-offs</button></div>
 </div></div>
@@ -3236,12 +3251,10 @@ let authToken = LS.get('v2.token') || null;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   }
 }
-/* One place that decides how this phone identifies itself. */
 function authHeaders() {
-  if (authToken) return { Authorization: 'Bearer ' + authToken };
-  return cfg.key ? { 'X-List-Key': cfg.key } : {};
+  return authToken ? { Authorization: 'Bearer ' + authToken } : {};
 }
-const hasCreds = () => !!(authToken || cfg.key);
+const hasCreds = () => !!authToken;
 function signedOutHere() {
   authToken = null;
   try { LS.set('v2.token', ''); } catch (e) {}
@@ -3413,13 +3426,17 @@ function stateSig(){
   const m = (o) => Object.keys(o || {}).sort().map(k => k + '=' + JSON.stringify(o[k])).join('|');
   return m(ticks) + '\n' + m(extras) + '\n' + m(pantryState) + '\n' + m(mealLog) + '\n' + m(dishes);
 }
-let needCode = false;   // set when the Worker rejects the access code
 function openSettings(){
-  $('#s_url').value = cfg.url;
-  $('#s_key').value = cfg.key;
+  $('#s_url').value = cfg.url || SYNC_URL;
+  if (authToken) {
+    $('#acc_signed_in').classList.add('active');
+    $('#acc_signed_out').classList.add('hidden');
+  } else {
+    $('#acc_signed_in').classList.remove('active');
+    $('#acc_signed_out').classList.remove('hidden');
+  }
   $('#s_stat').textContent = lastSync ? 'Last synced ' + new Date(lastSync).toLocaleString() : '';
   $('#setsheet').classList.add('open');
-  setTimeout(() => { try { $('#s_key').focus(); } catch(e){} }, 250);
 }
 
 function setDot(){
@@ -3428,11 +3445,10 @@ function setDot(){
   if (!cfg.url) {
     d.className = 'dot';
     txt.textContent = 'Local';
-  } else if (!authToken && (!cfg.key || needCode)) {
-    d.className = 'dot err';
-    txt.textContent = 'Tap to enter code';
+  } else if (!authToken) {
+    d.className = 'dot';
+    txt.textContent = 'Sign In';
   } else if (syncNote) {
-    /* Beside the dot, where it is actually read. */
     d.className = 'dot err';
     txt.textContent = syncNote;
   } else if (syncing) {
@@ -3492,16 +3508,11 @@ async function sync(push){
       r = await fetch(base + '/state', {headers:h});
     }
     if (r.status === 401){
-      /* A revoked or expired token must not lock somebody out of their own
-         shopping list. Drop it, and if this phone still knows the household
-         code it simply carries on as it always did; only if there is no code
-         either does it stop and ask. */
-      if (authToken) {
-        signedOutHere();
-        syncNote = 'Signed out on this device. Still syncing with the household code.';
-        if (cfg.key) { setDot(); throw new Error('Signed out - retrying with the access code'); }
-      }
-      needCode = true; openSettings(); throw new Error('Access code not accepted');
+      signedOutHere();
+      syncNote = 'Sign in required';
+      setDot();
+      openSettings();
+      throw new Error('Sign in required to sync');
     }
     if (r.status === 429) throw new Error('Too many attempts — wait a minute');
     /* The Worker declines a merge whose synced maps would not fit in one request.
@@ -6797,15 +6808,19 @@ document.addEventListener('click', e => {
   }
 
   if (e.target.closest('#bsync')){
-    if (!authToken && (!cfg.key || needCode)) { openSettings(); return; }
+    if (!authToken) { openSettings(); return; }
     sync(false); triggerHaptic(); return;
   }
   
   if (e.target.closest('#bset')){
-    $('#s_url').value = cfg.url;
-    $('#s_key').value = cfg.key;
-    $('#s_stat').textContent = lastSync ? 'Last synced ' + new Date(lastSync).toLocaleString() : 'Never synced';
-    $('#setsheet').classList.add('open');
+    openSettings();
+    return;
+  }
+
+  if (e.target.closest('#s_signout')){
+    signedOutHere();
+    openSettings();
+    setDot();
     return;
   }
 
@@ -6823,11 +6838,11 @@ document.addEventListener('click', e => {
   }
 
   if (e.target.closest('#s_go')){
-    cfg = {url: $('#s_url').value.trim(), key: $('#s_key').value.trim()};
-    needCode = false; pollFails = 0; startPolling();
+    cfg = {url: $('#s_url').value.trim() || SYNC_URL, key: ''};
+    pollFails = 0; startPolling();
     jset('v2.cfg', cfg);
     document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
-    sync(false);
+    if (authToken) sync(false);
     return;
   }
 
@@ -7378,7 +7393,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (cfg.url && !cfg.key && !authToken) openSettings(); else if (cfg.url) { sync(dirty); startPolling(); }
+if (authToken && cfg.url) { sync(dirty); startPolling(); }
 </script>
 </body>
 </html>
