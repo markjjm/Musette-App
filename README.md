@@ -46,7 +46,7 @@ Whether you're training for a marathon, putting in miles on the bike, swimming l
          ▼
   ⚡ Musette Metabolic Physics Engine
      ├── Calculates Basal Energy (BMR) + Dynamic Workout Expenditure
-     ├── Periodizes Daily Carbohydrates (Rest Day: 3–4 g/kg ➔ High Volume: 8–10+ g/kg)
+     ├── Periodizes Daily Carbohydrates (Rest Day: 1.4–1.8 g/lb ➔ High Volume: 4.5+ g/lb)
      └── Delivers Instant Workout Debriefs & Glycogen Replenishment Targets
          │
          ▼
@@ -73,10 +73,10 @@ No boiled chicken or chalky powders. Musette features **100 tested, delicious, w
 
 ### 2. ⚡ Dynamic Nutrition Periodization
 Your body needs different fuel on rest days versus hard training days. Musette periodizes your daily targets based on the demands of your schedule:
-- **Rest / Recovery Days**: $3.0 - 4.0\text{ g/kg}$ (Nutrient-dense whole foods, recovery fats).
-- **Aerobic Base Days (1–2h)**: $5.0 - 7.0\text{ g/kg}$ (Moderate glycogen replenishment).
-- **Threshold / Key Workout Days**: $7.5 - 9.5\text{ g/kg}$ (Targeted high-glycogen fueling).
-- **Epic Volume Days (3h+)**: $10.0+\text{ g/kg}$ (Complete glycogen replenishment + active session fueling).
+- **Rest / Recovery Days**: $1.4 - 1.8\text{ g/lb}$ (Nutrient-dense whole foods, recovery fats).
+- **Aerobic Base Days (1–2h)**: $2.3 - 3.2\text{ g/lb}$ (Moderate glycogen replenishment).
+- **Threshold / Key Workout Days**: $3.4 - 4.3\text{ g/lb}$ (Targeted high-glycogen fueling).
+- **Epic Volume Days (3h+)**: $4.5+\text{ g/lb}$ (Complete glycogen replenishment + active session fueling).
 
 ### 3. 🛒 Automated Aisle-Organized Grocery Lists
 Instead of a disorganized mess of ingredients, Musette automatically consolidates your weekly meal choices and pantry staples into physical supermarket aisles:
