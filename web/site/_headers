@@ -2,55 +2,55 @@
 # Re-run `npm run build` after changing any page, or the hashes go stale and
 # the browser refuses to run what it is served.
 /about
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-4P6ArVlmF+akb+ENjGMiwWPAYxF81sDZwnMeu906UUM='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-TC5n7cfVaRlLxdvfzqRmq4hJaSTHK9311buyHl36ngU='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /about.html
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-4P6ArVlmF+akb+ENjGMiwWPAYxF81sDZwnMeu906UUM='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-TC5n7cfVaRlLxdvfzqRmq4hJaSTHK9311buyHl36ngU='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /access
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-nZkEOx9Cxnl9crANp0C4j8cNyILAQYcAFS22Me+sYRg='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-wOf4zrENxxOB03EVKcmS8J2NexdyTwo8thy100yK/O8='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /access.html
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-nZkEOx9Cxnl9crANp0C4j8cNyILAQYcAFS22Me+sYRg='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-wOf4zrENxxOB03EVKcmS8J2NexdyTwo8thy100yK/O8='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-BM2PbulBqtrULSE7lEOiu9aKLrqDv0lNkWL9ktqmYoU='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-BM2PbulBqtrULSE7lEOiu9aKLrqDv0lNkWL9ktqmYoU='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-QY47rhTzg6nCZpu7eFt89JdsBQ8bRMDEaDF8Xk5cpJc='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /how
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-sSwLTsP3VJgIOT2BP1CIysmzVmD0aVuZsg3M2wlsbJI='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-kSO8xbBuQn433DmQQWexRLJF8Q39rVe1Q4BG05cVikc='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /how.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-sSwLTsP3VJgIOT2BP1CIysmzVmD0aVuZsg3M2wlsbJI='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-kSO8xbBuQn433DmQQWexRLJF8Q39rVe1Q4BG05cVikc='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-wa/Bh89MSGfygOqX8wp6U1IH2EkIpicHt5bLUce6CW0='; style-src 'sha256-rdUs2hVrB19FDbVJbzBYpicJQz99jRcOMaheW2bB8ik='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-wa/Bh89MSGfygOqX8wp6U1IH2EkIpicHt5bLUce6CW0='; style-src 'sha256-rTKlTjsmqXuuAqHVGBtzjWTgHqAa/6BmI/jwSw4gXNk='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /privacy
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-yTDjw07VnTJh3pVY1UER9oTweRuR6eGKbxlXQKJPBBA='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-CusnVtdXrS9cGgYvJ+SgA7C8hCdNNrNSTFvnfvWmos0='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /privacy.html
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-yTDjw07VnTJh3pVY1UER9oTweRuR6eGKbxlXQKJPBBA='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-CusnVtdXrS9cGgYvJ+SgA7C8hCdNNrNSTFvnfvWmos0='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /signin
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-rhMTXTcLmNFfDeB5NRkgdhV0FuBkC2dt2EJOvm9YRVY='; style-src 'sha256-jFj0tqy77YWfwqUhKR+MZvEASSzXkEhZXackYla61So='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-rhMTXTcLmNFfDeB5NRkgdhV0FuBkC2dt2EJOvm9YRVY='; style-src 'sha256-Z0QSE3Nxqd55u/BIkXFbSQBbmGykcL1ZfMZawh76eaY='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /signin.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-rhMTXTcLmNFfDeB5NRkgdhV0FuBkC2dt2EJOvm9YRVY='; style-src 'sha256-jFj0tqy77YWfwqUhKR+MZvEASSzXkEhZXackYla61So='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-rhMTXTcLmNFfDeB5NRkgdhV0FuBkC2dt2EJOvm9YRVY='; style-src 'sha256-Z0QSE3Nxqd55u/BIkXFbSQBbmGykcL1ZfMZawh76eaY='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /terms
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-mUhtrbEdH1JzDunXVcUbvcNnXgLGj1vkwybu3pcOztE='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-0g1EsqX/9l4zpkcTcK6CeTzWw26MccwViv36rPojVCQ='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /terms.html
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-mUhtrbEdH1JzDunXVcUbvcNnXgLGj1vkwybu3pcOztE='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-0g1EsqX/9l4zpkcTcK6CeTzWw26MccwViv36rPojVCQ='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /welcome
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-vxuzN0eN7aiZb8JbA/3WoYTpr23p+pC7Nwz7jvPeH0g='; style-src 'sha256-OVk+Lnm87MC6SOG+6iH4qwfqwY2auOn0lu2LesWNiS8='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-vxuzN0eN7aiZb8JbA/3WoYTpr23p+pC7Nwz7jvPeH0g='; style-src 'sha256-tiVZMka2u/h9vugxfPkxXlL0RAghn9yjFTfOEUYQ26k='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /welcome.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-vxuzN0eN7aiZb8JbA/3WoYTpr23p+pC7Nwz7jvPeH0g='; style-src 'sha256-OVk+Lnm87MC6SOG+6iH4qwfqwY2auOn0lu2LesWNiS8='; img-src 'self' data:; connect-src https://api.musetteapp.com https://shopping-list-sync.markpjacobs1.workers.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-vxuzN0eN7aiZb8JbA/3WoYTpr23p+pC7Nwz7jvPeH0g='; style-src 'sha256-tiVZMka2u/h9vugxfPkxXlL0RAghn9yjFTfOEUYQ26k='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /*
   X-Content-Type-Options: nosniff

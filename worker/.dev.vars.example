@@ -1,0 +1,19 @@
+# Local development secrets for Cloudflare Worker
+# Copy this file to .dev.vars (which is gitignored) for local development:
+#   cp worker/.dev.vars.example worker/.dev.vars
+
+# 4-digit code required by app to sync (sent as X-List-Key)
+LIST_KEY="1234"
+
+# Secret required for administrative actions like publishing meal plans (sent as X-Admin-Key)
+ADMIN_KEY="dev-admin-secret-key"
+
+# AI Nutrition & Coach integration (optional, via OpenRouter or OpenAI)
+OPENROUTER_KEY=""
+# OPENAI_API_KEY=""
+
+# intervals.icu integration (optional)
+INTERVALS_KEY=""
+INTERVALS_ATHLETE=""
+INTERVALS_CLIENT_ID=""
+INTERVALS_CLIENT_SECRET=""

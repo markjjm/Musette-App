@@ -43,6 +43,7 @@ let pushRefused = false, syncNote = '';
    is about. */
 let authToken = null;
 const authHeaders = () => (authToken ? { Authorization: 'Bearer ' + authToken } : { 'X-List-Key': cfg.key });
+const hasCreds = () => !!(authToken || cfg.key);
 const signedOutHere = () => { authToken = null; };
 /* One object per selector, so writes to #s_stat are observable rather than
    dropped on the floor — the earlier stub returned a fresh object each call,

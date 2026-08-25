@@ -32,7 +32,7 @@ function env(name, fallback) {
   return fallback;
 }
 
-const API = env('LIST_URL', 'https://shopping-list-sync.markpjacobs1.workers.dev').replace(/\/+$/, '');
+const API = env('LIST_URL', 'https://api.musetteapp.com').replace(/\/+$/, '');
 const ADMIN = env('ADMIN_KEY', '');
 const LIST_KEY = env('LIST_KEY', '');
 

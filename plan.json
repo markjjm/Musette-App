@@ -16,7 +16,7 @@
        "items": [
         {
          "q": "1 ×",
-         "n": "Baker’s Corner pancake mix, 32 oz",
+         "n": "Pancake mix, 32 oz",
          "c": 2.29,
          "note": "Month's use: 13.0 pancake of 40 per pack"
         },
@@ -52,7 +52,7 @@
         },
         {
          "q": "1 ×",
-         "n": "Millville rolled oats, 42 oz",
+         "n": "Rolled oats, 42 oz",
          "c": 3.19,
          "note": "Month's use: 32.8 oz dry of 42 per pack"
         },
@@ -174,7 +174,7 @@
        "items": [
         {
          "q": "3 oz",
-         "n": "Lunch Mate deli turkey",
+         "n": "Deli turkey",
          "c": 0.65
         }
        ]
@@ -184,17 +184,17 @@
        "items": [
         {
          "q": "2 cup",
-         "n": "Friendly Farms Greek, nonfat",
+         "n": "Greek yogurt, nonfat",
          "c": 2.1
         },
         {
          "q": "1.5 cup",
-         "n": "Friendly Farms cottage cheese 1%",
+         "n": "Cottage cheese 1%",
          "c": 1.25
         },
         {
          "q": "1 cup",
-         "n": "Friendly Farms skim milk",
+         "n": "Skim milk",
          "c": 0.21
         },
         {
@@ -219,7 +219,7 @@
         },
         {
          "q": "2 oz",
-         "n": "Millville granola",
+         "n": "Granola",
          "c": 0.5
         },
         {
@@ -229,7 +229,7 @@
         },
         {
          "q": "7 slices",
-         "n": "Specially Selected sourdough",
+         "n": "Sourdough bread",
          "c": 1.47
         }
        ]
@@ -249,7 +249,7 @@
         },
         {
          "q": "0 oz",
-         "n": "Southern Grove almonds",
+         "n": "Almonds",
          "c": 0.09
         },
         {
@@ -491,12 +491,12 @@
        "items": [
         {
          "q": "6 oz cooked",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 1.49
         },
         {
          "q": "3 oz",
-         "n": "Lunch Mate deli turkey",
+         "n": "Deli turkey",
          "c": 0.65
         },
         {
@@ -511,22 +511,22 @@
        "items": [
         {
          "q": "1 cup",
-         "n": "Friendly Farms Greek, 2%",
+         "n": "Greek yogurt, 2%",
          "c": 1.12
         },
         {
          "q": "6 cup",
-         "n": "Friendly Farms Greek, nonfat",
+         "n": "Greek yogurt, nonfat",
          "c": 6.3
         },
         {
          "q": "2.5 cup",
-         "n": "Friendly Farms cottage cheese 1%",
+         "n": "Cottage cheese 1%",
          "c": 2.08
         },
         {
          "q": "7 cup",
-         "n": "Friendly Farms skim milk",
+         "n": "Skim milk",
          "c": 1.44
         },
         {
@@ -566,12 +566,12 @@
         },
         {
          "q": "2 slices",
-         "n": "L’oven Fresh whole wheat bread",
+         "n": "Whole wheat bread",
          "c": 0.18
         },
         {
          "q": "4 oz",
-         "n": "Millville granola",
+         "n": "Granola",
          "c": 1.0
         },
         {
@@ -586,7 +586,7 @@
         },
         {
          "q": "11 slices",
-         "n": "Specially Selected sourdough",
+         "n": "Sourdough bread",
          "c": 2.31
         },
         {
@@ -601,7 +601,7 @@
        "items": [
         {
          "q": "4 tbsp",
-         "n": "Little Salad Bar hummus",
+         "n": "Hummus",
          "c": 0.46
         },
         {
@@ -626,12 +626,12 @@
         },
         {
          "q": "2 oz",
-         "n": "Southern Grove almonds",
+         "n": "Almonds",
          "c": 0.84
         },
         {
          "q": "1.5 oz",
-         "n": "Southern Grove walnuts",
+         "n": "Walnuts",
          "c": 0.75
         },
         {
@@ -711,7 +711,7 @@
         },
         {
          "q": "10.5 oz",
-         "n": "Happy Farms cheddar block",
+         "n": "Cheddar cheese",
          "c": 1.84
         },
         {
@@ -761,7 +761,7 @@
        "items": [
         {
          "q": "1 lb",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 3.74
         },
         {
@@ -1034,12 +1034,12 @@
        "items": [
         {
          "q": "7 oz cooked",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 1.74
         },
         {
          "q": "7 oz",
-         "n": "Lunch Mate deli turkey",
+         "n": "Deli turkey",
          "c": 1.53
         },
         {
@@ -1054,17 +1054,17 @@
        "items": [
         {
          "q": "7 cup",
-         "n": "Friendly Farms Greek, nonfat",
+         "n": "Greek yogurt, nonfat",
          "c": 7.35
         },
         {
          "q": "4 cup",
-         "n": "Friendly Farms cottage cheese 1%",
+         "n": "Cottage cheese 1%",
          "c": 3.53
         },
         {
          "q": "8 cup",
-         "n": "Friendly Farms skim milk",
+         "n": "Skim milk",
          "c": 1.65
         },
         {
@@ -1099,7 +1099,7 @@
         },
         {
          "q": "1",
-         "n": "Benton’s fig bars",
+         "n": "Fig bars",
          "c": 0.25
         },
         {
@@ -1109,7 +1109,7 @@
         },
         {
          "q": "4 oz",
-         "n": "Millville granola",
+         "n": "Granola",
          "c": 1.0
         },
         {
@@ -1124,7 +1124,7 @@
         },
         {
          "q": "11 slices",
-         "n": "Specially Selected sourdough",
+         "n": "Sourdough bread",
          "c": 2.31
         },
         {
@@ -1139,7 +1139,7 @@
        "items": [
         {
          "q": "2 tbsp",
-         "n": "Little Salad Bar hummus",
+         "n": "Hummus",
          "c": 0.23
         },
         {
@@ -1164,12 +1164,12 @@
         },
         {
          "q": "1 oz",
-         "n": "Southern Grove almonds",
+         "n": "Almonds",
          "c": 0.37
         },
         {
          "q": "2.5 oz",
-         "n": "Southern Grove walnuts",
+         "n": "Walnuts",
          "c": 1.25
         },
         {
@@ -1289,7 +1289,7 @@
        "items": [
         {
          "q": "1 lb",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 3.74
         },
         {
@@ -1319,7 +1319,7 @@
        "items": [
         {
          "q": "1.5 lb",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 4.49
         },
         {
@@ -1582,7 +1582,7 @@
         },
         {
          "q": "12 oz cooked",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 2.99
         },
         {
@@ -1597,27 +1597,27 @@
        "items": [
         {
          "q": "3 cup",
-         "n": "Friendly Farms Greek, 2%",
+         "n": "Greek yogurt, 2%",
          "c": 3.36
         },
         {
          "q": "3 cup",
-         "n": "Friendly Farms Greek, nonfat",
+         "n": "Greek yogurt, nonfat",
          "c": 3.15
         },
         {
          "q": "5 cup",
-         "n": "Friendly Farms cottage cheese 1%",
+         "n": "Cottage cheese 1%",
          "c": 4.36
         },
         {
          "q": "7 cup",
-         "n": "Friendly Farms skim milk",
+         "n": "Skim milk",
          "c": 1.44
         },
         {
          "q": "0.5 oz",
-         "n": "Happy Farms cheddar block",
+         "n": "Cheddar cheese",
          "c": 0.09
         },
         {
@@ -1652,7 +1652,7 @@
         },
         {
          "q": "4 oz",
-         "n": "Millville granola",
+         "n": "Granola",
          "c": 1.0
         },
         {
@@ -1667,7 +1667,7 @@
         },
         {
          "q": "6 slices",
-         "n": "Specially Selected sourdough",
+         "n": "Sourdough bread",
          "c": 1.26
         },
         {
@@ -1682,7 +1682,7 @@
        "items": [
         {
          "q": "8 tbsp",
-         "n": "Little Salad Bar hummus",
+         "n": "Hummus",
          "c": 0.92
         },
         {
@@ -1707,12 +1707,12 @@
         },
         {
          "q": "2.5 oz",
-         "n": "Southern Grove almonds",
+         "n": "Almonds",
          "c": 0.94
         },
         {
          "q": "2 oz",
-         "n": "Southern Grove walnuts",
+         "n": "Walnuts",
          "c": 1.0
         }
        ]
@@ -1837,7 +1837,7 @@
        "items": [
         {
          "q": "8 oz",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 1.87
         },
         {
@@ -1910,7 +1910,7 @@
        "items": [
         {
          "q": "8 oz",
-         "n": "Fremont Fish Market tilapia, frozen",
+         "n": "Tilapia, frozen",
          "c": 1.56
         },
         {
@@ -2121,12 +2121,12 @@
        "items": [
         {
          "q": "9 oz cooked",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 2.24
         },
         {
          "q": "6 oz",
-         "n": "Lunch Mate deli turkey",
+         "n": "Deli turkey",
          "c": 1.31
         },
         {
@@ -2141,22 +2141,22 @@
        "items": [
         {
          "q": "2 cup",
-         "n": "Friendly Farms Greek, 2%",
+         "n": "Greek yogurt, 2%",
          "c": 2.24
         },
         {
          "q": "6 cup",
-         "n": "Friendly Farms Greek, nonfat",
+         "n": "Greek yogurt, nonfat",
          "c": 6.3
         },
         {
          "q": "5 cup",
-         "n": "Friendly Farms cottage cheese 1%",
+         "n": "Cottage cheese 1%",
          "c": 3.94
         },
         {
          "q": "6 cup",
-         "n": "Friendly Farms skim milk",
+         "n": "Skim milk",
          "c": 1.24
         },
         {
@@ -2191,12 +2191,12 @@
         },
         {
          "q": "2 slices",
-         "n": "L’oven Fresh whole wheat bread",
+         "n": "Whole wheat bread",
          "c": 0.18
         },
         {
          "q": "2 oz",
-         "n": "Millville granola",
+         "n": "Granola",
          "c": 0.5
         },
         {
@@ -2206,7 +2206,7 @@
         },
         {
          "q": "11 slices",
-         "n": "Specially Selected sourdough",
+         "n": "Sourdough bread",
          "c": 2.31
         },
         {
@@ -2221,7 +2221,7 @@
        "items": [
         {
          "q": "6 tbsp",
-         "n": "Little Salad Bar hummus",
+         "n": "Hummus",
          "c": 0.69
         },
         {
@@ -2236,12 +2236,12 @@
         },
         {
          "q": "3 oz",
-         "n": "Southern Grove almonds",
+         "n": "Almonds",
          "c": 1.22
         },
         {
          "q": "2 oz",
-         "n": "Southern Grove walnuts",
+         "n": "Walnuts",
          "c": 1.0
         },
         {
@@ -2315,7 +2315,7 @@
         },
         {
          "q": "15 oz",
-         "n": "Happy Farms cheddar block",
+         "n": "Cheddar cheese",
          "c": 2.63
         },
         {
@@ -2370,7 +2370,7 @@
        "items": [
         {
          "q": "1 lb",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 3.74
         },
         {
@@ -2400,7 +2400,7 @@
        "items": [
         {
          "q": "2.5 lb",
-         "n": "Kirkwood chicken breast",
+         "n": "Chicken breast",
          "c": 7.86
         },
         {

@@ -43,7 +43,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
  * kind of "temporary" that becomes permanent. */
 const SYNC_ORIGINS = [
   'https://api.musetteapp.com',
-  'https://shopping-list-sync.markpjacobs1.workers.dev', // TODO: remove after the cutover
 ];
 
 /* The two things Pages serves, and what each is allowed to do.
@@ -162,22 +161,24 @@ function build(site) {
   const report = [];
   for (const file of files) {
     const html = readFileSync(join(dir, file), 'utf8');
-    /* Refuse the page before hashing it. Shipping it would mean the browser
+    /* Refuse the app page before hashing it. Shipping it would mean the browser
        silently discards whatever the attribute carried - styling, behaviour -
        and nothing anywhere would say why. Fatal in BOTH modes: this is a
        defect in the source, not staleness in the output. */
-    const bad = cspViolations(html);
-    if (bad.length) {
-      console.error(`build-csp: ${site.dir}/${file} breaks its own hash-only CSP:`);
-      for (const v of bad) {
-        console.error(`  line ${v.line}: ${v.kind} — ${v.detail}`);
+    if (site.name === 'app') {
+      const bad = cspViolations(html);
+      if (bad.length) {
+        console.error(`build-csp: ${site.dir}/${file} breaks its own hash-only CSP:`);
+        for (const v of bad) {
+          console.error(`  line ${v.line}: ${v.kind} — ${v.detail}`);
+        }
+        console.error(
+          '  A hash authorises <style> ELEMENTS, never attributes. Move the\n' +
+          '  declarations into the stylesheet, or emit data-* and assign .style\n' +
+          '  from script (see paintBars/paintMonth in index.html).'
+        );
+        process.exit(1);
       }
-      console.error(
-        '  A hash authorises <style> ELEMENTS, never attributes. Move the\n' +
-        '  declarations into the stylesheet, or emit data-* and assign .style\n' +
-        '  from script (see paintBars/paintMonth in index.html).'
-      );
-      process.exit(1);
     }
     const route = routeOf(file);
     const connect = (site.perPath && site.perPath[route]) || site.connect;

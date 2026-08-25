@@ -69,10 +69,10 @@ jobs:
 
           echo "--- worker rejects unauthenticated reads ---"
           c=$(curl -sS -o /dev/null -w '%{http_code}' \
-            "https://shopping-list-sync.markpjacobs1.workers.dev/state?cb=$cb")
+            "https://api.musetteapp.com/state?cb=$cb")
           [ "$c" = "401" ] || { echo "::error::worker /state returned $c, expected 401"; exit 1; }
 
           echo "--- worker is alive ---"
-          curl -sS "https://shopping-list-sync.markpjacobs1.workers.dev/health?cb=$cb" \
+          curl -sS "https://api.musetteapp.com/health?cb=$cb" \
             | grep -q '"ok":true' || { echo "::error::worker health failed"; exit 1; }
           echo "deploy verified"
