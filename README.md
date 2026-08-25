@@ -1,27 +1,30 @@
 # Musette 🚴🍲
 
-> **"I was tired of paying big brands monthly subscriptions just to feed my .FIT files into AI for the analysis I actually wanted. And I couldn't justify paying $300 a month for a remote coach who checks in once a week.**  
-> **Musette is a sovereign lifestyle app built for the modern athlete who lives a busy life. It builds around your life to help you fuel with purpose and live your best life."**
+> **The sovereign endurance fueling and meal-planning system built for the modern, high-performing athlete.**
 
-- **Live App**: https://shopping-list-app-9an.pages.dev
-- **Sync API**: https://api.musetteapp.com
+Musette bridges the gap between mechanical workout output on your bike or watch and high-performance nutrition in your kitchen. Designed for busy athletes who want precision metabolic fueling and effortless grocery planning without expensive coaching retainers or recurring subscription paywalls.
+
+🌐 **Website**: [musetteapp.com](https://musetteapp.com)  
+📱 **Live Web App**: [shopping-list-app-9an.pages.dev](https://shopping-list-app-9an.pages.dev)  
+⚡ **Sync API**: [api.musetteapp.com](https://api.musetteapp.com)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Cloudflare Workers & Pages](https://img.shields.io/badge/Cloudflare-Free_Tier_($0/mo)-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
+[![Cloudflare Workers & Pages](https://img.shields.io/badge/Hosting-Sovereign_$0/mo-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 [![Zero-Build PWA](https://img.shields.io/badge/Architecture-Single--File_PWA-10B981)](#-architecture--layout)
 [![Security: Strict CSP](https://img.shields.io/badge/Security-SHA256_CSP_%26_Zero_Tracking-success)](SECURITY.md)
 
 ---
 
-## 🎯 The Manifesto: Built for the Modern, Busy Athlete
+## 🎯 The Vision: High-Performance Nutrition Built Around Real Life
 
-If you train hard while balancing a demanding job, family, and daily life, you know the frustration:
+Most fitness platforms tell you what you did yesterday. Generic diet apps recommend restrictive 1,500-calorie meal plans designed for sedentary weight loss. 
 
-- **Big Brands Lock Your Data Behind Paywalls**: Platforms like Strava, Garmin, and TrainingPeaks show you graphs of what you did yesterday, but charge monthly fees while leaving you to manually copy and paste your `.FIT` workout metrics into AI chatbots to get the actual nutritional advice you need.
-- **The $300/Month Remote Coach Tax**: Paying hundreds every month for a coach to review your workout log once a week makes no sense when metabolic physics can analyze your training load in milliseconds.
-- **The Kitchen Execution Friction**: Even when you know your target macros, turning grams of carbohydrates into practical weeknight dinners, grocery aisle checklists, and pantry management takes hours of mental overhead that busy people don't have.
+Musette was built from a fundamental reality: **endurance athletes have dynamic metabolic demands, demanding careers, and busy family lives.**
 
-**Musette changes this.** It connects your actual workout output directly to a 100-meal recovery recipe catalog and an automated supermarket shopping list — running entirely on your own free sovereign cloud.
+- **Precision Energy Physics**: Instead of guessing calorie burn or manually exporting `.FIT` files into external chat prompts, Musette automatically translates mechanical workout energy ($1\text{ kJ mechanical work} \approx 1\text{ kcal metabolic expenditure}$) and training load into exact daily carbohydrate, protein, and caloric targets.
+- **Real-World Kitchen Execution**: Converts target nutrition numbers into 100 tested, delicious recovery recipes with instant **🍳 Single-Pan** and **⏱️ <20-Minute** filters for minimal kitchen cleanup.
+- **Frictionless Logistics**: Automatically aggregates your planned dinners and low pantry staples into clean, aisle-organized supermarket checklists with one-tap mobile checkoffs.
+- **Sovereign & Zero-Cost Cloud**: 100% private with no tracking scripts. Deploys seamlessly to Cloudflare’s global edge network for **$0.00/month**.
 
 ---
 
@@ -56,7 +59,7 @@ If you train hard while balancing a demanding job, family, and daily life, you k
 ## 🌟 Built For Real Lives (Key Features)
 
 ### 1. 🍽️ Real Food That Fits a Busy Schedule
-No boiled chicken and white rice. Musette features **100 tested, delicious, whole-food recipes** calibrated for athletic recovery — smash burgers on brioche, honey garlic chicken jasmine bowls, slow-cooked beef ragù, Mediterranean salmon, chicken fajitas, and steak tacos:
+No boiled chicken or bland powders. Musette features **100 tested, delicious, whole-food recipes** calibrated for athletic recovery — smash burgers on brioche, honey garlic chicken jasmine bowls, slow-cooked beef ragù, Mediterranean salmon, chicken fajitas, and steak tacos:
 - **🍳 Single-Pan Shortcut**: Filter instantly for one-pot and sheet-pan meals with minimal kitchen cleanup.
 - **⏱️ <20-Min Quick Prep**: Fast recovery dinners ready in minutes after a late workout.
 - **One-Tap Grocery List Sync**: Tap `+ List` on any recipe to instantly queue all ingredients; tap `✓ In List ✕` to remove them with zero leftover clutter.
@@ -169,4 +172,4 @@ See [SECURITY.md](SECURITY.md) for the threat model and the architectural contro
 
 ## 📄 License
 
-Musette is open-source software licensed under the [MIT License](LICENSE).
+Musette is open-source software licensed under the permissive [MIT License](LICENSE).
