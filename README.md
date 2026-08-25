@@ -5,7 +5,7 @@
 Musette bridges the gap between daily physical training across any sport and practical, delicious nutrition in your kitchen. Built for runners, cyclists, triathletes, lifters, and everyday active people with busy lives who want intelligent, automated meal planning without expensive coaching fees or subscription paywalls.
 
 🌐 **Website**: [musetteapp.com](https://musetteapp.com)  
-📱 **Live Web App**: [shopping-list-app-9an.pages.dev](https://shopping-list-app-9an.pages.dev)  
+📱 **Live Web App**: [app.musetteapp.com](https://app.musetteapp.com)  
 ⚡ **Sync API**: [api.musetteapp.com](https://api.musetteapp.com)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
