@@ -1,8 +1,8 @@
-# Musette 🚴🍲
+# Musette 🎒🍲
 
-> **The sovereign endurance fueling and meal-planning system built for the modern, high-performing athlete.**
+> **The sovereign lifestyle fueling and meal-planning system built for active, high-performing people.**
 
-Musette bridges the gap between mechanical workout output on your bike or watch and high-performance nutrition in your kitchen. Designed for busy athletes who want precision metabolic fueling and effortless grocery planning without expensive coaching retainers or recurring subscription paywalls.
+Musette bridges the gap between daily physical training across any sport and practical, delicious nutrition in your kitchen. Built for runners, cyclists, triathletes, lifters, and everyday active people with busy lives who want intelligent, automated meal planning without expensive coaching fees or subscription paywalls.
 
 🌐 **Website**: [musetteapp.com](https://musetteapp.com)  
 📱 **Live Web App**: [shopping-list-app-9an.pages.dev](https://shopping-list-app-9an.pages.dev)  
@@ -15,42 +15,49 @@ Musette bridges the gap between mechanical workout output on your bike or watch 
 
 ---
 
-## 🎯 The Vision: High-Performance Nutrition Built Around Real Life
+## 🎒 Why "Musette"?
 
-Most fitness platforms tell you what you did yesterday. Generic diet apps recommend restrictive 1,500-calorie meal plans designed for sedentary weight loss. 
+In endurance athletics, a ***musette*** is the iconic cotton feed bag handed to athletes mid-effort. Packed with purposeful nourishment, hydration, and energy, it provides exactly what the body needs to keep moving forward without slowing down.
 
-Musette was built from a fundamental reality: **endurance athletes have dynamic metabolic demands, demanding careers, and busy family lives.**
-
-- **Precision Energy Physics**: Instead of guessing calorie burn or manually exporting `.FIT` files into external chat prompts, Musette automatically translates mechanical workout energy ($1\text{ kJ mechanical work} \approx 1\text{ kcal metabolic expenditure}$) and training load into exact daily carbohydrate, protein, and caloric targets.
-- **Real-World Kitchen Execution**: Converts target nutrition numbers into 100 tested, delicious recovery recipes with instant **🍳 Single-Pan** and **⏱️ <20-Minute** filters for minimal kitchen cleanup.
-- **Frictionless Logistics**: Automatically aggregates your planned dinners and low pantry staples into clean, aisle-organized supermarket checklists with one-tap mobile checkoffs.
-- **Sovereign & Zero-Cost Cloud**: 100% private with no tracking scripts. Deploys seamlessly to Cloudflare’s global edge network for **$0.00/month**.
+Musette brings that same philosophy to your everyday life: **simple, high-quality nourishment handed to you on the go, built to power your active lifestyle without adding complexity to your schedule.**
 
 ---
 
-## ⚡ What Musette Does
+## 🎯 The Vision: Fueling Built Around Any Sport, Any Schedule
+
+Whether you're training for a marathon, putting in miles on the bike, swimming laps, lifting, or simply balancing a demanding career and family, traditional fitness platforms fall short:
+
+- **Data Without Action**: Garmin, Apple Health, Strava, and TrainingPeaks record what you did yesterday, but leave you guessing how many calories, carbohydrates, and nutrients your body actually needs to recover for tomorrow.
+- **Generic Diets Don't Work for Active Lives**: Restrictive 1,500-calorie diet apps leave active people exhausted, under-fueled, and fighting late-afternoon brain fog and midnight pantry cravings.
+- **The Kitchen Execution Friction**: Knowing your target nutrition is only half the battle. Converting numbers into weekly family dinners, organized grocery store trips, and pantry inventory takes hours of mental energy that busy people simply don't have.
+
+**Musette solves this across every sport.** It automatically scales your daily nutrition targets to your training output, connects them to a curated 100-meal recovery recipe catalog, and generates an aisle-organized supermarket shopping list in a single tap.
+
+---
+
+## ⚡ How It Works
 
 ```
-  🚴 Real Workout Output (.FIT / Garmin / Wahoo)
+  🏃‍♂️ Real Training Output (Running, Cycling, Swimming, Gym, Multi-Sport)
          │
          ▼
-  📊 intervals.icu Direct Sync (Mechanical Work: kJ)
+  📊 intervals.icu / Device Direct Sync (Mechanical Work & Energy Burn)
          │
          ▼
   ⚡ Musette Metabolic Physics Engine
-     ├── Calculates Total Energy Burn ($1\text{ kJ mechanical work} \approx 1\text{ kcal food energy}$)
-     ├── Periodizes Daily Carbohydrates (Rest Day: 3–4 g/kg ➔ Epic 4h Day: 10+ g/kg)
-     └── Delivers Instant Workout Analysis & Glycogen Replenishment Targets
+     ├── Calculates Basal Energy (BMR) + Dynamic Workout Expenditure
+     ├── Periodizes Daily Carbohydrates (Rest Day: 3–4 g/kg ➔ High Volume: 8–10+ g/kg)
+     └── Delivers Instant Workout Debriefs & Glycogen Replenishment Targets
          │
          ▼
-  🍽️ 100-Meal Recovery Catalog (Calibrated Atwater Macros)
-     ├── 🍳 Single-Pan Filters (Sheet-pan, one-pot, slow-cooker)
-     ├── ⏱️ Quick Meals (<20 minutes start-to-table)
-     └── Dynamic Portion Scaling based on actual training expenditure
+  🍽️ 100-Meal Recovery Catalog (Calibrated Whole-Food Macros)
+     ├── 🍳 Single-Pan & Sheet-Pan Filters (Minimal kitchen cleanup)
+     ├── ⏱️ <20-Minute Quick Prep Meals (Fast dinners after late sessions)
+     └── Dynamic Portion Scaling based on actual expenditure
          │
          ▼
   🛒 Aisle-Sorted Grocery Checklist
-     ├── Automatically groups ingredients by Supermarket Aisle
+     ├── Automatically groups ingredients by physical Supermarket Aisle
      └── Tracks Pantry Staples (Low/Out status automatically queues items)
 ```
 
@@ -59,17 +66,17 @@ Musette was built from a fundamental reality: **endurance athletes have dynamic 
 ## 🌟 Built For Real Lives (Key Features)
 
 ### 1. 🍽️ Real Food That Fits a Busy Schedule
-No boiled chicken or bland powders. Musette features **100 tested, delicious, whole-food recipes** calibrated for athletic recovery — smash burgers on brioche, honey garlic chicken jasmine bowls, slow-cooked beef ragù, Mediterranean salmon, chicken fajitas, and steak tacos:
+No boiled chicken or chalky powders. Musette features **100 tested, delicious, whole-food recipes** calibrated for active recovery — smash burgers on brioche, honey garlic chicken jasmine bowls, slow-cooked beef ragù, Mediterranean salmon, chicken fajitas, and steak tacos:
 - **🍳 Single-Pan Shortcut**: Filter instantly for one-pot and sheet-pan meals with minimal kitchen cleanup.
 - **⏱️ <20-Min Quick Prep**: Fast recovery dinners ready in minutes after a late workout.
 - **One-Tap Grocery List Sync**: Tap `+ List` on any recipe to instantly queue all ingredients; tap `✓ In List ✕` to remove them with zero leftover clutter.
 
-### 2. ⚡ Dynamic Carbohydrate Periodization
-Human muscle and liver glycogen stores are finite (~400–500g). Musette automatically scales your daily carb targets based on the demands of your training:
+### 2. ⚡ Dynamic Nutrition Periodization
+Your body needs different fuel on rest days versus hard training days. Musette periodizes your daily targets based on the demands of your schedule:
 - **Rest / Recovery Days**: $3.0 - 4.0\text{ g/kg}$ (Nutrient-dense whole foods, recovery fats).
 - **Aerobic Base Days (1–2h)**: $5.0 - 7.0\text{ g/kg}$ (Moderate glycogen replenishment).
 - **Threshold / Key Workout Days**: $7.5 - 9.5\text{ g/kg}$ (Targeted high-glycogen fueling).
-- **Long Endurance Days (3h+)**: $10.0+\text{ g/kg}$ (Complete glycogen replenishment + on-the-bike fueling).
+- **Epic Volume Days (3h+)**: $10.0+\text{ g/kg}$ (Complete glycogen replenishment + active session fueling).
 
 ### 3. 🛒 Automated Aisle-Organized Grocery Lists
 Instead of a disorganized mess of ingredients, Musette automatically consolidates your weekly meal choices and pantry staples into physical supermarket aisles:
@@ -123,7 +130,7 @@ Local Worker dev reads secrets from `worker/.dev.vars` (gitignored, dummy values
 
 ## 📅 Updating the Meal Plan
 
-The app provides dedicated tabs: **Shop** (Grocery checklist & Pantry), **Dinners** (Weekly schedule & 100-recipe catalog), **Eat** (Daily fueling schedule with ride hours, kcal/carb targets, and timed meals), and **Train** (Live activity cards and coach analysis).
+The app provides dedicated tabs: **Shop** (Grocery checklist & Pantry), **Dinners** (Weekly schedule & 100-recipe catalog), **Eat** (Daily fueling schedule with workout hours, kcal/carb targets, and timed meals), and **Train** (Live activity cards and coach analysis).
 
 Two ways to ship a new monthly block:
 
