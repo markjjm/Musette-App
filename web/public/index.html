@@ -3562,8 +3562,8 @@ function setDot(){
   if (!cfg.url) {
     d.className = 'dot';
     txt.textContent = 'Local';
-  } else if (!authToken) {
-    d.className = 'dot';
+  } else if (!hasCreds()) {
+    d.className = 'dot err';
     txt.textContent = 'Sign In';
   } else if (syncNote) {
     d.className = 'dot err';
@@ -3689,7 +3689,7 @@ async function sync(push){
        so if a pull cleared this, the loss would be silent and the dot would read
        "Synced" over a list that had just dropped a change. It stays up until
        something actually saves. */
-    if (doPush) syncNote = '';
+    if (doPush || syncNote === 'Offline') syncNote = '';
     lastSync = new Date().toISOString();
     LS.set('v2.lastSync', lastSync);
     /* Only clear dirty when nothing was written mid-flight; otherwise re-arm the
@@ -3708,6 +3708,9 @@ async function sync(push){
   } catch(e){
     lastSync = lastSync || '';
     $('#s_stat').textContent = 'Sync failed: ' + e.message;
+    if (!navigator.onLine || /failed to fetch|network|load failed/i.test(e.message)) {
+      if (!syncNote) syncNote = 'Offline';
+    }
   } finally {
     syncing = false; setDot();
   }
@@ -3737,10 +3740,20 @@ async function pollRev(){
     const base = cfg.url.replace(/\/+$/,'');
     const h = authHeaders();
     const r = await fetch(base + '/rev', {headers: h});
+    if (r.status === 401) {
+      signedOutHere();
+      syncNote = 'Sign in required';
+      setDot();
+      return;
+    }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const { rev } = await r.json();
     pollFails = 0;
-    if (Number(rev) > lastRev) await sync(false);   // someone else changed it
+    if (dirty) {
+      await sync(true);
+    } else if (Number(rev) > lastRev) {
+      await sync(false);   // someone else changed it
+    }
   } catch(e) {
     pollFails++;
   }

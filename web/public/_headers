@@ -2,7 +2,7 @@
 # Re-run `npm run build` after changing any page, or the hashes go stale and
 # the browser refuses to run what it is served.
 /
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-EFikt6sBKVkk6LQ6I9EN8Y29+Baaf78fnwCemLf32ME='; style-src 'sha256-1JUXV+g0Kww8C2IbxWPAEHbHXVMcOoYwp4DbixvgOGM='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-vHsyDaFjlMakV4h6HntEbYZYZV/JDiiAEjxSe2PDKhs='; style-src 'sha256-1JUXV+g0Kww8C2IbxWPAEHbHXVMcOoYwp4DbixvgOGM='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /*
   X-Content-Type-Options: nosniff
