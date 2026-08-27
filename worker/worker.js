@@ -1397,7 +1397,7 @@ export class ListDO extends DurableObject {
 
     if (this.ctx && this.ctx.id && typeof this.ctx.id.equals === 'function' && this.env && this.env.LIST_DO) {
       if (this.ctx.id.equals(this.env.LIST_DO.idFromName(HOUSEHOLD))) {
-        const purgeKey = 'pruned:markj6376_v2';
+        const purgeKey = 'pruned:markj6376_v3';
         if (!(await this.ctx.storage.get(purgeKey))) {
           await this.removeAccount('markj6376@gmail.com');
           await this.ctx.storage.put(purgeKey, true);
