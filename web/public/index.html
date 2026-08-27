@@ -2176,6 +2176,25 @@ footer {
   border-radius: 8px;
   padding: 8px 10px;
 }
+.btn-push-garmin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0070f3;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin: 10px 0 4px;
+  width: 100%;
+}
+.btn-push-garmin:hover { background: #0051b3; }
+.btn-push-garmin.synced { background: #10B981; color: #fff; }
 
 /* ---------------- Shop Tab Polish ---------------- */
 .shop-filter-bar {
@@ -5787,6 +5806,63 @@ function sportIcon(sport, kind) {
   return '🚴';
 }
 
+function formatIntervalsIcuWorkout(rx) {
+  if (!rx || !rx.intervals || !rx.intervals.length) {
+    return (rx && rx.intent) || (rx && rx.title) || 'Steady Ride';
+  }
+  const lines = [];
+  let inMain = false;
+  rx.intervals.forEach((step) => {
+    const dur = step.dur || (step.mins ? step.mins + 'm' : '10m');
+    const intensityPct = Math.round((step.intensity || 0.7) * 100);
+    const phase = step.phase || '';
+
+    if (phase.toLowerCase().includes('warmup')) {
+      lines.push('Warmup');
+      lines.push('- ' + dur + ' ' + Math.max(50, intensityPct - 10) + '-' + intensityPct + '%');
+      lines.push('');
+    } else if (phase.toLowerCase().includes('cooldown')) {
+      lines.push('Cooldown');
+      lines.push('- ' + dur + ' ' + intensityPct + '%');
+    } else {
+      if (!inMain) {
+        lines.push('Main Set');
+        inMain = true;
+      }
+      lines.push('- ' + dur + ' ' + intensityPct + '%');
+    }
+  });
+  return lines.join('\n');
+}
+
+async function pushWorkoutToGarmin(dNum, targetDate) {
+  const dd = (plan.training || []).find(z => z.d === dNum);
+  if (!dd) return;
+  const rx = coachWorkoutPrescription(dNum, dd.kind, dd.h, (dd.bk && dd.bk.cb));
+  const steps = formatIntervalsIcuWorkout(rx);
+  const btn = $('#btn_push_garmin_' + dNum);
+  if (btn) { btn.disabled = true; btn.textContent = '⚡ Syncing to Garmin...'; }
+  try {
+    const r = await api('/workout/intervals', {
+      method: 'POST',
+      body: {
+        date: targetDate || selDay || todayKey(),
+        title: rx.title || 'Structured Workout',
+        type: 'Ride',
+        description: steps + '\n\n' + (rx.intent || ''),
+        duration_seconds: Math.round((Number(dd.h) || 1) * 3600)
+      }
+    });
+    if (r.ok) {
+      if (btn) { btn.className = 'btn-push-garmin synced'; btn.textContent = '✓ Synced to Garmin via Intervals.icu'; }
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Sync Failed: ' + (r.why || 'Link Intervals.icu in settings'); }
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Error: ' + e.message; }
+  }
+}
+
 function coachWorkoutPrescription(d, kind, h, onbike) {
   const hrs = Number(h) || 0;
   const k = String(kind || '').trim();
@@ -5997,6 +6073,13 @@ function renderWorkoutGuideHtml(rx, iso, t) {
     fuelHtml = '<div class="tf-fuel-box"><b>Fueling Strategy:</b> ' + esc(rx.fueling) + '</div>';
   }
 
+  const isWorkout = (Number(t && t.h) || 0) > 0;
+  const syncBtnHtml = isWorkout ? (
+    '<button class="btn-push-garmin" id="btn_push_garmin_' + (t ? t.d : '') + '" data-push-garmin="' + (t ? t.d : '') + '" data-target-date="' + esc(iso) + '">'
+      + '⚡ Push Workout to Garmin'
+    + '</button>'
+  ) : '';
+
   return '<div class="guide-coach-panel">'
     + '<div class="guide-coach-intent">'
       + '<div class="guide-intent-hd">⚡ Coach Intent &amp; Physiological Target</div>'
@@ -6004,6 +6087,7 @@ function renderWorkoutGuideHtml(rx, iso, t) {
     + '</div>'
     + '<div class="guide-section-hd">Structured Workout Structure</div>'
     + intervalsHtml
+    + syncBtnHtml
     + pacingHtml
     + fuelHtml
     + '<button class="cbtn rx-ask mt-10" data-ask="⚡ Coach, what is the ideal pacing and cadence strategy for today\'s ' + esc(rx.title) + '?">'
@@ -7262,7 +7346,15 @@ document.addEventListener('click', e => {
     const inp = document.getElementById('fit_file_input');
     if (inp) inp.click();
     return;
-  }  const tb = e.target.closest('#tabs button[data-t]');
+  const garminBtn = e.target.closest('[data-push-garmin]');
+  if (garminBtn) {
+    const dn = Number(garminBtn.dataset.pushGarmin);
+    const targetDate = garminBtn.dataset.targetDate;
+    if (dn) pushWorkoutToGarmin(dn, targetDate);
+    triggerHaptic();
+    return;
+  }
+  const tb = e.target.closest('#tabs button[data-t]');
   if (tb){
     tab = tb.dataset.t;
     LS.set('v2.tab', tab);

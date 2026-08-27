@@ -3935,6 +3935,37 @@ async function fetchRides(link, oldest, newest, ctx) {
   }
 }
 
+async function pushWorkoutToIntervals(link, workout) {
+  if (!link) return { ok: false, why: 'not linked' };
+  const { athlete, auth } = link;
+  const payload = {
+    start_date_local: workout.date ? (workout.date.includes('T') ? workout.date : `${workout.date}T08:00:00`) : new Date().toISOString().slice(0, 19),
+    name: workout.title || 'Planned Workout',
+    type: workout.type || 'Ride',
+    category: 'WORKOUT',
+    description: workout.description || workout.steps || '',
+    moving_time: Number(workout.duration_seconds) || 3600,
+  };
+  try {
+    const r = await fetch(`${ICU}/athlete/${encodeURIComponent(athlete)}/events`, {
+      method: 'POST',
+      headers: { Authorization: auth, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.status === 401 || r.status === 403) return { ok: false, why: 'key rejected' };
+    if (r.status === 429) {
+      const retry = Number(r.headers.get('Retry-After'));
+      return { ok: false, why: 'rate limited', retry: Number.isFinite(retry) && retry > 0 ? retry : null };
+    }
+    if (!r.ok) return { ok: false, why: `upstream ${r.status}` };
+    const raw = await r.json();
+    return { ok: true, event_id: raw.id, name: raw.name, sync: 'garmin' };
+  } catch {
+    return { ok: false, why: 'unreachable' };
+  }
+}
+
 export default {
   /* Weekly, so the standing three-month read is never more than seven days old
      without anybody having to remember to ask for it. Deliberately not daily:
@@ -4391,6 +4422,15 @@ export default {
         return json({ ok: false, why: 'expected oldest and newest as YYYY-MM-DD' }, 400, origin);
 
       return json(await fetchRides(await linkFor(env, session ? session.dataId : HOUSEHOLD), oldest, newest, ctx), 200, origin);
+    }
+
+    if (path === '/workout/intervals' && request.method === 'POST') {
+      const r = await readJson(request);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const link = await linkFor(env, session ? session.dataId : HOUSEHOLD);
+      if (!link) return json({ ok: false, why: 'intervals.icu not linked' }, 400, origin);
+      const result = await pushWorkoutToIntervals(link, r.body || {});
+      return json(result, result.ok ? 200 : 502, origin);
     }
 
     if (path === '/state' && request.method === 'GET') {

@@ -360,11 +360,16 @@ if (!/function blockYM\(/.test(worker)) {
   const icuCalls = [...worker.matchAll(/fetch\(`\$\{ICU\}/g)].length;
   const verifyBody = /async function icuVerify\([\s\S]*?\n\}/.exec(worker);
   const verifyCalls = verifyBody ? [...verifyBody[0].matchAll(/fetch\(`\$\{ICU\}/g)].length : 0;
-  if (icuCalls - verifyCalls > 1) {
-    err(`worker.js calls intervals.icu from ${icuCalls - verifyCalls} places outside icuVerify() - all ride reads must go through fetchRides, which is where the cache is`);
+  const pushBody = /async function pushWorkoutToIntervals\([\s\S]*?\n\}/.exec(worker);
+  const pushCalls = pushBody ? [...pushBody[0].matchAll(/fetch\(`\$\{ICU\}/g)].length : 0;
+  if (icuCalls - verifyCalls - pushCalls > 1) {
+    err(`worker.js calls intervals.icu from ${icuCalls - verifyCalls - pushCalls} places outside icuVerify/pushWorkoutToIntervals - all ride reads must go through fetchRides, which is where the cache is`);
   }
   if (verifyCalls > 1) {
     err(`icuVerify() makes ${verifyCalls} upstream calls - it is a single credential check, not a fetcher`);
+  }
+  if (pushCalls > 1) {
+    err(`pushWorkoutToIntervals() makes ${pushCalls} upstream calls - it must be a single workout event post`);
   }
   const fr = /async function fetchRides\([\s\S]*?\n\}/.exec(worker);
   if (!fr) err('worker.js has no fetchRides() - cannot verify ride responses are cached');
