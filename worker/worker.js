@@ -2892,19 +2892,26 @@ function restingEnergy(p) {
    and a plan that only speaks to cyclists is no use to them. */
 const SPORTS = {
   cycling:  { label: 'Cycling',        kcalPerHour: 600, long: 'Long day',   hard: 'Key day' },
+  bike:     { label: 'Cycling',        kcalPerHour: 600, long: 'Long day',   hard: 'Key day' },
   running:  { label: 'Running',        kcalPerHour: 700, long: 'Long day',   hard: 'Key day' },
+  run:      { label: 'Running',        kcalPerHour: 700, long: 'Long day',   hard: 'Key day' },
   swimming: { label: 'Swimming',       kcalPerHour: 550, long: 'Long day',   hard: 'Key day' },
   gym:      { label: 'Gym & strength', kcalPerHour: 400, long: 'Key day',    hard: 'Key day' },
+  lift:     { label: 'Gym & strength', kcalPerHour: 400, long: 'Key day',    hard: 'Key day' },
   walking:  { label: 'Walking',        kcalPerHour: 280, long: 'Moderate day', hard: 'Moderate day' },
+  walk:     { label: 'Walking',        kcalPerHour: 280, long: 'Moderate day', hard: 'Moderate day' },
   mixed:    { label: 'A bit of everything', kcalPerHour: 450, long: 'Moderate day', hard: 'Key day' },
 };
 
 /* How much, per week, at each level. Hours rather than intensity, because hours
    are the thing somebody can actually answer honestly about themselves. */
 const LEVELS = {
-  starting: { hoursWk: 2.5, longest: 0.75, label: 'Just starting' },
-  regular:  { hoursWk: 5,   longest: 1.5,  label: 'A few times a week' },
-  serious:  { hoursWk: 9,   longest: 3,    label: 'Most days' },
+  light:    { hoursWk: 4,   longest: 1.5,  label: 'Light (3–5 hrs/wk)' },
+  mid:      { hoursWk: 8,   longest: 3.0,  label: 'Mid (6–10 hrs/wk)' },
+  high:     { hoursWk: 13,  longest: 4.5,  label: 'High (11–16+ hrs/wk)' },
+  starting: { hoursWk: 3.5, longest: 1.0,  label: 'Just starting' },
+  regular:  { hoursWk: 7.5, longest: 2.5,  label: 'A few times a week' },
+  serious:  { hoursWk: 9,   longest: 3.0,  label: 'Most days' },
   athlete:  { hoursWk: 14,  longest: 4.5,  label: 'Training for something' },
 };
 

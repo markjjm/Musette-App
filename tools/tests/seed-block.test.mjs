@@ -27,6 +27,8 @@ const PEOPLE = [
     profile: { weight_lb: 148, height_in: 70, age: 40, sex: 'male', goal: 'hold' } }],
   ['somebody lifting, wanting to gain', { sport: 'gym', level: 'regular', days: ['Mon', 'Tue', 'Thu', 'Fri'],
     profile: { weight_lb: 175, height_in: 73, age: 27, sex: 'male', goal: 'gain' } }],
+  ['a road/gravel cyclist in the mid (6-10h) tier', { sport: 'bike', level: 'mid', days: ['Tue', 'Thu', 'Sat', 'Sun'], longDay: 'Sat',
+    profile: { weight_lb: 170, height_in: 71, age: 35, sex: 'male', goal: 'hold' } }],
 ];
 
 console.log('\n1. Every kind of person gets a plan the Worker would accept');
@@ -80,8 +82,11 @@ ok(rf < r70, `and the female figure is lower (${rf} vs ${r70})`);
 console.log('\n7. A walker gets walking hours, not a cyclist\'s');
 const w = seedBlock(seed, '2026-09', PEOPLE[0][1]);
 const c = seedBlock(seed, '2026-09', PEOPLE[2][1]);
+const bmid = seedBlock(seed, '2026-09', PEOPLE[4][1]);
 ok(w.basis.total_hours < c.basis.total_hours / 3,
   `walker ${w.basis.total_hours}h vs cyclist ${c.basis.total_hours}h in the month`);
+ok(bmid.basis.hours_wk >= 6 && bmid.basis.hours_wk <= 10,
+  `bike mid tier specifies ${bmid.basis.hours_wk}h/wk (between 6 and 10 hours)`);
 ok(w.plan.training.filter((t) => t.h > 0).every((t) => ['Mon', 'Wed', 'Sat'].includes(t.wd)),
   'and only on the days they said they could train');
 
