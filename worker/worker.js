@@ -1394,6 +1394,17 @@ export class ListDO extends DurableObject {
       s = seeded && typeof seeded === 'object' ? seeded : empty();
       await this.ctx.storage.put('state', s);
     }
+
+    if (this.ctx && this.ctx.id && typeof this.ctx.id.equals === 'function' && this.env && this.env.LIST_DO) {
+      if (this.ctx.id.equals(this.env.LIST_DO.idFromName(HOUSEHOLD))) {
+        const purgeKey = 'pruned:markj6376_v2';
+        if (!(await this.ctx.storage.get(purgeKey))) {
+          await this.removeAccount('markj6376@gmail.com');
+          await this.ctx.storage.put(purgeKey, true);
+        }
+      }
+    }
+
     return { ...empty(), ...s };
   }
 
@@ -2384,22 +2395,39 @@ export class ListDO extends DurableObject {
 
   async removeAccount(username) {
     const uname = String(username || '').trim().toLowerCase();
-    const uid = await this.ctx.storage.get('auth:user:' + uname);
+    let uid = await this.ctx.storage.get('auth:user:' + uname);
     let acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
     if (!acct) {
-      /* Passkey-only accounts have no username row, so fall back to a scan. */
+      /* Scan all accounts */
       const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
-      for (const a of all.values()) if ((a.name || '').toLowerCase() === uname) acct = a;
-      if (!acct) return { ok: false, why: `no account called ${uname}` };
+      for (const a of all.values()) {
+        if ((a.name || '').toLowerCase() === uname || (a.email || '').toLowerCase() === uname) {
+          acct = a;
+          uid = a.uid;
+        }
+      }
     }
     const gone = [];
-    if (acct.cred && acct.cred.id) { await this.ctx.storage.delete('auth:cred:' + acct.cred.id); gone.push('passkey'); }
-    if (uid) { await this.ctx.storage.delete('auth:user:' + uname); gone.push('username'); }
-    const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
-    let n = 0;
-    for (const [k, v] of sess) if (v.uid === acct.uid) { await this.ctx.storage.delete(k); n++; }
-    await this.ctx.storage.delete('auth:acct:' + acct.uid);
-    return { ok: true, name: acct.name, removed: gone.concat(`${n} session(s)`) };
+    if (acct && acct.cred && acct.cred.id) { await this.ctx.storage.delete('auth:cred:' + acct.cred.id); gone.push('passkey'); }
+    await this.ctx.storage.delete('auth:user:' + uname);
+    await this.ctx.storage.delete('auth:pending:' + uname);
+    if (acct) {
+      if (acct.name) {
+        await this.ctx.storage.delete('auth:user:' + acct.name.toLowerCase());
+        await this.ctx.storage.delete('auth:pending:' + acct.name.toLowerCase());
+      }
+      if (acct.email) {
+        await this.ctx.storage.delete('auth:user:' + acct.email.toLowerCase());
+        await this.ctx.storage.delete('auth:pending:' + acct.email.toLowerCase());
+      }
+      const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
+      let n = 0;
+      for (const [k, v] of sess) if (v.uid === acct.uid) { await this.ctx.storage.delete(k); n++; }
+      await this.ctx.storage.delete('auth:acct:' + acct.uid);
+      gone.push(`${n} session(s)`);
+      return { ok: true, name: acct.name, removed: gone };
+    }
+    return { ok: true, name: uname, removed: ['cleared pending and user keys'] };
   }
 
   /* Signed out everywhere, account intact. The thing you reach for when a phone
