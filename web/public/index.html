@@ -2196,6 +2196,20 @@ footer {
 .btn-push-garmin:hover { background: #0051b3; }
 .btn-push-garmin.synced { background: #10B981; color: #fff; }
 
+.empty-onboarding-card {
+  margin: 36px 16px;
+  padding: 36px 24px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.eoc-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-onboarding-card h3 { font-size: 20px; font-weight: 850; margin: 0 0 8px; color: var(--ink); }
+.empty-onboarding-card p { font-size: 14px; line-height: 1.5; color: var(--ink-soft); max-width: 380px; margin: 0 auto 20px; }
+.eoc-btn { display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 750; text-decoration: none; border-radius: 12px; }
+
 /* ---------------- Shop Tab Polish ---------------- */
 .shop-filter-bar {
   display: flex;
@@ -7014,7 +7028,15 @@ function paintBars(){
 
 function render(){
   const w = curWeek();
-  if (!w){ $('#main').innerHTML = '<div class="empty">No plan loaded.</div>'; return; }
+  if (!w){
+    $('#main').innerHTML = '<div class="empty-onboarding-card">'
+      + '<div class="eoc-icon">⚡</div>'
+      + '<h3>Welcome to Musette</h3>'
+      + '<p>Your account is ready! Create your personalized training &amp; fueling plan to generate your workouts, daily carbohydrate targets, and smart grocery list.</p>'
+      + '<a class="btn primary eoc-btn" href="https://musetteapp.com/welcome">Build Your Training &amp; Fueling Plan →</a>'
+    + '</div>';
+    return;
+  }
   
   const mode = modeOf(tab);
 
