@@ -4444,6 +4444,14 @@ Your task:
       const st = await me().read();
       return json({ ok: true, ...session, profile: st.profile || null, block: (st.plan || {}).block || null }, 200, origin);
     }
+
+    /* Self-service account deletion. */
+    if (path === '/me/delete' && request.method === 'POST') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const stub = dataStub(env, HOUSEHOLD);
+      const out = await stub.removeAccount(session.name);
+      return json(out, 200, origin);
+    }
     /* Linking intervals.icu, per person.
        The key is verified against intervals.icu BEFORE it is stored, so a typo
        fails once here with a reason rather than silently on every future ride
