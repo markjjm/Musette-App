@@ -1395,16 +1395,6 @@ export class ListDO extends DurableObject {
       await this.ctx.storage.put('state', s);
     }
 
-    if (this.ctx && this.ctx.id && typeof this.ctx.id.equals === 'function' && this.env && this.env.LIST_DO) {
-      if (this.ctx.id.equals(this.env.LIST_DO.idFromName(HOUSEHOLD))) {
-        const purgeKey = 'pruned:markj6376_v3';
-        if (!(await this.ctx.storage.get(purgeKey))) {
-          await this.removeAccount('markj6376@gmail.com');
-          await this.ctx.storage.put(purgeKey, true);
-        }
-      }
-    }
-
     return { ...empty(), ...s };
   }
 
@@ -1805,9 +1795,6 @@ export class ListDO extends DurableObject {
     if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
       return { ok: false, why: 'the browser did not derive a key correctly' };
     }
-    if (mail === 'markj6376@gmail.com') {
-      await this.removeAccount('markj6376@gmail.com');
-    }
     const existingUid = await this.ctx.storage.get('auth:user:' + mail);
     if (existingUid) {
       const acct = await this.ctx.storage.get('auth:acct:' + existingUid);
@@ -1903,9 +1890,6 @@ export class ListDO extends DurableObject {
       if (!/^[A-Za-z0-9_-]{32,120}$/.test(String(verifier || ''))) {
         return { ok: false, why: 'the browser did not derive a key correctly' };
       }
-      if (mail === 'markj6376@gmail.com') {
-        await this.removeAccount('markj6376@gmail.com');
-      }
       const existingUid = await this.ctx.storage.get('auth:user:' + mail);
       if (existingUid) {
         const acct = await this.ctx.storage.get('auth:acct:' + existingUid);
@@ -1992,7 +1976,7 @@ export class ListDO extends DurableObject {
      a per-object secret so it cannot be computed off-site. It looks exactly
      like a real one and fails at the next step, same as a wrong password. */
   async passwordOptions(username) {
-    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    const uname = String(username || '').trim().toLowerCase().slice(0, 120);
     const uid = uname ? await this.ctx.storage.get('auth:user:' + uname) : null;
     if (uid) {
       const acct = await this.ctx.storage.get('auth:acct:' + uid);
@@ -2004,7 +1988,7 @@ export class ListDO extends DurableObject {
   }
 
   async passwordVerify(username, verifier) {
-    const uname = String(username || '').trim().toLowerCase().slice(0, 40);
+    const uname = String(username || '').trim().toLowerCase().slice(0, 120);
     const uid = uname ? await this.ctx.storage.get('auth:user:' + uname) : null;
     const acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
     if (!acct || !acct.pw) return { ok: false, why: 'wrong username or password' };

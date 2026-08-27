@@ -83,12 +83,3 @@ jobs:
           curl -sS "https://api.musetteapp.com/health?cb=$cb" \
             | grep -q '"ok":true' || { echo "::error::worker health failed"; exit 1; }
           echo "deploy verified"
-
-      - name: prune requested account
-        env:
-          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
-          LIST_URL: https://api.musetteapp.com
-        run: |
-          if [ -n "${ADMIN_KEY:-}" ]; then
-            node tools/accounts.mjs remove markj6376@gmail.com || true
-          fi
