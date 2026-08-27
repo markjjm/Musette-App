@@ -345,10 +345,11 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   var $ = function (id) { return document.getElementById(id); };
   var token = null, draft = null, fullState = null;
 
-  try { token = sessionStorage.getItem('musette.token'); } catch (e) {}
+  try { token = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token'); } catch (e) {}
   var m = /[#&]t=([^&]+)/.exec(location.hash || '');
   if (m) {
     token = decodeURIComponent(m[1]);
+    try { localStorage.setItem('musette.token', token); } catch (e) {}
     try { sessionStorage.setItem('musette.token', token); } catch (e) {}
     history.replaceState(null, '', location.pathname);
   }
@@ -386,6 +387,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     return await r.json();
   }
   function signedOut() {
+    try { localStorage.removeItem('musette.token'); } catch (e) {}
     try { sessionStorage.removeItem('musette.token'); } catch (e) {}
     $('app').className = 'hidden'; $('gate').className = '';
   }

@@ -566,18 +566,18 @@ const ANALYST_SCHEMA = {
 
 const RIDE_SYSTEM = (rider) => [
   rider,
-  'You are an elite endurance cycling coach giving your athlete a short, high-signal debrief after their ride.',
-  'Your athlete wants enough to understand the STRENGTHS of the workout, but NOT too much text. Keep the whole debrief under 75 words total.',
-  'Speak directly, warmly, and concisely—like a real coach giving a quick high-five and 2 key observations.',
+  'You are an elite endurance sports scientist and coach (Coach Watts) giving your athlete a short, high-signal debrief after their workout.',
+  'Your athlete wants enough to understand the physiological adaptation and exact fueling replenishment, but NOT too much text. Keep the whole debrief under 80 words total.',
+  'Speak directly, warmly, and concisely—like a real coach giving a quick high-five and 2 high-impact observations.',
   '',
   'CRITICAL UNIT RULE: Always use imperial units exclusively (miles for distance, feet for elevation, lbs for body weight, mph for speed). NEVER output metric units (kilometers, meters, kg).',
   '',
   'STRICT BREVITY RULES:',
-  '- Headline: Exactly 1 sentence summarizing the main strength or takeaway.',
+  '- Headline: Exactly 1 sentence summarizing the main strength or physiological takeaway.',
   '- Sections: Exactly 2 sections (1–2 sentences each max):',
-  '  * Section 1 (Power & Pacing): Highlight how power was delivered, NP, or interval consistency.',
-  '  * Section 2 (Aerobic Economy): Highlight heart rate response, efficiency (W/bpm), or recovery nutrition.',
-  '- Do Next: Exactly 1 or 2 quick actionable bullet points.',
+  '  * Section 1 (Power & Pacing): Highlight power delivery, Normalized Power (NP), cadence, or interval pacing consistency.',
+  '  * Section 2 (Aerobic Economy & Glycogen Refuel): Highlight heart rate response (W/bpm) and actionable glycogen/carbohydrate replenishment for tonight.',
+  '- Do Next: Exactly 1 or 2 quick actionable bullet points for recovery or tomorrow.',
   '- Zero boilerplate, zero recitation of dates/mileage (the rider already sees them), and zero essays.',
 ].join('\n');
 
@@ -718,6 +718,19 @@ function rideContext(ride, all, day, meals, logMap, dateISO) {
   }, 0);
   const anyLogged = (meals || []).some((m) => logMap[dateISO + '|' + m.t]);
 
+  const avgWatts = Number(ride.watts) || 0;
+  const np = Number(ride.np) || avgWatts;
+  const totalKcal = Number(ride.kcal) || (avgWatts > 0 && ride.secs > 0 ? Math.round((avgWatts * ride.secs) / 1000) : 0);
+  const intensity = np > 0 ? (np / 250) : 0.65;
+  let choPct = 0.20;
+  if (intensity > 0.40 && intensity <= 1.00) {
+    choPct = 0.20 + 0.75 * Math.pow((intensity - 0.40) / 0.60, 1.2);
+  } else if (intensity > 1.00) {
+    choPct = Math.min(1.0, 0.95 + 0.05 * (intensity - 1.0));
+  }
+  const choGrams = totalKcal > 0 ? Math.round((totalKcal * choPct) / 4.0) : 0;
+  const fatGrams = totalKcal > 0 ? Math.round((totalKcal * (1 - choPct)) / 9.0) : 0;
+
   /* Deliberately flat. An earlier version nested this under `ride`,
      `the_day` and `versus_his_own_history`, and the model cited those names
      back at the reader as though they were sources — "(the_day)". Telling it
@@ -737,6 +750,9 @@ function rideContext(ride, all, day, meals, logMap, dateISO) {
     calories_came_from: ride.basis,
     average_watts: ride.watts,
     normalised_watts: ride.np,
+    glycogen_burned_grams: choGrams || null,
+    fat_oxidized_grams: fatGrams || null,
+    carbohydrate_energy_percent: choGrams ? Math.round(choPct * 100) : null,
     power_summary: ride.np && ride.watts && ride.np !== ride.watts
       ? `${ride.np}W Normalized Power (${ride.watts}W Average Power)`
       : (ride.np ? `${ride.np}W NP` : (ride.watts ? `${ride.watts}W avg` : null)),
@@ -1286,7 +1302,7 @@ async function lookupFood(env, stub, q) {
 const RP_ID = 'musetteapp.com';
 const RP_NAME = 'Musette';
 const CHALLENGE_TTL = 5 * 60 * 1000;      // long enough to pick a finger, short enough not to bank
-const SESSION_TTL = 30 * 24 * 3600 * 1000;
+const SESSION_TTL = 90 * 24 * 3600 * 1000; // 90 days persistent session lifetime with rolling refresh
 const INVITE_TTL = 24 * 3600 * 1000;
 /* Spent in the BROWSER, not here. 600k is the OWASP figure; a phone does it in
    well under a second and the Worker never pays it. */
@@ -2477,7 +2493,7 @@ export class ListDO extends DurableObject {
     await this.ctx.storage.put('auth:sess:' + (await sha256B64(token)), {
       uid, exp: Date.now() + SESSION_TTL, created: Date.now(),
     });
-    return { token, uid, expires_days: 30 };
+    return { token, uid, expires_days: 90 };
   }
 
   async session(token) {
@@ -2486,6 +2502,11 @@ export class ListDO extends DurableObject {
     const s = await this.ctx.storage.get(key);
     if (!s) return null;
     if (s.exp < Date.now()) { await this.ctx.storage.delete(key); return null; }
+    // Rolling refresh: if remaining session is less than 45 days, extend back to 90 days
+    if (s.exp - Date.now() < 45 * 24 * 3600 * 1000) {
+      s.exp = Date.now() + SESSION_TTL;
+      await this.ctx.storage.put(key, s);
+    }
     const acct = await this.ctx.storage.get('auth:acct:' + s.uid);
     /* dataId is absent on accounts that predate the split, and those are the
        owner's - so they keep opening the household exactly as before. */

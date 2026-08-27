@@ -2069,6 +2069,114 @@ footer {
 .askout-coach-box { background: var(--card); border: 1px solid var(--rule); border-radius: 18px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(15,23,42,0.04); }
 .btn-send-pill { border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 750; }
 
+/* GoldenCheetah Substrate Oxidation & FIT Ingestion */
+.fit-file-hidden { display: none; }
+.fit-import-bar { margin: 10px 14px 14px; }
+.fit-drop-zone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1.5px dashed var(--rule);
+  border-radius: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fit-drop-zone:hover, .fit-drop-zone.dragover {
+  border-color: var(--mark-ink);
+  background: var(--mark-soft);
+}
+.fdz-icon { font-size: 20px; line-height: 1; }
+.fdz-text { display: flex; flex-direction: column; gap: 1px; }
+.fdz-text b { font-size: 12px; font-weight: 750; color: var(--ink); }
+.fdz-text span { font-size: 10.5px; color: var(--gravel); }
+
+.substrate-card {
+  background: var(--card-sunk);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sub-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.sub-meta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gravel);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.sub-bar-wrap {
+  display: flex;
+  height: 22px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--edge);
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 22px;
+  text-align: center;
+}
+.sub-bar-cho {
+  background: linear-gradient(90deg, #F97316, #EA580C);
+  transition: width 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.sub-bar-fat {
+  background: linear-gradient(90deg, #0284C7, #0369A1);
+  transition: width 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.sub-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 520px) {
+  .sub-metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.sub-metric-col {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sm-lbl { font-size: 9px; font-weight: 800; color: var(--gravel); text-transform: uppercase; letter-spacing: .05em; }
+.sm-val { font-size: 13px; font-weight: 850; color: var(--ink); font-variant-numeric: tabular-nums; }
+.sm-val.cho { color: #EA580C; }
+.sm-val.fat { color: #0284C7; }
+.sm-sub { font-size: 9.5px; font-weight: 600; color: var(--ink-soft); }
+.sub-fuel-tip {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
 /* ---------------- Shop Tab Polish ---------------- */
 .shop-filter-bar {
   display: flex;
@@ -3243,11 +3351,18 @@ let cfg    = jget('v2.cfg', null) || {url: SYNC_URL, key: ''};
    person this is - and it is revocable. Losing it falls back to the code rather
    than locking anyone out of their own shopping list. */
 let authToken = LS.get('v2.token') || null;
+if (!authToken) {
+  try {
+    const raw = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token');
+    if (raw) { authToken = raw; LS.set('v2.token', authToken); }
+  } catch (e) {}
+}
 {
   const m = /[#&]t=([^&]+)/.exec(location.hash || '');
   if (m) {
     authToken = decodeURIComponent(m[1]);
     LS.set('v2.token', authToken);
+    try { localStorage.setItem('musette.token', authToken); } catch (e) {}
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   }
 }
@@ -3258,6 +3373,8 @@ const hasCreds = () => !!authToken;
 function signedOutHere() {
   authToken = null;
   try { LS.set('v2.token', ''); } catch (e) {}
+  try { localStorage.removeItem('musette.token'); } catch (e) {}
+  try { sessionStorage.removeItem('musette.token'); } catch (e) {}
 }
 if (!cfg.url) cfg.url = SYNC_URL;
 let dirty  = jget('v2.dirty', false);
@@ -4865,13 +4982,21 @@ async function loadDayRides(d){
   if (dayRide.day === d && dayRide.rides !== null) return;
   dayRide = { day: d, rides: null, read: null, cached: false, busy: false, err: '' };
   try {
+    const localFit = getLocalFitActivity(d);
+    if (localFit) dayRide.rides = [localFit];
     const r = await api('/ride?date=' + d);
-    dayRide.rides = r.ok ? (r.rides || []) : [];
+    if (r.ok && r.rides && r.rides.length) {
+      dayRide.rides = r.rides;
+    } else if (!dayRide.rides) {
+      dayRide.rides = (r.ok && r.rides) ? r.rides : [];
+    }
     if (r.ok && r.advice) {
       dayRide.read = r.advice;
       dayRide.cached = !!r.cached;
     }
-  } catch { dayRide.rides = []; }
+  } catch {
+    if (!dayRide.rides) dayRide.rides = [];
+  }
   if (tab === 'F' || tab === 'T') render();
 }
 
@@ -5237,6 +5362,332 @@ function renderSplitsTable(laps, act) {
   + '</div>';
 }
 
+function calculateSubstrateOxidation(stats, ftp) {
+  const durationSecs = Number(stats.secs) || Number(stats.total_timer_time) || 0;
+  const avgWatts = Number(stats.avg_watts) || Number(stats.avg_power) || 0;
+  const np = Number(stats.np) || Number(stats.normalized_power) || avgWatts;
+  const totalKcal = Number(stats.kcal) || Number(stats.total_calories) || (avgWatts > 0 && durationSecs > 0 ? Math.round((avgWatts * durationSecs) / 1000) : 0);
+
+  const effFtp = Math.max(100, Number(ftp) || 250);
+  const intensity = np > 0 ? (np / effFtp) : (avgWatts > 0 ? avgWatts / effFtp : 0.65);
+
+  let choPct;
+  if (intensity <= 0.40) {
+    choPct = 0.20;
+  } else if (intensity <= 1.00) {
+    choPct = 0.20 + 0.75 * Math.pow((intensity - 0.40) / 0.60, 1.2);
+  } else {
+    choPct = Math.min(1.0, 0.95 + 0.05 * (intensity - 1.0));
+  }
+  choPct = Math.max(0.15, Math.min(1.0, choPct));
+
+  const fatPct = 1 - choPct;
+  const choKcal = totalKcal * choPct;
+  const fatKcal = totalKcal * fatPct;
+
+  const choGrams = Math.round(choKcal / 4.0);
+  const fatGrams = Math.round(fatKcal / 9.0);
+
+  const ifFactor = Math.round((np / effFtp) * 100) / 100;
+  const tss = effFtp > 0 && durationSecs > 0
+    ? Math.round(((durationSecs * np * ifFactor) / (effFtp * 3600)) * 100)
+    : 0;
+
+  return {
+    totalKcal,
+    np: Math.round(np),
+    intensity: Math.round(intensity * 100) / 100,
+    ifFactor,
+    tss,
+    choPct: Math.round(choPct * 100),
+    fatPct: Math.round(fatPct * 100),
+    choGrams,
+    fatGrams,
+  };
+}
+
+function parseFitBinary(buffer) {
+  const bytes = new Uint8Array(buffer instanceof ArrayBuffer ? buffer : buffer.buffer || buffer);
+  if (bytes.length < 14) throw new Error('File too small to be a FIT file');
+
+  const headerSize = bytes[0];
+  if (headerSize !== 14 && headerSize !== 12) throw new Error('Invalid FIT header size: ' + headerSize);
+
+  const tag = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+  if (tag !== '.FIT') throw new Error('Missing .FIT signature tag');
+
+  const dataSize = bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24);
+  const endOffset = Math.min(bytes.length, headerSize + dataSize);
+
+  let offset = headerSize;
+  const localDefs = {};
+  const records = [];
+  let session = null;
+  const laps = [];
+  const FIT_EPOCH_DIFF = 631065600;
+
+  function readVal(type, len, arch) {
+    if (offset + len > endOffset) return null;
+    let v = 0;
+    if (len === 1) {
+      v = bytes[offset];
+      offset += 1;
+      return v === 0xFF ? null : v;
+    }
+    if (len === 2) {
+      v = arch === 0 ? (bytes[offset] | (bytes[offset + 1] << 8)) : ((bytes[offset] << 8) | bytes[offset + 1]);
+      offset += 2;
+      return v === 0xFFFF ? null : v;
+    }
+    if (len === 4) {
+      v = arch === 0
+        ? (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24))
+        : ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]);
+      offset += 4;
+      return v === 0xFFFFFFFF || v === -1 ? null : v;
+    }
+    offset += len;
+    return null;
+  }
+
+  while (offset < endOffset) {
+    const recordHeader = bytes[offset++];
+    const isCompressed = (recordHeader & 0x80) !== 0;
+
+    if (isCompressed) {
+      const localType = (recordHeader >> 5) & 0x03;
+      const def = localDefs[localType];
+      if (def) offset += def.totalSize;
+      continue;
+    }
+
+    const isDefinition = (recordHeader & 0x40) !== 0;
+    const hasDevData = (recordHeader & 0x20) !== 0;
+    const localType = recordHeader & 0x0F;
+
+    if (isDefinition) {
+      if (offset + 5 > endOffset) break;
+      const reserved = bytes[offset++];
+      const arch = bytes[offset++];
+      const globalMsgNum = arch === 0 ? (bytes[offset] | (bytes[offset + 1] << 8)) : ((bytes[offset] << 8) | bytes[offset + 1]);
+      offset += 2;
+      const numFields = bytes[offset++];
+
+      const fields = [];
+      let totalSize = 0;
+      for (let i = 0; i < numFields; i++) {
+        if (offset + 3 > endOffset) break;
+        const fieldDefNum = bytes[offset++];
+        const size = bytes[offset++];
+        const baseType = bytes[offset++];
+        fields.push({ fieldDefNum, size, baseType });
+        totalSize += size;
+      }
+
+      if (hasDevData) {
+        const numDevFields = bytes[offset++] || 0;
+        for (let d = 0; d < numDevFields; d++) {
+          if (offset + 3 > endOffset) break;
+          const num = bytes[offset++];
+          const size = bytes[offset++];
+          const idx = bytes[offset++];
+          totalSize += size;
+        }
+      }
+
+      localDefs[localType] = { globalMsgNum, arch, fields, totalSize };
+    } else {
+      const def = localDefs[localType];
+      if (!def) break;
+
+      const msg = {};
+      for (const f of def.fields) {
+        const val = readVal(f.baseType, f.size, def.arch);
+        if (val !== null) msg[f.fieldDefNum] = val;
+      }
+
+      if (def.globalMsgNum === 20) {
+        const ts = msg[253] ? new Date((msg[253] + FIT_EPOCH_DIFF) * 1000).toISOString() : null;
+        records.push({
+          timestamp: ts,
+          lat: msg[0] != null ? msg[0] * (180 / 2147483648) : null,
+          lng: msg[1] != null ? msg[1] * (180 / 2147483648) : null,
+          altitude: msg[2] != null ? (msg[2] / 5) - 500 : null,
+          hr: msg[3] || null,
+          cadence: msg[4] || null,
+          distance: msg[5] != null ? (msg[5] / 100) : null,
+          speed: msg[6] != null ? (msg[6] / 1000) * 2.23694 : null,
+          power: msg[7] || null,
+        });
+      } else if (def.globalMsgNum === 18) {
+        const sportCode = msg[5] || 0;
+        const sports = { 1: 'Run', 2: 'Ride', 5: 'Swim', 11: 'Workout', 15: 'Walk' };
+        session = {
+          sport: sports[sportCode] || 'Ride',
+          startTime: msg[2] ? new Date((msg[2] + FIT_EPOCH_DIFF) * 1000).toISOString() : null,
+          totalSecs: msg[8] != null ? Math.round(msg[8] / 1000) : (msg[7] != null ? Math.round(msg[7] / 1000) : 0),
+          totalMiles: msg[9] != null ? Math.round((msg[9] / 100) * 0.000621371 * 10) / 10 : 0,
+          totalCalories: msg[11] || 0,
+          avgSpeedMph: msg[14] != null ? Math.round((msg[14] / 1000) * 2.23694 * 10) / 10 : 0,
+          maxSpeedMph: msg[15] != null ? Math.round((msg[15] / 1000) * 2.23694 * 10) / 10 : 0,
+          avgHr: msg[16] || 0,
+          maxHr: msg[17] || 0,
+          avgCadence: msg[18] || 0,
+          avgPower: msg[20] || 0,
+          maxPower: msg[21] || 0,
+          elevationGainFt: msg[22] != null ? Math.round(msg[22] * 3.28084) : 0,
+          normalizedPower: msg[34] || 0,
+          tss: msg[35] != null ? Math.round(msg[35] / 10) : 0,
+          intensityFactor: msg[36] != null ? Math.round((msg[36] / 1000) * 100) / 100 : 0,
+          workKj: msg[48] != null ? Math.round(msg[48] / 1000) : 0,
+        };
+      } else if (def.globalMsgNum === 19) {
+        laps.push({
+          secs: msg[8] != null ? Math.round(msg[8] / 1000) : 0,
+          miles: msg[9] != null ? Math.round((msg[9] / 100) * 0.000621371 * 10) / 10 : 0,
+          watts: msg[20] || 0,
+          hr: msg[16] || 0,
+        });
+      }
+    }
+  }
+
+  const durationSecs = session?.totalSecs || records.length || 0;
+  const powers = records.map(r => r.power).filter(p => typeof p === 'number' && p > 0);
+  const avgWatts = session?.avgPower || (powers.length ? Math.round(powers.reduce((a, b) => a + b, 0) / powers.length) : 0);
+  const hrs = records.map(r => r.hr).filter(h => typeof h === 'number' && h > 0);
+  const avgHr = session?.avgHr || (hrs.length ? Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length) : 0);
+
+  return {
+    session: session || {
+      sport: 'Ride',
+      totalSecs: durationSecs,
+      totalMiles: 0,
+      totalCalories: avgWatts > 0 ? Math.round((avgWatts * durationSecs) / 1000) : 0,
+      avgPower: avgWatts,
+      avgHr,
+    },
+    records,
+    laps,
+  };
+}
+
+function getLocalFitActivity(d) {
+  try {
+    const raw = localStorage.getItem('fit_act_' + d);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+async function handleFitFileUpload(file) {
+  if (!file) return;
+  try {
+    const buffer = await file.arrayBuffer();
+    const parsed = parseFitBinary(buffer);
+    const s = parsed.session;
+    const date = (s.startTime ? s.startTime.slice(0, 10) : (selDay || todayKey()));
+    const stats = {
+      name: (s.sport || 'Workout') + ' (' + (s.totalMiles ? s.totalMiles + ' mi' : hhm(s.totalSecs / 3600)) + ')',
+      type: s.sport || 'Ride',
+      sport: s.sport || 'Ride',
+      date: date,
+      secs: s.totalSecs,
+      elapsed: s.totalSecs,
+      dist: s.totalMiles,
+      miles: s.totalMiles,
+      kcal: s.totalCalories,
+      avg_watts: s.avgPower,
+      watts: s.avgPower,
+      max_watts: s.maxPower,
+      np: s.normalizedPower || s.avgPower,
+      hr: s.avgHr,
+      maxhr: s.maxHr,
+      cadence: s.avgCadence,
+      avg_speed_mph: s.avgSpeedMph,
+      max_speed_mph: s.maxSpeedMph,
+      up_feet: s.elevationGainFt,
+      load: s.tss || Math.round(s.totalSecs / 3600 * 55),
+      if: s.intensityFactor,
+      vi: s.normalizedPower && s.avgPower ? Math.round(s.normalizedPower / s.avgPower * 100) / 100 : null,
+      laps: parsed.laps,
+      trust: 'measured',
+      source: 'fit_import',
+    };
+    stats.substrate = calculateSubstrateOxidation(stats, getAthleteFtp());
+    try {
+      localStorage.setItem('fit_act_' + date, JSON.stringify(stats));
+    } catch(e) {}
+    dayRide = { day: date, rides: [stats], read: null, cached: false, busy: false, err: '' };
+    selDay = date;
+    render();
+  } catch (err) {
+    alert('Could not parse FIT file: ' + err.message);
+  }
+}
+
+function renderSubstrateOxidationCard(act) {
+  if (!act) return '';
+  const ftp = getAthleteFtp();
+  const sub = act.substrate || calculateSubstrateOxidation(act, ftp);
+  const totalKcal = sub.totalKcal || Number(act.kcal) || 0;
+  if (!totalKcal && !sub.np && !act.avg_watts) return '';
+
+  const choPct = sub.choPct;
+  const fatPct = sub.fatPct;
+  const choGrams = sub.choGrams;
+  const fatGrams = sub.fatGrams;
+
+  return '<div class="substrate-card">'
+    + '<div class="sub-hd">'
+      + '<span>🧪 GoldenCheetah Substrate Oxidation</span>'
+      + '<span class="sub-meta">' + esc(ftp) + 'W FTP Model</span>'
+    + '</div>'
+    + '<div class="sub-bar-wrap">'
+      + '<div class="sub-bar-cho" data-w="' + choPct + '"><span>' + choPct + '% Glycogen</span></div>'
+      + '<div class="sub-bar-fat" data-w="' + fatPct + '"><span>' + fatPct + '% Fat</span></div>'
+    + '</div>'
+    + '<div class="sub-metrics-grid">'
+      + '<div class="sub-metric-col">'
+        + '<span class="sm-lbl">Glycogen Burned</span>'
+        + '<span class="sm-val cho">' + esc(choGrams) + 'g carbs</span>'
+        + '<span class="sm-sub">' + Math.round(choGrams * 4) + ' kcal (' + choPct + '%)</span>'
+      + '</div>'
+      + '<div class="sub-metric-col">'
+        + '<span class="sm-lbl">Fat Oxidized</span>'
+        + '<span class="sm-val fat">' + esc(fatGrams) + 'g fat</span>'
+        + '<span class="sm-sub">' + Math.round(fatGrams * 9) + ' kcal (' + fatPct + '%)</span>'
+      + '</div>'
+      + '<div class="sub-metric-col">'
+        + '<span class="sm-lbl">Normalized Power</span>'
+        + '<span class="sm-val">' + (sub.np ? esc(sub.np) + 'W' : (act.avg_watts ? esc(act.avg_watts) + 'W' : '--')) + '</span>'
+        + '<span class="sm-sub">' + (sub.ifFactor ? 'IF ' + esc(sub.ifFactor) : 'Avg ' + esc(act.avg_watts || 0) + 'W') + '</span>'
+      + '</div>'
+      + '<div class="sub-metric-col">'
+        + '<span class="sm-lbl">Training Stress</span>'
+        + '<span class="sm-val">' + (sub.tss ? esc(sub.tss) + ' TSS' : (act.load ? esc(act.load) + ' TSS' : '--')) + '</span>'
+        + '<span class="sm-sub">' + (sub.intensity ? esc(sub.intensity) + 'x FTP' : 'Aerobic') + '</span>'
+      + '</div>'
+    + '</div>'
+    + '<div class="sub-fuel-tip">'
+      + '💡 <b>Fueling Recovery Target:</b> Muscle &amp; liver glycogen resynthesis requires replenishing ~<b>' + esc(choGrams) + 'g</b> of carbohydrates over the next 4–6 hours.'
+    + '</div>'
+  + '</div>';
+}
+
+function renderFitImportBar() {
+  return '<div class="fit-import-bar">'
+    + '<div class="fit-drop-zone" id="fit_drop_zone" title="Drag and drop or tap to import a Garmin/Wahoo/Polar .FIT file">'
+      + '<span class="fdz-icon">📥</span>'
+      + '<div class="fdz-text">'
+        + '<b>Direct .FIT Activity Ingestion</b>'
+        + '<span>Drag &amp; drop or tap to load Garmin / Wahoo .FIT files offline</span>'
+      + '</div>'
+      + '<input type="file" id="fit_file_input" class="fit-file-hidden" accept=".fit">'
+    + '</div>'
+  + '</div>';
+}
+
 function renderActivityGarminCard(act, dRide) {
   if (!act) return '';
   const iso = act.date || selDay;
@@ -5252,15 +5703,18 @@ function renderActivityGarminCard(act, dRide) {
   // 2. Garmin Core Telemetry Matrix
   out += renderGarminStatsGrid(act);
 
-  // 3. Power & Heart Rate Zones Distribution
+  // 3. GoldenCheetah Substrate Oxidation & Glycogen Burn
+  out += renderSubstrateOxidationCard(act);
+
+  // 4. Power & Heart Rate Zones Distribution
   out += renderGarminZones(act);
 
-  // 4. Laps & Interval Splits Table (if available)
+  // 5. Laps & Interval Splits Table (if available)
   if (act.laps && act.laps.length) {
     out += renderSplitsTable(act.laps, act);
   }
 
-  // 5. Coach's Debrief Section
+  // 6. Coach's Debrief Section
   out += '<div class="garmin-coach-section">'
     + '<div class="garmin-coach-hd">'
       + '<span class="debrief-hdr">Coach Debrief</span>'
@@ -6618,7 +7072,7 @@ function render(){
 
     let contentHtml = '';
     if (trainView === 'week') {
-      contentHtml = renderTrainSchedule(w) + rideDetail() + analysisCard();
+      contentHtml = renderFitImportBar() + renderTrainSchedule(w) + rideDetail() + analysisCard();
     } else if (trainView === 'coach') {
       contentHtml = renderCoachChatView(w);
     } else if (trainView === 'roadmap') {
@@ -6631,6 +7085,7 @@ function render(){
         + `<div class="card coach coach-summary-card"><h3>Block Progression Focus</h3><p>Progressive overload cycle building aerobic threshold and fatigue resistance through structured sweetspot and long endurance rides.</p></div>`;
     } else {
       contentHtml = `<div class="sech">30-Day Block Overview &amp; Activities</div>`
+        + renderFitImportBar()
         + monthGrid()
         + rideDetail()
         + analysisCard();
@@ -6786,10 +7241,12 @@ document.addEventListener('click', e => {
     window.scrollTo(0,0);
     return;
   }
-
-
-
-  const tb = e.target.closest('#tabs button[data-t]');
+  const fdz = e.target.closest('#fit_drop_zone');
+  if (fdz) {
+    const inp = document.getElementById('fit_file_input');
+    if (inp) inp.click();
+    return;
+  }  const tb = e.target.closest('#tabs button[data-t]');
   if (tb){
     tab = tb.dataset.t;
     LS.set('v2.tab', tab);
@@ -7366,6 +7823,36 @@ document.addEventListener('input', e => {
         ? sorted.map(m => renderRecipeCard(m)).join('')
         : `<div class="empty">No recipes found.<br><br><button class="bcan" id="rec_reset_empty">Show all 100 meals</button></div>`;
     }
+  }
+});
+
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'fit_file_input') {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleFitFileUpload(file);
+  }
+});
+
+document.addEventListener('dragover', e => {
+  const fdz = e.target.closest('#fit_drop_zone');
+  if (fdz) {
+    e.preventDefault();
+    fdz.classList.add('dragover');
+  }
+});
+
+document.addEventListener('dragleave', e => {
+  const fdz = e.target.closest('#fit_drop_zone');
+  if (fdz) fdz.classList.remove('dragover');
+});
+
+document.addEventListener('drop', e => {
+  const fdz = e.target.closest('#fit_drop_zone');
+  if (fdz) {
+    e.preventDefault();
+    fdz.classList.remove('dragover');
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) handleFitFileUpload(file);
   }
 });
 

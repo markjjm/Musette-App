@@ -229,7 +229,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 (function () {
   var API = 'https://api.musetteapp.com';
   var token = null;
-  try { token = sessionStorage.getItem('musette.token'); } catch (e) {}
+  try { token = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token'); } catch (e) {}
 
   var $ = function (id) { return document.getElementById(id); };
   var step = 0;
