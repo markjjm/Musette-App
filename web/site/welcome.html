@@ -129,14 +129,13 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 <main><section><div class="wrap"><div class="step-wrap">
 <div class="wizard-box">
 
-<div id="gate">
-  <div class="pill-badge"><i></i>Welcome Athlete</div>
-  <h1>Sign in first</h1>
-  <p class="lede" style="margin:12px 0 24px">This setup wizard is for enrolled athlete accounts.</p>
-  <a class="btn primary" href="/signin" style="width:100%">Sign in →</a>
-</div>
+<div id="flow">
+  <div style="margin-bottom:20px;">
+    <div class="pill-badge" id="welcomeBadge"><i></i><span>Welcome Athlete</span></div>
+    <h1 id="welcomeTitle" style="font-size:clamp(24px,5vw,32px)">Build your training &amp; fueling plan</h1>
+    <p class="lede" id="welcomeSub" style="margin:8px 0 16px;font-size:15px">Configure your volume, discipline, and schedule to build your personalized month.</p>
+  </div>
 
-<div id="flow" class="hidden">
   <div class="dots"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
   <div id="msg" class="msg hidden" role="status" aria-live="polite"></div>
 
@@ -462,6 +461,8 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
             draft = modOut.plan;
             renderPlanSummary(draft, currentBasis, modOut.analysis, modOut.modifications);
             say('modMsg', 'ok', '✓ Plan successfully updated by Coach Watts!');
+            var revBox = $('coachReviewBox');
+            if (revBox) revBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           } catch (e) {
             say('modMsg', 'bad', 'Could not reach Coach Watts.');
           } finally {
@@ -504,31 +505,49 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       renderPlanSummary(draft, currentBasis, aiReview ? aiReview.analysis : null, aiReview ? aiReview.modifications : null);
       $('doneName').textContent = nm;
       $('flow').className = 'hidden'; $('done').className = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) { if (e.message !== 'out') say('msg', 'bad', 'Could not reach the server.'); }
     finally { $('next').disabled = false; $('next').textContent = 'Build my month'; }
   });
 
-  var APP_URL = 'https://app.musetteapp.com';
-
   $('redo').addEventListener('click', function () { $('done').className = 'hidden'; $('flow').className = ''; show(0); });
   $('start').addEventListener('click', async function () {
     $('start').disabled = true; $('start').textContent = 'Saving…';
+    if (!token) {
+      try { sessionStorage.setItem('musette.pending_plan', JSON.stringify(draft)); } catch (e) {}
+      say('msg2', 'ok', 'Plan ready! Create an account to save and activate your plan…');
+      setTimeout(function () { location.href = '/signin?intent=claim_plan'; }, 600);
+      return;
+    }
     try {
       var out = await api('/plan/publish', { plan: draft, resetTicks: true });
       if (!out.ok) { say('msg2', 'bad', out.why || 'Could not save your plan.'); return; }
-      say('msg2', 'ok', 'Plan activated! Opening your web app…');
+      say('msg2', 'ok', 'Plan activated! Opening your profile…');
       setTimeout(function () { 
-        location.href = APP_URL + '#t=' + encodeURIComponent(token); 
+        location.href = '/account'; 
       }, 500);
     } catch (e) { if (e.message !== 'out') say('msg2', 'bad', 'Could not reach the server.'); }
     finally { $('start').disabled = false; $('start').textContent = 'Start this plan'; }
   });
 
-  if (!token) { $('gate').className = ''; }
-  else {
-    $('gate').className = 'hidden'; $('flow').className = '';
-    cards('sports', SPORTS, 'sport'); cards('levels', LEVELS, 'level'); cards('goals', GOALS, 'goal');
-    dayButtons(); show(0);
+  cards('sports', SPORTS, 'sport'); cards('levels', LEVELS, 'level'); cards('goals', GOALS, 'goal');
+  dayButtons(); show(0);
+
+  // Initialize athlete name if logged in
+  if (token) {
+    fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } })
+      .then(function (r) { return r.json(); })
+      .then(function (me) {
+        if (me && me.name) {
+          var athleteName = (me.profile && me.profile.name) || me.name.split('@')[0];
+          $('welcomeBadge').querySelector('span').textContent = 'Welcome, ' + athleteName;
+          $('nm').value = athleteName;
+        }
+      }).catch(function () {});
+  } else {
+    $('welcomeBadge').querySelector('span').textContent = 'Free Athlete Preview';
+    $('welcomeTitle').textContent = 'Build Your Training & Fueling Month';
+    $('welcomeSub').textContent = 'Choose your sport, schedule, and goals to build and preview a personalized month.';
   }
 })();
 </script>

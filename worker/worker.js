@@ -4088,24 +4088,21 @@ export default {
        would be safe enough, but showing somebody their month before it becomes
        theirs is the difference between a tool and a slot machine. */
     if (path === '/plan/seed' && request.method === 'POST') {
-      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);
       if (r.tooLarge) return json({ ok: false, why: 'payload too large' }, 413, origin);
       if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
       const b = r.body || {};
 
-      const stub = me();
-      /* The seed comes from the HOUSEHOLD, the destination is the caller's own
-         object. A new account's object is empty by design - that is the whole
-         point of the split - so reading the seed from it would mean nobody new
-         could ever be set up. The household block is the template every first
-         month is cut from; it is never written to here. */
       const seedState = await dataStub(env, HOUSEHOLD).read();
       if (!seedState.plan || !Array.isArray(seedState.plan.days) || !seedState.plan.days.length) {
         return json({ ok: false, why: 'this server has no plan to build a first month from yet' }, 400, origin);
       }
 
-      const merged = await stub.merge({ profile: { ...(b.profile || {}), t: Date.now() } });
+      let profile = b.profile || {};
+      if (session) {
+        const merged = await me().merge({ profile: { ...(b.profile || {}), t: Date.now() } });
+        profile = merged.profile;
+      }
 
       let ym = String(b.month || '');
       if (!/^\d{4}-\d{2}$/.test(ym)) {
@@ -4113,28 +4110,38 @@ export default {
         ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
       }
       const out = seedBlock(seedState.plan, ym, {
-        sport: b.sport, level: b.level, days: b.days, longDay: b.long_day, profile: merged.profile,
+        sport: b.sport, level: b.level, days: b.days, longDay: b.long_day, profile,
       });
       if (!out.ok) return json(out, 400, origin);
-      /* Store the hours the chosen level implies, so the profile agrees with the
-         plan that was just built from it rather than keeping a default nobody
-         chose. */
-      const withHours = await stub.merge({
-        profile: { ...merged.profile, hours_wk: out.basis.hours_wk, t: Date.now() },
-      });
+
+      if (session) {
+        const withHours = await me().merge({
+          profile: { ...profile, hours_wk: out.basis.hours_wk, t: Date.now() },
+        });
+        profile = withHours.profile;
+      }
+
       const invalid = validatePlan(out.plan);
       if (invalid) return json({ ok: false, why: `generated plan is not valid: ${invalid}` }, 500, origin);
-      return json({ ...out, profile: withHours.profile }, 200, origin);
+      return json({ ...out, profile, preview: !session }, 200, origin);
     }
 
     if (path === '/plan/ai-modify' && request.method === 'POST') {
-      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);
       if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
       const b = r.body || {};
       const plan = b.plan;
       if (!plan || !Array.isArray(plan.days) || !Array.isArray(plan.training)) {
         return json({ ok: false, why: 'plan object required' }, 400, origin);
+      }
+
+      if (!session) {
+        return json({
+          ok: true,
+          plan,
+          analysis: `Your ${plan.block} plan is built for consistent aerobic development. Create an account to unlock custom AI modifications and push structured workouts directly to Garmin.`,
+          modifications: ['Preview mode: Create an account to activate and modify this plan with AI.']
+        }, 200, origin);
       }
 
       const budget = await me().spend();

@@ -229,16 +229,28 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     return enc(bits);
   }
 
-  var APP_URL = 'https://app.musetteapp.com';
-
-  function land(out) {
-    var target = out.fresh ? '/welcome' : (APP_URL + '#t=' + encodeURIComponent(out.token));
+  async function land(out) {
     try { sessionStorage.setItem('musette.token', out.token); } catch (e) {}
     try { localStorage.setItem('musette.token', out.token); } catch (e) {}
+
+    var pendingPlan = null;
+    try { pendingPlan = JSON.parse(sessionStorage.getItem('musette.pending_plan')); } catch (e) {}
+    if (pendingPlan) {
+      try {
+        sessionStorage.removeItem('musette.pending_plan');
+        await fetch(API + '/plan/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + out.token },
+          body: JSON.stringify({ plan: pendingPlan, resetTicks: true })
+        });
+      } catch (e) {}
+    }
+
+    var target = pendingPlan ? '/account' : (out.fresh ? '/welcome' : '/account');
     msg.className = 'msg ok';
     msg.textContent = '';
     var b = document.createElement('b');
-    b.textContent = 'Signed in successfully! Opening your app… ';
+    b.textContent = 'Signed in successfully! Opening your profile… ';
     var a = document.createElement('a');
     a.href = target;
     a.textContent = 'Click here if not redirected automatically →';
