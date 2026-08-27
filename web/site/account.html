@@ -374,17 +374,26 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   updateUnitLabels();
 
   function say(kind, text) { var e = $('msg'); e.className = 'msg ' + kind; e.textContent = text; }
-  function busy(el, on, label) { el.disabled = on; el.textContent = on ? 'Working…' : label; }
   async function api(path, opts) {
     var o = opts || {};
-    var r = await fetch(API + path, {
-      method: o.method || 'GET',
-      headers: Object.assign({ Authorization: 'Bearer ' + token },
-        o.body ? { 'Content-Type': 'application/json' } : {}),
-      body: o.body ? JSON.stringify(o.body) : undefined
-    });
-    if (r.status === 401) { signedOut(); throw new Error('signed out'); }
-    return await r.json();
+    try {
+      var r = await fetch(API + path, {
+        method: o.method || 'GET',
+        headers: Object.assign({ Authorization: 'Bearer ' + token },
+          o.body ? { 'Content-Type': 'application/json' } : {}),
+        body: o.body ? JSON.stringify(o.body) : undefined
+      });
+      if (r.status === 401) { signedOut(); throw new Error('signed out'); }
+      var txt = await r.text();
+      try {
+        return JSON.parse(txt);
+      } catch (e) {
+        return { ok: false, why: 'Server returned HTTP ' + r.status };
+      }
+    } catch (err) {
+      if (err.message === 'signed out') throw err;
+      return { ok: false, why: 'Could not connect to server' };
+    }
   }
   function signedOut() {
     try { localStorage.removeItem('musette.token'); } catch (e) {}
@@ -637,7 +646,12 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   /* Main State Loading */
   async function load() {
     var me = await api('/me');
-    if (!me.ok) { signedOut(); return; }
+    if (!me.ok) {
+      if (me.why && me.why.includes('401')) { signedOut(); return; }
+      $('gate').className = 'hidden'; $('app').className = '';
+      say('bad', 'Network error: ' + (me.why || 'Could not load athlete profile.'));
+      return;
+    }
     $('gate').className = 'hidden'; $('app').className = '';
     var athleteName = (me.profile && me.profile.name) || (me.name || '').split('@')[0];
     $('name').textContent = athleteName;
@@ -649,7 +663,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       $('btnLaunchApp').href = FULL_APP_URL + '#t=' + encodeURIComponent(token);
     }
 
-    paintIcu(await api('/me/intervals'));
+    try { paintIcu(await api('/me/intervals')); } catch (e) {}
 
     /* Fetch full state including plan, meals, and shopping list */
     try {
@@ -663,28 +677,38 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       }
     } catch(e) {}
 
-    var s = await api('/summary');
-    var stats = '<div class="stat"><span>Active Plan Block</span><b>' + (me.block || (fullState && fullState.plan ? fullState.plan.block : 'Active')) + '</b></div>';
-    if (s.stored_rides) {
-      stats += '<div class="stat"><span>Activities Recorded</span><b>' + s.stored_rides.count + ' activities</b></div>';
-      if (s.stored_rides.oldest) stats += '<div class="stat"><span>History Since</span><b>' + s.stored_rides.oldest + '</b></div>';
-    }
-    $('stats').innerHTML = stats;
+    try {
+      var s = await api('/summary');
+      var stats = '<div class="stat"><span>Active Plan Block</span><b>' + (me.block || (fullState && fullState.plan ? fullState.plan.block : 'Active')) + '</b></div>';
+      if (s && s.stored_rides) {
+        stats += '<div class="stat"><span>Activities Recorded</span><b>' + s.stored_rides.count + ' activities</b></div>';
+        if (s.stored_rides.oldest) stats += '<div class="stat"><span>History Since</span><b>' + s.stored_rides.oldest + '</b></div>';
+      }
+      $('stats').innerHTML = stats;
 
-    if (s.ok && s.summary) {
-      var w = (s.summary.watch || []).map(function (x) { return '<li>' + x + '</li>'; }).join('');
-      $('sum').innerHTML = '<p style="font-size:15px;font-weight:750;color:var(--ink);margin-bottom:8px">' + s.summary.headline + '</p>'
-        + '<p>' + s.summary.training + '</p><p>' + s.summary.fuelling + '</p>'
-        + (w ? '<p class="mono" style="margin:14px 0 6px">Key Observations</p><ul style="margin:0;padding-left:18px;color:var(--ink-2);font-size:14px">' + w + '</ul>' : '')
-        + '<p style="font-size:12px;color:var(--ink-3);margin-top:12px">Based on ' + s.basis.rides + ' activities over '
-        + s.basis.window_days + ' days (' + (s.age_days === 0 ? 'generated today' : s.age_days + ' days old') + ')</p>';
-    } else {
-      $('sum').innerHTML = '<p style="margin:0">' + (s.why || 'No synthesis generated yet.') + '</p>';
-    }
+      if (s && s.ok && s.summary) {
+        var w = (s.summary.watch || []).map(function (x) { return '<li>' + x + '</li>'; }).join('');
+        $('sum').innerHTML = '<p style="font-size:15px;font-weight:750;color:var(--ink);margin-bottom:8px">' + s.summary.headline + '</p>'
+          + '<p>' + s.summary.training + '</p><p>' + s.summary.fuelling + '</p>'
+          + (w ? '<p class="mono" style="margin:14px 0 6px">Key Observations</p><ul style="margin:0;padding-left:18px;color:var(--ink-2);font-size:14px">' + w + '</ul>' : '')
+          + '<p style="font-size:12px;color:var(--ink-3);margin-top:12px">Based on ' + (s.basis ? s.basis.rides : 0) + ' activities over '
+          + (s.basis ? s.basis.window_days : 0) + ' days (' + (s.age_days === 0 ? 'generated today' : s.age_days + ' days old') + ')</p>';
+      } else {
+        $('sum').innerHTML = '<p style="margin:0">' + ((s && s.why) || 'No synthesis generated yet.') + '</p>';
+      }
+    } catch (e) {}
   }
 
   if (!token) { signedOut(); }
-  else load().catch(function () { signedOut(); });
+  else {
+    load().catch(function (err) {
+      if (err && err.message === 'signed out') signedOut();
+      else {
+        $('gate').className = 'hidden'; $('app').className = '';
+        say('bad', 'Could not reach the server. Please check your connection.');
+      }
+    });
+  }
 })();
 </script>
 </body></html>

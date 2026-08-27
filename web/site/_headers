@@ -14,10 +14,10 @@
   Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'sha256-wOf4zrENxxOB03EVKcmS8J2NexdyTwo8thy100yK/O8='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-64TSOBLaXzMxUYMWeFr8tzFC7b1AteW5/mmFTzsYxUE='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-KrY6Q76y4D0xHDyoHBKuWTeIulwGmUclJUaZRYLzydU='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /account.html
-  Content-Security-Policy: default-src 'none'; script-src 'sha256-64TSOBLaXzMxUYMWeFr8tzFC7b1AteW5/mmFTzsYxUE='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'none'; script-src 'sha256-KrY6Q76y4D0xHDyoHBKuWTeIulwGmUclJUaZRYLzydU='; style-src 'sha256-ldRACBFOk/6dU+J8xLwJT4udC+TjNej9eYtuoMGcjzs='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /how
   Content-Security-Policy: default-src 'none'; script-src 'sha256-r9475cnisB7yW2IaQtrpgRKyyKnmAgamoFbcs/QIC1I='; style-src 'sha256-kSO8xbBuQn433DmQQWexRLJF8Q39rVe1Q4BG05cVikc='; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
