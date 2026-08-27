@@ -3577,9 +3577,12 @@ function setDot(){
   } else if (lastSync) {
     d.className = 'dot ok';
     txt.textContent = 'Synced';
-  } else {
+  } else if (!navigator.onLine) {
     d.className = 'dot err';
     txt.textContent = 'Offline';
+  } else {
+    d.className = 'dot pend';
+    txt.textContent = 'Connecting...';
   }
 }
 
@@ -7893,7 +7896,7 @@ render();
 setDot();
 updateHeaderHeight();
 
-if (authToken && cfg.url) { sync(dirty); startPolling(); }
+if (hasCreds() && cfg.url) { sync(dirty); startPolling(); }
 </script>
 </body>
 </html>
