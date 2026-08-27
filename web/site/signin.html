@@ -246,7 +246,9 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       } catch (e) {}
     }
 
-    var target = pendingPlan ? '/account' : (out.fresh ? '/welcome' : '/account');
+    var target = pendingPlan
+      ? ('/account#t=' + encodeURIComponent(out.token))
+      : (out.fresh ? ('/welcome#t=' + encodeURIComponent(out.token)) : ('/account#t=' + encodeURIComponent(out.token)));
     msg.className = 'msg ok';
     msg.textContent = '';
     var b = document.createElement('b');

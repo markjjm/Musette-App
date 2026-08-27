@@ -253,7 +253,17 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 (function () {
   var API = 'https://api.musetteapp.com';
   var token = null;
-  try { token = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token'); } catch (e) {}
+
+  var m = /[#&]t=([^&]+)/.exec(location.hash || '');
+  if (m) {
+    token = decodeURIComponent(m[1]);
+    try { localStorage.setItem('musette.token', token); } catch (e) {}
+    try { sessionStorage.setItem('musette.token', token); } catch (e) {}
+    history.replaceState(null, '', location.pathname);
+  }
+  if (!token) {
+    try { token = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token'); } catch (e) {}
+  }
 
   var $ = function (id) { return document.getElementById(id); };
   var step = 0;
@@ -270,12 +280,18 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   function say(id, kind, text) { var el = $(id); el.className = 'msg ' + kind; el.textContent = text; }
 
   async function api(path, body) {
+    var hdrs = { 'Content-Type': 'application/json' };
+    if (token) hdrs['Authorization'] = 'Bearer ' + token;
     var r = await fetch(API + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      headers: hdrs,
       body: JSON.stringify(body || {})
     });
-    if (r.status === 401) { location.href = '/signin'; throw new Error('out'); }
+    if (r.status === 401 && token) {
+      token = null;
+      try { localStorage.removeItem('musette.token'); } catch (e) {}
+      try { sessionStorage.removeItem('musette.token'); } catch (e) {}
+    }
     return await r.json();
   }
 

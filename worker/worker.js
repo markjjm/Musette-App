@@ -4185,8 +4185,8 @@ export default {
         return json({
           ok: true,
           plan,
-          analysis: `Your ${plan.block} plan is built for consistent aerobic development. Create an account to unlock custom AI modifications and push structured workouts directly to Garmin.`,
-          modifications: ['Preview mode: Create an account to activate and modify this plan with AI.']
+          analysis: `Your ${plan.block} block is configured for progressive aerobic overload. Portions scale with daily energy demands to optimize glycogen replenishment while maintaining metabolic flexibility.`,
+          modifications: ['Plan generated to match baseline training schedule and profile.']
         }, 200, origin);
       }
 
