@@ -156,8 +156,18 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     <h2>Which days can you train?</h2>
     <p class="sub">Select the days you typically run, ride, or train, and nominate your primary long session day.</p>
     <div class="days" id="days"></div>
-    <div class="field" style="margin-top:14px"><label for="longDay">Primary long workout day</label>
-      <select id="longDay"></select></div>
+    <div class="row">
+      <div class="field"><label for="longDay">Primary long workout day</label>
+        <select id="longDay"></select></div>
+      <div class="field"><label for="strengthPref">Strength &amp; Cross-Training</label>
+        <select id="strengthPref">
+          <option value="none">No dedicated gym work (pure endurance)</option>
+          <option value="2x_strength" selected>2x / week functional strength &amp; core</option>
+          <option value="3x_hypertrophy">3x / week lifting &amp; power development</option>
+          <option value="mobility">Mobility &amp; yoga on recovery days</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <div class="q hidden" data-step="3">
@@ -183,15 +193,30 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       <div class="field"><label for="sx">Sex (for baseline metabolic formula)</label>
         <select id="sx"><option value="male">Male</option><option value="female">Female</option></select></div>
     </div>
+    <div class="row">
+      <div class="field"><label for="ftp">FTP / Threshold Power (Watts, optional)</label>
+        <input id="ftp" type="number" inputmode="numeric" placeholder="e.g. 260"></div>
+      <div class="field"><label for="dietStyle">Dietary Pattern</label>
+        <select id="dietStyle">
+          <option value="omnivore" selected>Omnivore / Balanced High-Carb</option>
+          <option value="plant_forward">Plant-Forward / Vegetarian</option>
+          <option value="dairy_free">Dairy-Free Focus</option>
+          <option value="gluten_free">Gluten-Free Focus</option>
+          <option value="pescatarian">Pescatarian</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <div class="q hidden" data-step="5">
-    <h2>Dietary preferences & exclusions</h2>
-    <p class="sub">Optional: note any foods or ingredients you refuse to eat, and what event you are targeting.</p>
-    <div class="field"><label for="why">Target event or motivation (optional)</label>
-      <input id="why" placeholder="e.g. Chicago Marathon, Leadville 100"></div>
-    <div class="field"><label for="av">Foods you will not eat (comma separated)</label>
-      <input id="av" placeholder="e.g. mushrooms, shellfish, cilantro"></div>
+    <h2>AI Coach Context &amp; Customization</h2>
+    <p class="sub">Provide extra context so Coach Watts can customize your workouts, fueling strategy, and debriefs.</p>
+    <div class="field"><label for="why">Target Event, Race, or Main Horizon (optional)</label>
+      <input id="why" placeholder="e.g. Leadville 100 in August, Sub-3hr Marathon, Gran Fondo"></div>
+    <div class="field"><label for="notes">Extra Context &amp; Schedule Notes for Coach Watts (optional)</label>
+      <textarea id="notes" rows="3" style="width:100%;padding:11px 13px;font-size:14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font-family:inherit;resize:vertical;" placeholder="e.g. I train early mornings before work, looking to build threshold durability while keeping knees happy."></textarea></div>
+    <div class="field"><label for="av">Foods or ingredients you will not eat (comma separated)</label>
+      <input id="av" placeholder="e.g. mushrooms, shellfish, cilantro, bell peppers"></div>
   </div>
 
   <div class="nav">
@@ -201,9 +226,9 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 </div>
 
 <div id="done" class="hidden">
-  <div class="pill-badge"><i></i>Plan Seeded</div>
+  <div class="pill-badge"><i></i>Plan Seeded &amp; Verified</div>
   <h1>Your initial plan is ready</h1>
-  <p class="lede" style="margin:10px 0 20px">Here is your tailored month of fueling, <b id="doneName"></b>.</p>
+  <p class="lede" style="margin:10px 0 20px">Here is your tailored training &amp; fueling block, <b id="doneName"></b>.</p>
   <div id="msg2" class="msg hidden" role="status" aria-live="polite"></div>
   <div id="summary" style="margin-bottom:24px"></div>
   <div class="nav">
@@ -330,19 +355,49 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   $('back').addEventListener('click', function () { if (step > 0) show(step - 1); });
   $('next').addEventListener('click', async function () {
     if (step === 2 && !A.days.length) { say('msg', 'bad', 'Please select at least one training day.'); return; }
+    if (step === 4) {
+      var nm = ($('nm').value || '').trim();
+      var wt = Number($('w').value), ht = Number($('h').value), age = Number($('a').value);
+      if (!nm) { say('msg', 'bad', 'Please enter your name or handle.'); return; }
+      if (!(wt >= 70 && wt <= 400)) { say('msg', 'bad', 'Please enter a valid weight in pounds (70 - 400 lbs).'); return; }
+      if (!(ht >= 48 && ht <= 90)) { say('msg', 'bad', 'Please enter a valid height in inches (48 - 90 in).'); return; }
+      if (!(age >= 14 && age <= 100)) { say('msg', 'bad', 'Please enter a valid age (14 - 100).'); return; }
+    }
     if (step < 5) { show(step + 1); return; }
+
     var nm = ($('nm').value || '').trim();
     var wt = Number($('w').value), ht = Number($('h').value), age = Number($('a').value);
-    if (!nm) { say('msg', 'bad', 'Please enter your name or handle.'); return; }
-    if (!(wt >= 70 && wt <= 400)) { say('msg', 'bad', 'Please enter a valid weight in pounds (70 - 400 lbs).'); return; }
-    if (!(ht >= 48 && ht <= 90)) { say('msg', 'bad', 'Please enter a valid height in inches (48 - 90 in).'); return; }
-    if (!(age >= 14 && age <= 100)) { say('msg', 'bad', 'Please enter a valid age (14 - 100).'); return; }
+    var ftp = Number($('ftp').value) || 0;
+    var strength = $('strengthPref').value;
+    var diet = $('dietStyle').value;
+    var rawNotes = ($('notes').value || '').trim();
+    var why = ($('why').value || '').trim();
+    var avoid = ($('av').value || '').trim();
+
+    var notesArr = [];
+    if (strength && strength !== 'none') {
+      var sLabel = strength === '2x_strength' ? '2x/week functional strength & core'
+        : strength === '3x_hypertrophy' ? '3x/week heavy lifting & power development'
+        : 'Mobility & yoga focus';
+      notesArr.push('Strength routine: ' + sLabel);
+    }
+    if (diet && diet !== 'omnivore') {
+      var dLabel = diet === 'plant_forward' ? 'Plant-Forward / Vegetarian'
+        : diet === 'dairy_free' ? 'Dairy-Free'
+        : diet === 'gluten_free' ? 'Gluten-Free' : 'Pescatarian';
+      notesArr.push('Dietary style: ' + dLabel);
+    }
+    if (rawNotes) notesArr.push(rawNotes);
+    var combinedNotes = notesArr.join('. ');
+
     $('next').disabled = true; $('next').textContent = 'Building…';
     try {
       var out = await api('/plan/seed', {
         sport: A.sport, level: A.level, days: A.days, long_day: A.longDay,
-        profile: { name: nm, weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
-          goal: A.goal, motivation: $('why').value, avoid: $('av').value, hours_wk: 0 }
+        profile: {
+          name: nm, weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
+          goal: A.goal, motivation: why, avoid: avoid, notes: combinedNotes, ftp: ftp, hours_wk: 0
+        }
       });
       if (!out.ok) { say('msg', 'bad', out.why || 'Could not generate your plan.'); return; }
       draft = out.plan;
@@ -350,14 +405,23 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
       var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; })) || 1;
       var kcs = out.plan.days.map(function (d) { return d.kc; });
+      var kg = wt * 0.45359237;
       var html = '<div class="stat"><span>Target Month</span><b>' + out.plan.block + '</b></div>'
         + '<div class="stat"><span>Sport Profile</span><b>' + out.basis.sport + '</b></div>'
+        + '<div class="stat"><span>Target Weekly Volume</span><b>' + out.basis.hours_wk + ' hrs / week</b></div>'
         + '<div class="stat"><span>Total Monthly Training</span><b>' + out.basis.total_hours + ' hours</b></div>'
         + '<div class="stat"><span>Resting Energy (BMR)</span><b>' + out.basis.resting_kcal + ' kcal</b></div>'
-        + '<div class="stat"><span>Rest Day Target</span><b>' + Math.min.apply(null, kcs) + ' kcal</b></div>'
+        + '<div class="stat"><span>Rest Day Baseline Target</span><b>' + Math.min.apply(null, kcs) + ' kcal</b></div>'
         + '<div class="stat"><span>Key Training Day Target</span><b>' + Math.max.apply(null, kcs) + ' kcal</b></div>'
+        + (ftp ? '<div class="stat"><span>Threshold Power</span><b>' + ftp + ' W (' + (Math.round((ftp / kg) * 100) / 100) + ' W/kg)</b></div>' : '')
+        + (strength !== 'none' ? '<div class="stat"><span>Strength Integration</span><b>' + (strength === '2x_strength' ? '2x / wk Core & Strength' : (strength === '3x_hypertrophy' ? '3x / wk Lifting' : 'Mobility')) + '</b></div>' : '')
         + '<div class="stat"><span>Grocery Items Planned</span><b>' + out.basis.shopping_lines + ' lines</b></div>'
-        + '<p class="mono" style="margin:20px 0 8px">Weekly Training Load</p>';
+        + '<div style="margin-top:20px;padding:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;">'
+          + '<div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--ink);margin-bottom:6px"><span>⚡</span> Coach Watts Strategic Plan Review</div>'
+          + '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0 0 10px;">Your <b>' + out.plan.block + '</b> block is configured for <b>' + out.basis.hours_wk + ' hours/week</b> of structured aerobic overload' + (strength !== 'none' ? ' alongside your strength sessions' : '') + '. Carbohydrate and energy intake dynamically ramps on your key days (~' + Math.max.apply(null, kcs) + ' kcal) to optimize glycogen replenishment, and contracts on rest days for metabolic flexibility.</p>'
+          + '<p style="font-size:12.5px;color:var(--ink-3);margin:0">💡 You can customize workouts, log off-plan nutrition, and ask Coach Watts for real-time adaptations anytime in the app.</p>'
+        + '</div>'
+        + '<p class="mono" style="margin:20px 0 8px">Weekly Periodization &amp; Training Load</p>';
       Object.keys(wk).sort().forEach(function (k) {
         html += '<div class="wkbar"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
           + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
