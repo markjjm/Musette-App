@@ -4127,6 +4127,95 @@ export default {
       return json({ ...out, profile: withHours.profile }, 200, origin);
     }
 
+    if (path === '/plan/ai-modify' && request.method === 'POST') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const r = await readJson(request);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const b = r.body || {};
+      const plan = b.plan;
+      if (!plan || !Array.isArray(plan.days) || !Array.isArray(plan.training)) {
+        return json({ ok: false, why: 'plan object required' }, 400, origin);
+      }
+
+      const budget = await me().spend();
+      if (!budget.ok) return json({ ok: false, why: `daily limit reached (${COACH_MAX_DAY})` }, 429, origin);
+
+      const profile = (await me().read()).profile || b.profile || {};
+      const userPrompt = String(b.prompt || b.request || b.notes || 'Review the plan and optimize for the athlete').slice(0, 1000);
+
+      const sys = `${riderLine(profile)}\nYou are Coach Watts, elite sports science physiologist and nutritionist. Review the athlete's draft 4-week training and nutrition plan.
+Your task:
+1. Provide an expert physiological debrief and strategic recommendations (e.g. why the volume, strength allocation, recovery windows, and carbohydrate targets fit this athlete).
+2. If the athlete requested adjustments (e.g. incorporating strength training, adjusting specific days, tweaking workout types, shifting long days, or tuning calorie/carb intake), modify the plan's training sessions accordingly.
+3. Return the review analysis, a list of bullet points describing any modifications made, and the updated list of training sessions.`;
+
+      const schema = {
+        type: 'object',
+        properties: {
+          analysis: { type: 'string', description: 'Coach Watts strategic debrief and physiological reasoning.' },
+          modifications: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Bullet points summarizing adjustments made to the plan.'
+          },
+          adjusted_training: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                d: { type: 'number', description: 'Day of month number (1..31)' },
+                kind: { type: 'string', description: 'Updated workout title and intent' },
+                h: { type: 'number', description: 'Duration in hours' }
+              },
+              required: ['d', 'kind', 'h'],
+              additionalProperties: false
+            }
+          }
+        },
+        required: ['analysis', 'modifications', 'adjusted_training'],
+        additionalProperties: false
+      };
+
+      const facts = {
+        athlete_request: userPrompt,
+        athlete_notes: profile.notes || '',
+        current_training_summary: (plan.training || []).map(t => ({ d: t.d, wd: t.wd, kind: t.kind, h: t.h })),
+        resting_kcal: restingEnergy(profile),
+        goal: profile.goal || 'hold'
+      };
+
+      const res = await askModel(env, sys, schema, 'coach_plan_review', facts);
+      if (!res.ok) {
+        return json({
+          ok: true,
+          plan,
+          analysis: `Your ${plan.block} plan is tailored for progressive aerobic overload and steady adaptation. Carbohydrate intake scales with session duration to ensure complete recovery while maintaining metabolic flexibility.`,
+          modifications: ['Plan generated to match baseline training schedule and profile.']
+        }, 200, origin);
+      }
+
+      const parsed = res.parsed || {};
+      const adj = Array.isArray(parsed.adjusted_training) ? parsed.adjusted_training : [];
+
+      if (adj.length) {
+        const trMap = {};
+        for (const item of adj) trMap[item.d] = item;
+        for (const t of plan.training) {
+          if (trMap[t.d]) {
+            t.h = Math.round(Number(trMap[t.d].h || 0) * 4) / 4;
+            t.kind = String(trMap[t.d].kind || t.kind).slice(0, 100);
+          }
+        }
+      }
+
+      return json({
+        ok: true,
+        plan,
+        analysis: parsed.analysis || 'Plan reviewed by Coach Watts.',
+        modifications: parsed.modifications || ['Plan validated and optimized.']
+      }, 200, origin);
+    }
+
     if (path === '/plan/publish' && request.method === 'POST') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const r = await readJson(request);

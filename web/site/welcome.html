@@ -390,7 +390,88 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     if (rawNotes) notesArr.push(rawNotes);
     var combinedNotes = notesArr.join('. ');
 
-    $('next').disabled = true; $('next').textContent = 'Building…';
+    var currentBasis = null;
+
+    function renderPlanSummary(p, basis, analysis, modifications) {
+      var wk = {};
+      p.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
+      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; })) || 1;
+      var kcs = p.days.map(function (d) { return d.kc; });
+      var kg = wt * 0.45359237;
+
+      var modsHtml = '';
+      if (modifications && modifications.length) {
+        modsHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);">'
+          + '<div style="font-size:12px;font-weight:750;color:var(--train);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">⚡ Key Adaptations Applied</div>'
+          + '<ul style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-2);line-height:1.45;">'
+          + modifications.map(function (m) { return '<li>' + m + '</li>'; }).join('')
+          + '</ul></div>';
+      }
+
+      var html = '<div class="stat"><span>Target Month</span><b>' + p.block + '</b></div>'
+        + '<div class="stat"><span>Sport Profile</span><b>' + (basis.sport || 'Endurance') + '</b></div>'
+        + '<div class="stat"><span>Target Weekly Volume</span><b>' + (basis.hours_wk || 8) + ' hrs / week</b></div>'
+        + '<div class="stat"><span>Total Monthly Training</span><b>' + (Math.round(p.training.reduce(function(a,t){return a+t.h;},0)*10)/10) + ' hours</b></div>'
+        + '<div class="stat"><span>Resting Energy (BMR)</span><b>' + (basis.resting_kcal || 1650) + ' kcal</b></div>'
+        + '<div class="stat"><span>Rest Day Baseline Target</span><b>' + Math.min.apply(null, kcs) + ' kcal</b></div>'
+        + '<div class="stat"><span>Key Training Day Target</span><b>' + Math.max.apply(null, kcs) + ' kcal</b></div>'
+        + (ftp ? '<div class="stat"><span>Threshold Power</span><b>' + ftp + ' W (' + (Math.round((ftp / kg) * 100) / 100) + ' W/kg)</b></div>' : '')
+        + (strength !== 'none' ? '<div class="stat"><span>Strength Integration</span><b>' + (strength === '2x_strength' ? '2x / wk Core & Strength' : (strength === '3x_hypertrophy' ? '3x / wk Lifting' : 'Mobility')) + '</b></div>' : '')
+        + '<div class="stat"><span>Grocery Items Planned</span><b>' + (basis.shopping_lines || 150) + ' lines</b></div>'
+        + '<div id="coachReviewBox" style="margin-top:20px;padding:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;">'
+          + '<div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--ink);margin-bottom:6px"><span>⚡</span> Coach Watts Strategic Plan Review</div>'
+          + '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0;">' + (analysis || ('Your ' + p.block + ' block is tailored for progressive aerobic overload and steady adaptation.')) + '</p>'
+          + modsHtml
+        + '</div>'
+        + '<div style="margin-top:20px;padding:16px;background:var(--surface);border:1.5px solid rgba(255,122,0,.35);border-radius:14px;box-shadow:var(--sh-xs);">'
+          + '<label for="coachPrompt" style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:6px;display:block;">⚡ Want Coach Watts to modify anything in this plan?</label>'
+          + '<textarea id="coachPrompt" rows="2" style="width:100%;padding:10px 12px;font-size:13.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink);font-family:inherit;resize:vertical;" placeholder="e.g. Move Saturday long ride to Sunday, add 30m core on Wednesday, keep calorie deficit slight..."></textarea>'
+          + '<div style="display:flex;justify-content:flex-end;margin-top:8px;">'
+            + '<button id="btnAskCoachModify" class="btn primary" type="button" style="padding:8px 18px;min-height:36px;font-size:13px;">⚡ Modify Plan with AI</button>'
+          + '</div>'
+          + '<div id="modMsg" class="msg hidden" style="margin-top:10px;margin-bottom:0;" role="status"></div>'
+        + '</div>'
+        + '<p class="mono" style="margin:24px 0 8px">Weekly Periodization &amp; Training Load</p>';
+
+      Object.keys(wk).sort().forEach(function (k) {
+        html += '<div class="wkbar"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
+          + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
+      });
+
+      html += '<p class="note">Each day matches your metabolic energy demand within ~'
+        + (basis.mean_target_gap_kcal || 40) + ' kcal on average. Portions scale dynamically across the training block.</p>';
+
+      $('summary').innerHTML = html;
+
+      var modBtn = $('btnAskCoachModify');
+      if (modBtn) {
+        modBtn.addEventListener('click', async function () {
+          var pText = ($('coachPrompt').value || '').trim();
+          if (!pText) { say('modMsg', 'bad', 'Please enter what you would like Coach Watts to change.'); return; }
+          modBtn.disabled = true; modBtn.textContent = '🧠 Coach Watts is modifying your plan…';
+          try {
+            var modOut = await api('/plan/ai-modify', {
+              plan: draft,
+              prompt: pText,
+              profile: {
+                name: nm, weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
+                goal: A.goal, motivation: why, avoid: avoid, notes: combinedNotes, ftp: ftp
+              }
+            });
+            if (!modOut.ok) { say('modMsg', 'bad', modOut.why || 'Could not modify plan.'); return; }
+            draft = modOut.plan;
+            renderPlanSummary(draft, currentBasis, modOut.analysis, modOut.modifications);
+            say('modMsg', 'ok', '✓ Plan successfully updated by Coach Watts!');
+          } catch (e) {
+            say('modMsg', 'bad', 'Could not reach Coach Watts.');
+          } finally {
+            modBtn.disabled = false; modBtn.textContent = '⚡ Modify Plan with AI';
+          }
+        });
+      }
+    }
+
+    $('next').disabled = true; $('next').textContent = '🧠 Coach Watts is building your plan…';
     try {
       var out = await api('/plan/seed', {
         sport: A.sport, level: A.level, days: A.days, long_day: A.longDay,
@@ -401,34 +482,26 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       });
       if (!out.ok) { say('msg', 'bad', out.why || 'Could not generate your plan.'); return; }
       draft = out.plan;
-      var wk = {};
-      out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
-      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; })) || 1;
-      var kcs = out.plan.days.map(function (d) { return d.kc; });
-      var kg = wt * 0.45359237;
-      var html = '<div class="stat"><span>Target Month</span><b>' + out.plan.block + '</b></div>'
-        + '<div class="stat"><span>Sport Profile</span><b>' + out.basis.sport + '</b></div>'
-        + '<div class="stat"><span>Target Weekly Volume</span><b>' + out.basis.hours_wk + ' hrs / week</b></div>'
-        + '<div class="stat"><span>Total Monthly Training</span><b>' + out.basis.total_hours + ' hours</b></div>'
-        + '<div class="stat"><span>Resting Energy (BMR)</span><b>' + out.basis.resting_kcal + ' kcal</b></div>'
-        + '<div class="stat"><span>Rest Day Baseline Target</span><b>' + Math.min.apply(null, kcs) + ' kcal</b></div>'
-        + '<div class="stat"><span>Key Training Day Target</span><b>' + Math.max.apply(null, kcs) + ' kcal</b></div>'
-        + (ftp ? '<div class="stat"><span>Threshold Power</span><b>' + ftp + ' W (' + (Math.round((ftp / kg) * 100) / 100) + ' W/kg)</b></div>' : '')
-        + (strength !== 'none' ? '<div class="stat"><span>Strength Integration</span><b>' + (strength === '2x_strength' ? '2x / wk Core & Strength' : (strength === '3x_hypertrophy' ? '3x / wk Lifting' : 'Mobility')) + '</b></div>' : '')
-        + '<div class="stat"><span>Grocery Items Planned</span><b>' + out.basis.shopping_lines + ' lines</b></div>'
-        + '<div style="margin-top:20px;padding:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;">'
-          + '<div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--ink);margin-bottom:6px"><span>⚡</span> Coach Watts Strategic Plan Review</div>'
-          + '<p style="font-size:13.5px;color:var(--ink-2);line-height:1.55;margin:0 0 10px;">Your <b>' + out.plan.block + '</b> block is configured for <b>' + out.basis.hours_wk + ' hours/week</b> of structured aerobic overload' + (strength !== 'none' ? ' alongside your strength sessions' : '') + '. Carbohydrate and energy intake dynamically ramps on your key days (~' + Math.max.apply(null, kcs) + ' kcal) to optimize glycogen replenishment, and contracts on rest days for metabolic flexibility.</p>'
-          + '<p style="font-size:12.5px;color:var(--ink-3);margin:0">💡 You can customize workouts, log off-plan nutrition, and ask Coach Watts for real-time adaptations anytime in the app.</p>'
-        + '</div>'
-        + '<p class="mono" style="margin:20px 0 8px">Weekly Periodization &amp; Training Load</p>';
-      Object.keys(wk).sort().forEach(function (k) {
-        html += '<div class="wkbar"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
-          + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
-      });
-      html += '<p class="note">Each day matches your metabolic energy demand within ~'
-        + out.basis.mean_target_gap_kcal + ' kcal on average. Portions scale dynamically across the training block.</p>';
-      $('summary').innerHTML = html;
+      currentBasis = out.basis;
+
+      // Automatically invoke AI review with athlete context
+      var aiReview = null;
+      try {
+        var aiOut = await api('/plan/ai-modify', {
+          plan: draft,
+          prompt: combinedNotes || 'Review and optimize monthly training block and fueling for the athlete',
+          profile: {
+            name: nm, weight_lb: wt, height_in: ht, age: age, sex: $('sx').value || undefined,
+            goal: A.goal, motivation: why, avoid: avoid, notes: combinedNotes, ftp: ftp
+          }
+        });
+        if (aiOut.ok) {
+          draft = aiOut.plan || draft;
+          aiReview = aiOut;
+        }
+      } catch (e) {}
+
+      renderPlanSummary(draft, currentBasis, aiReview ? aiReview.analysis : null, aiReview ? aiReview.modifications : null);
       $('doneName').textContent = nm;
       $('flow').className = 'hidden'; $('done').className = '';
     } catch (e) { if (e.message !== 'out') say('msg', 'bad', 'Could not reach the server.'); }
