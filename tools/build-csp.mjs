@@ -121,6 +121,7 @@ function cspViolations(html) {
 const routeOf = (file) => (file === 'index.html' ? '/' : '/' + file.replace(/\.html$/, ''));
 
 const COMMON = [
+  'Cache-Control: public, max-age=0, must-revalidate',
   'X-Content-Type-Options: nosniff',
   'Referrer-Policy: no-referrer',
   'X-Frame-Options: DENY',

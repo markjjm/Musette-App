@@ -53,6 +53,7 @@
   Content-Security-Policy: default-src 'none'; script-src 'sha256-ntHfCvBq4Nt9uAv+0h8aiISbQOvJ/U/Dl1URvHsEWwc='; style-src 'sha256-tiVZMka2u/h9vugxfPkxXlL0RAghn9yjFTfOEUYQ26k='; img-src 'self' data:; connect-src https://api.musetteapp.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /*
+  Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
