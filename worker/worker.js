@@ -2550,15 +2550,15 @@ export class ListDO extends DurableObject {
 
   async setPlan(plan, resetTicks) {
     return await this.ctx.blockConcurrencyWhile(async () => {
-      const v = validatePlan(plan);
-      if (!v.ok) return { error: v.error || 'invalid plan schema' };
+      const invalid = validatePlan(plan);
+      if (invalid) return { ok: false, error: invalid };
       const state = await this.load();
       state.plan = plan;
       if (resetTicks !== false) state.ticks = {};
       state.rev = (state.rev || 0) + 1;
       state.updated = new Date().toISOString();
       await this.ctx.storage.put('state', state);
-      return state;
+      return { ok: true, rev: state.rev, updated: state.updated };
     });
   }
 }
@@ -4263,6 +4263,7 @@ Your task:
       const invalid = validatePlan(plan);
       if (invalid) return json({ ok: false, why: `that plan is not valid: ${invalid}` }, 400, origin);
       const state = await me().setPlan(plan, (r.body || {}).resetTicks !== false);
+      if (!state.ok) return json({ ok: false, why: state.error || 'could not save plan' }, 400, origin);
       return json({ ok: true, block: plan.block, rev: state.rev, by: session.name }, 200, origin);
     }
 
