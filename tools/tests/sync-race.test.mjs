@@ -38,6 +38,9 @@ const fillPlan = (p) => p;
 const jset = () => {};
 const LS = { set: () => {}, get: () => null };
 let pushRefused = false, syncNote = '';
+/* sync() now records whether the account HAS a block, so an empty one gets
+   the onboarding card instead of the bundled sample month. */
+let noPlanYet = false;
 /* The app can now identify itself as a person as well as a household, so
    sync() asks how. Stubbed to the household code, which is the path this test
    is about. */

@@ -3324,6 +3324,14 @@ const jset = (k,v) => LS.set(k, JSON.stringify(v));
 
 /* App State */
 let plan   = fillPlan(jget('v2.plan', null));
+/* Signed in, and the server says this account has no block yet. That is a
+   different thing from "not synced yet", and nothing used to record it:
+   fillPlan always falls back to BUNDLED, so an account with no plan was
+   shown a stranger's August as though it were its own, and the onboarding
+   card in render() - written for exactly this case - could never fire,
+   because curWeek() is never empty once BUNDLED is loaded. Persisted, or
+   every reload flashes the sample month again before the first sync. */
+let noPlanYet = jget('v2.noPlan', false);
 let ticks  = migrateTicks(jget('v2.ticks', {}));
 
 /* Old keys were weekId|store|section␟name|qty. Sections and quantities now
@@ -3718,6 +3726,13 @@ async function sync(push){
     if (s.plan && Array.isArray(s.plan.weeks) && s.plan.weeks.length) {
       const sig = JSON.stringify(s.plan);
       if (sig !== planSig) { planSig = sig; plan = fillPlan(s.plan); jset('v2.plan', plan); changed = true; }
+      if (noPlanYet) { noPlanYet = false; jset('v2.noPlan', false); changed = true; }
+    } else if (hasCreds()) {
+      /* Set only from a real answer, never inferred from a missing local copy,
+         so being offline cannot fake it. The app is session-only, so creds mean
+         this reply is that account's own state and an absent plan is a fact
+         about the account rather than about the request. */
+      if (!noPlanYet) { noPlanYet = true; jset('v2.noPlan', true); changed = true; }
     }
     lastRev = Number(s.rev) || lastRev; LS.set('v2.rev', String(lastRev));
     /* Only a successful PUSH clears the warning. The pull after a refusal adopts
@@ -7028,7 +7043,7 @@ function paintBars(){
 
 function render(){
   const w = curWeek();
-  if (!w){
+  if (!w || noPlanYet){
     $('#main').innerHTML = '<div class="empty-onboarding-card">'
       + '<div class="eoc-icon">⚡</div>'
       + '<h3>Welcome to Musette</h3>'
@@ -7368,6 +7383,7 @@ document.addEventListener('click', e => {
     const inp = document.getElementById('fit_file_input');
     if (inp) inp.click();
     return;
+  }
   const garminBtn = e.target.closest('[data-push-garmin]');
   if (garminBtn) {
     const dn = Number(garminBtn.dataset.pushGarmin);
