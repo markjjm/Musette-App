@@ -112,6 +112,8 @@ box-shadow:var(--sh-xs);transition:all .15s ease}
 .shop-group{margin-bottom:24px}
 .shop-group h3{font:750 13px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hover);
 margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+.shop-sec{font:750 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;
+color:var(--ink-3);margin:14px 0 8px}
 .shop-items{display:grid;gap:8px}
 .shop-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface);
 border:1px solid var(--line);border-radius:9px;font-size:14.5px;cursor:pointer;user-select:none;touch-action:manipulation}
@@ -226,8 +228,8 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
 
         <div class="card" style="margin-bottom:20px">
           <h3>Draft Next Month's Plan</h3>
-          <p style="margin-bottom:14px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
-          <div class="row">
+          <p id="genHint" style="margin-bottom:14px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
+          <div class="row" id="genRow">
             <div class="field"><label for="rp">Weekly Ramp %</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
             <div class="field"><label for="rw">Recovery Week (1–5)</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
           </div>
@@ -449,12 +451,38 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   });
 
   /* Plan Generation & Publishing */
+  /* Drafting carries the CURRENT block forward, so an account that has never
+     published one cannot draft anything - the Worker answers "there is no
+     current block to carry forward", which is true and completely unactionable
+     next to a button called Draft Next Month. Say what to do instead. */
+  function setDraftReady(hasPlan) {
+    if ($('gen')) {
+      $('gen').disabled = !hasPlan;
+      $('gen').style.opacity = hasPlan ? '' : '.5';
+    }
+    if ($('genRow')) $('genRow').className = hasPlan ? 'row' : 'row hidden';
+    if ($('genHint')) {
+      $('genHint').innerHTML = hasPlan
+        ? 'Carries your current training block onto next month\'s calendar with weekly volume ramping and a scheduled recovery week.'
+        : 'There is no active block to carry forward yet. Build your first month, and next month can then be drafted from it. '
+          + '<a href="/welcome" style="font-weight:700">Build your first plan →</a>';
+    }
+  }
+
   $('gen').addEventListener('click', async function () {
     busy($('gen'), true, 'Drafting…');
     try {
       var out = await api('/plan/generate', { method: 'POST',
         body: { ramp_percent: Number($('rp').value), recovery_week: Number($('rw').value) } });
-      if (!out.ok) { say('bad', out.why || out.error || 'Could not draft the next block.'); return; }
+      if (!out.ok) {
+        if (/no current block/i.test(out.why || '')) {
+          setDraftReady(false);
+          say('bad', 'There is no active block to carry forward yet - build your first month at /welcome.');
+        } else {
+          say('bad', out.why || out.error || 'Could not draft the next block.');
+        }
+        return;
+      }
       draft = out.plan;
       var wk = {};
       out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
@@ -553,66 +581,118 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   }
 
   /* Render Full Plan View */
+  /* Read the plan's OWN shape. A day is {d, wd, kind, dish, cook, meals[], kc,
+     cb, pr, ft} and the hours live on the matching training entry, keyed by day
+     number. This used to read day.train, day.carb, day.dt and a meal with
+     .kind/.name/.desc - none of which have ever existed - so every day in the
+     month rendered as "Rest Day", the same stock dinner line, and a carb figure
+     invented from kc*0.55/4 instead of the plan's own cb. */
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* "August 2026" -> "2026-08", so a day number can become a real date. */
+  function blockYM(plan) {
+    var m = /^([A-Za-z]+)\s+(\d{4})$/.exec(String((plan && plan.block) || '').trim());
+    if (!m) return '';
+    var i = MONTHS.indexOf(m[1]);
+    return i < 0 ? '' : m[2] + '-' + String(i + 1).padStart(2, '0');
+  }
+
   function renderPlan(plan) {
     if (!plan || !plan.days || !plan.days.length) {
       $('planDaysContainer').innerHTML = '<p style="margin:18px 0;color:var(--ink-3)">No active plan found. Use the setup wizard or draft a new plan above.</p>';
       return;
     }
     if ($('planSubtitle')) $('planSubtitle').textContent = 'Block ' + (plan.block || '') + ' (' + plan.days.length + ' days total)';
-    var isMetric = unitPref === 'metric';
+
+    var ym = blockYM(plan);
+    var train = {};
+    (plan.training || []).forEach(function (t) { train[t.d] = t; });
+
     var html = '';
     plan.days.forEach(function (day) {
-      var dName = day.d || 'Day';
-      var dDate = day.dt || '';
-      var trainTag = day.train ? (day.train.label || day.train.zone || 'Training') : 'Rest Day';
-      var kc = day.kc || 2000;
-      var carbs = day.carb || Math.round(kc * 0.55 / 4);
+      var t = train[day.d] || {};
+      var hrs = Number(t.h) || Number(day.h) || 0;
+      var kind = t.kind || day.kind || '';
+      var trainTag = hrs > 0 ? (kind || 'Training') + ' · ' + hrs + ' h' : (kind || 'Rest day');
+      var iso = ym ? ym + '-' + String(day.d).padStart(2, '0') : '';
       var meals = day.meals || [];
-      var dinner = meals.find(function(m){ return m.kind === 'dinner'; }) || meals[0] || { name: 'Balanced Athlete Dinner', desc: 'Calibrated recovery meal' };
-      
+      /* The dinner label carries its own separators and repeats the dish
+         ("Dinner · cook tonight · Burgers on the grill"), which duplicates the
+         line above and makes a joined list unreadable. Keep the first segment,
+         so the labels and the meal count agree. */
+      var labels = meals.map(function (m) {
+        return String(m.l || m.t || '').split(' · ')[0].trim();
+      }).filter(function (x) { return x; });
+      var macros = [];
+      if (day.pr != null) macros.push(day.pr + 'g protein');
+      if (day.ft != null) macros.push(day.ft + 'g fat');
+      macros.push(meals.length + (meals.length === 1 ? ' meal' : ' meals'));
+
       html += '<div class="day-row">'
         + '<div class="day-head">'
-        + '<div><span class="day-date">' + dName + (dDate ? ' (' + dDate.slice(5) + ')' : '') + '</span></div>'
+        + '<div><span class="day-date">' + esc((day.wd ? day.wd + ' ' : '') + day.d)
+        + (iso ? ' (' + esc(iso.slice(5)) + ')' : '') + '</span></div>'
         + '<div class="day-meta">'
-        + '<span class="chip train">' + trainTag + '</span>'
-        + '<span class="chip fuel">' + kc + ' kcal · ' + carbs + 'g carbs</span>'
+        + '<span class="chip train">' + esc(trainTag) + '</span>'
+        + '<span class="chip fuel">' + (Number(day.kc) || 0) + ' kcal · ' + (Number(day.cb) || 0) + 'g carbs</span>'
         + '</div>'
         + '</div>'
-        + '<div class="day-dinner">🍽️ ' + (dinner.name || 'Calibrated Athlete Dinner') + '</div>'
-        + '<p class="day-desc">' + (dinner.desc || dinner.summary || 'Nutrient-rich dinner planned to replenish glycogen and support recovery.') + '</p>'
+        + '<div class="day-dinner">🍽️ ' + esc(day.dish || 'Dinner')
+        + (day.cook ? ' · 🍳 Cook night' : '') + '</div>'
+        + '<p class="day-desc">' + esc(macros.join(' · '))
+        + (labels.length ? ' — ' + esc(labels.join(' · ')) : '') + '</p>'
         + '</div>';
     });
     $('planDaysContainer').innerHTML = html;
   }
 
   /* Render Consolidated Grocery List */
-  function renderGroceries(shopping, ticks) {
+  /* The items live at plan.weeks[].lists.{A,M}[].items. There has never been a
+     top-level `shopping` key on a plan, so this pane was handed `undefined`
+     every time and always drew its empty state. A and M are two shops for the
+     same week and the app concatenates them, so this does too - the tick key
+     carries the week, not the shop. */
+  var tickKey = function (weekId, name) { return weekId + '|' + String(name).trim(); };
+
+  function renderGroceries(plan, ticks) {
     ticks = ticks || {};
-    if (!shopping || !shopping.length) {
+    var html = '', n = 0;
+    ((plan && plan.weeks) || []).forEach(function (w) {
+      var secs = [].concat((w.lists && w.lists.A) || [], (w.lists && w.lists.M) || [])
+        .filter(function (s) { return s && s.items && s.items.length; });
+      if (!secs.length) return;
+      html += '<div class="shop-group"><h3>' + esc(w.label || w.id)
+        + (w.dates ? ' — ' + esc(w.dates) : '') + '</h3>';
+      secs.forEach(function (s) {
+        html += '<div class="shop-sec">' + esc(s.sec || 'Everything else') + '</div>'
+          + '<div class="shop-items">';
+        s.items.forEach(function (it) {
+          var key = tickKey(w.id, it.n);
+          var on = !!(ticks[key] && ticks[key].v);
+          var id = 'chk_' + (++n);
+          html += '<label class="shop-item' + (on ? ' checked' : '') + '" for="' + id + '">'
+            + '<input type="checkbox" id="' + id + '" data-key="' + esc(key) + '"' + (on ? ' checked' : '') + '>'
+            + '<span>' + (it.q ? '<b>' + esc(it.q) + '</b> ' : '') + esc(it.n)
+            + (Number(it.c) ? ' <em style="font-style:normal;color:var(--ink-3)">$' + Number(it.c).toFixed(2) + '</em>' : '')
+            + (it.note ? '<br><small style="color:var(--ink-3)">' + esc(it.note) + '</small>' : '')
+            + '</span></label>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+
+    if (!html) {
       $('groceryContainer').innerHTML = '<p style="margin:18px 0;color:var(--ink-3)">No grocery items planned. Generate or publish a plan to view shopping list.</p>';
       return;
     }
-    var byAisle = {};
-    shopping.forEach(function (it) {
-      var aisle = it.aisle || 'Pantry & General';
-      if (!byAisle[aisle]) byAisle[aisle] = [];
-      byAisle[aisle].push(it);
-    });
-
-    var html = '';
-    Object.keys(byAisle).sort().forEach(function (aisle) {
-      html += '<div class="shop-group"><h3>' + aisle + '</h3><div class="shop-items">';
-      byAisle[aisle].forEach(function (it, idx) {
-        var id = 'chk_' + aisle.replace(/\s+/g, '_') + '_' + idx;
-        var key = it.key || (aisle + ':' + it.name);
-        var isChecked = !!ticks[key];
-        html += '<label class="shop-item ' + (isChecked ? 'checked' : '') + '" for="' + id + '">'
-          + '<input type="checkbox" id="' + id + '" data-key="' + key + '" ' + (isChecked ? 'checked' : '') + '>'
-          + '<span><b>' + (it.qty ? it.qty + ' ' : '') + (it.unit ? it.unit + ' ' : '') + '</b>' + it.name + '</span>'
-          + '</label>';
-      });
-      html += '</div></div>';
-    });
     $('groceryContainer').innerHTML = html;
 
     $('groceryContainer').querySelectorAll('input[type=checkbox]').forEach(function (cb) {
@@ -620,22 +700,38 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
         var p = cb.closest('.shop-item');
         if (p) p.classList.toggle('checked', cb.checked);
         var k = cb.dataset.key;
-        if (k && fullState) {
-          if (!fullState.ticks) fullState.ticks = {};
-          fullState.ticks[k] = cb.checked ? Date.now() : 0;
-          api('/sync', { method: 'PUT', body: { ticks: fullState.ticks } }).catch(function(){});
-        }
+        if (!k || !fullState) return;
+        if (!fullState.ticks) fullState.ticks = {};
+        /* {v, t} is the shape cleanTick accepts; a bare timestamp was dropped by
+           the Worker's merge without a word. */
+        fullState.ticks[k] = { v: cb.checked, t: Date.now() };
+        saveTicks();
       });
     });
   }
 
+  /* PUT /state is the route that exists. /sync never has been one, so every tick
+     made on this page 404'd into a swallowed catch. The Worker merges by
+     timestamp and returns the merged state, so adopt the map it hands back. */
+  async function saveTicks() {
+    if (!fullState) return;
+    try {
+      var out = await api('/state', { method: 'PUT', body: { ticks: fullState.ticks } });
+      if (out && out.ticks) fullState.ticks = out.ticks;
+    } catch (e) { /* signed out, or offline - the next tick tries again */ }
+  }
+
   if ($('btnClearTicks')) {
     $('btnClearTicks').addEventListener('click', async function () {
-      if (confirm('Reset all checked grocery items?')) {
-        fullState.ticks = {};
-        renderGroceries(fullState.plan ? fullState.plan.shopping : [], {});
-        try { await api('/sync', { method: 'PUT', body: { ticks: {} } }); } catch(e){}
-      }
+      if (!fullState || !confirm('Reset all checked grocery items?')) return;
+      /* An empty map clears nothing: mergeByTime only ever adds or replaces a
+         key, so the server would keep every tick it already had. Clearing means
+         writing v:false with a newer stamp, which is what the app itself does. */
+      if (!fullState.ticks) fullState.ticks = {};
+      var t = Date.now();
+      Object.keys(fullState.ticks).forEach(function (k) { fullState.ticks[k] = { v: false, t: t }; });
+      renderGroceries(fullState.plan, fullState.ticks);
+      await saveTicks();
     });
   }
 
@@ -670,10 +766,12 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
       var st = await api('/state');
       if (st) {
         fullState = st;
-        if (st.plan) {
-          renderPlan(st.plan);
-          renderGroceries(st.plan.shopping, st.ticks);
-        }
+        /* Draw the empty states too. Leaving the panes untouched when there is
+           no plan left them on "Loading..." for ever, which reads as a hang
+           rather than as an account with nothing in it yet. */
+        renderPlan(st.plan);
+        renderGroceries(st.plan, st.ticks);
+        setDraftReady(!!(st.plan && st.plan.days && st.plan.days.length));
       }
     } catch(e) {}
 
