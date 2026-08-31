@@ -538,9 +538,9 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     try {
       var out = await api('/plan/publish', { plan: draft, resetTicks: true });
       if (!out.ok) { say('msg2', 'bad', out.why || 'Could not save your plan.'); return; }
-      say('msg2', 'ok', 'Plan activated! Opening your profile…');
+      say('msg2', 'ok', 'Plan activated! Opening your calendar and meals…');
       setTimeout(function () { 
-        location.href = '/account'; 
+        location.href = 'https://app.musetteapp.com/#t=' + encodeURIComponent(token); 
       }, 500);
     } catch (e) { if (e.message !== 'out') say('msg2', 'bad', 'Could not reach the server.'); }
     finally { $('start').disabled = false; $('start').textContent = 'Start this plan'; }
