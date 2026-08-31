@@ -640,6 +640,26 @@ function blockYM(plan) {
   return `${m[2]}-${String(mi + 1).padStart(2, '0')}`;
 }
 
+/* '2026-08' -> '2026-09', December included. Date does the carry, because
+   `m + 1` does not and a January that reads as month 13 is a whole year of
+   meals filed under a month that does not exist. */
+function nextYM(ym) {
+  if (!/^\d{4}-\d{2}$/.test(String(ym || ''))) return null;
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/* What the rider gets when nobody chose: the same figures the profile page
+   offers by default. Auto-generation must not invent a training philosophy of
+   its own - it carries the block forward on the settings a person would have
+   picked, and a person can still pick differently. */
+const AUTO_RAMP_PCT = 4;
+const AUTO_RECOVER_WEEK = 3;   // zero-based, so the fourth week is the easy one
+/* Somebody opening the app after a year away is carried month by month rather
+   than in one request that runs until the runtime kills it. */
+const ROLL_MAX = 14;
+
 /* Assemble what the model is allowed to know. Every figure below is arithmetic
    done here; none of it is left for the model to work out.
 
@@ -2553,12 +2573,116 @@ export class ListDO extends DurableObject {
       const invalid = validatePlan(plan);
       if (invalid) return { ok: false, error: invalid };
       const state = await this.load();
+      /* Replacing a month is the one destructive write in the app, and the
+         route above has always SAID this takes an undo snapshot. It did not:
+         only merge() ever wrote 'prev', so /undo after a publish restored
+         whatever the last sync happened to hold and reverted every tick since.
+         Now the claim is true. */
+      const before = JSON.parse(JSON.stringify(state));
       state.plan = plan;
       if (resetTicks !== false) state.ticks = {};
       state.rev = (state.rev || 0) + 1;
       state.updated = new Date().toISOString();
+      await this.ctx.storage.put('prev', before);
       await this.ctx.storage.put('state', state);
       return { ok: true, rev: state.rev, updated: state.updated };
+    });
+  }
+
+  /* ---- One month of runway, without anybody pressing a button -----------
+     The rider wants next month to exist before it starts: on 1 September,
+     September is live AND October is already built.
+
+     Two jobs, in this order. ROLL: while the live block names a month that has
+     already ended, the queued month becomes the live one. TOP UP: then make
+     sure exactly one month sits in front of the live block.
+
+     The queue lives under its own storage key, NOT in `state`. A plan is ~77 KB
+     and `state` already carries one; putting a second inside it would roughly
+     double the value written on every tick, and read() hands `state` back
+     wholesale, so /state would pay 77 KB for a month nobody is looking at yet.
+
+     Lazily, on read, rather than from the weekly cron. The cron fires Sunday
+     05:00 UTC, so a month turning on a Tuesday would be up to six days late -
+     and the cron has no way to enumerate accounts anyway. Opening the app IS
+     the trigger, which is also the only moment the answer matters. */
+  async nextPlan() {
+    return (await this.ctx.storage.get('next')) || null;
+  }
+
+  /* A drafted month, parked in front of the live one instead of replacing it.
+     This is the non-destructive half of publishing: nothing that is on screen
+     today changes, and the rollover picks it up when the month turns. */
+  async setNext(plan) {
+    const invalid = validatePlan(plan);
+    if (invalid) return { ok: false, error: invalid };
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      await this.ctx.storage.put('next', plan);
+      return { ok: true, next: plan.block };
+    });
+  }
+
+  async rollBlocks(todayYM, opts) {
+    if (!/^\d{4}-\d{2}$/.test(String(todayYM || ''))) return { ok: false, why: 'bad month' };
+    return await this.ctx.blockConcurrencyWhile(async () => {
+      const state = await this.load();
+      if (!state.plan || !Array.isArray(state.plan.days) || !state.plan.days.length) {
+        return { ok: false, why: 'no block to carry forward' };
+      }
+      const o = {
+        rampPct: Number.isFinite(opts && opts.rampPct) ? opts.rampPct : AUTO_RAMP_PCT,
+        recoverWeek: Number.isFinite(opts && opts.recoverWeek) ? opts.recoverWeek : AUTO_RECOVER_WEEK,
+      };
+
+      const before = JSON.parse(JSON.stringify(state));
+      let queued = (await this.ctx.storage.get('next')) || null;
+      let rolled = null, queueChanged = false;
+
+      /* A block whose month has not ended yet is the block you are living in.
+         Only a month strictly in the past is carried forward - on 31 August the
+         August plan stays exactly where it is. */
+      for (let i = 0; i < ROLL_MAX; i++) {
+        const cur = blockYM(state.plan);
+        if (!cur || cur >= todayYM) break;
+        const want = nextYM(cur);
+        let candidate = queued && blockYM(queued) === want ? queued : null;
+        if (!candidate) {
+          const g = generateBlock(state.plan, want, o);
+          if (!g.ok) break;
+          candidate = g.plan;
+        }
+        /* The same validator the publish route runs. A month that could not be
+           published by hand must not arrive by itself either. */
+        if (validatePlan(candidate)) break;
+        state.plan = candidate;
+        state.ticks = {};            // a new month is a new shopping list
+        if (queued) { queued = null; queueChanged = true; }
+        rolled = candidate.block;
+      }
+
+      const cur = blockYM(state.plan);
+      const want = cur ? nextYM(cur) : null;
+      if (want && (!queued || blockYM(queued) !== want)) {
+        const g = generateBlock(state.plan, want, o);
+        if (g.ok && !validatePlan(g.plan)) { queued = g.plan; queueChanged = true; }
+      }
+
+      if (rolled) {
+        state.rev = (state.rev || 0) + 1;
+        state.updated = new Date().toISOString();
+        await this.ctx.storage.put('prev', before);
+        await this.ctx.storage.put('state', state);
+      }
+      if (queueChanged) {
+        if (queued) await this.ctx.storage.put('next', queued);
+        else await this.ctx.storage.delete('next');
+      }
+      return {
+        ok: true, rolled,
+        block: state.plan.block,
+        next: queued ? queued.block : null,
+        rev: state.rev || 0,
+      };
     });
   }
 }
@@ -4267,6 +4391,51 @@ Your task:
       return json({ ok: true, block: plan.block, rev: state.rev, by: session.name }, 200, origin);
     }
 
+    /* The month that is waiting, in full. Separate from /state on purpose: it
+       is another ~77 KB, and the only screen that wants it is the one showing
+       next month's calendar. */
+    if (path === '/plan/next' && request.method === 'GET') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const stub = me();
+      const roll = await stub.rollBlocks(new Date().toISOString().slice(0, 7));
+      const nx = await stub.nextPlan();
+      return json({ ok: true, plan: nx, block: nx ? nx.block : null,
+        live: roll.ok ? roll.block : null }, 200, origin);
+    }
+
+    /* Rebuild the queued month on different settings. This is the safe half of
+       publishing and the one the profile page uses: it replaces the month that
+       has NOT started yet, so nothing on screen today moves and no shopping
+       list in progress is reset. /plan/publish still replaces the LIVE block,
+       because onboarding has no live block to protect. */
+    if (path === '/plan/queue' && request.method === 'POST') {
+      if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
+      const r = await readJson(request);
+      if (r.bad) return json({ ok: false, why: 'bad json' }, 400, origin);
+      const b = r.body || {};
+      const stub = me();
+      await stub.rollBlocks(new Date().toISOString().slice(0, 7));
+      const state = await stub.read();
+      if (!state.plan) return json({ ok: false, why: 'there is no current block to carry forward' }, 400, origin);
+      const cur = blockYM(state.plan);
+      if (!cur) return json({ ok: false, why: 'cannot tell what month the current block is' }, 400, origin);
+
+      const rampPct = Number(b.ramp_percent);
+      const recoverWeek = Number(b.recovery_week) - 1;
+      const out = generateBlock(state.plan, nextYM(cur), {
+        rampPct: Number.isFinite(rampPct) ? rampPct : AUTO_RAMP_PCT,
+        recoverWeek: Number.isFinite(recoverWeek) ? recoverWeek : AUTO_RECOVER_WEEK,
+      });
+      if (!out.ok) return json(out, 400, origin);
+      const saved = await stub.setNext(out.plan);
+      if (!saved.ok) return json({ ok: false, why: saved.error || 'could not queue that month' }, 400, origin);
+      /* Hours per week, so the card can draw its bars without being sent the
+         whole 77 KB month to add them up itself. */
+      const weekly = {};
+      for (const t of out.plan.training || []) weekly[t.wk] = (weekly[t.wk] || 0) + t.h;
+      return json({ ok: true, block: out.plan.block, basis: out.basis, weekly, live: state.plan.block }, 200, origin);
+    }
+
     if (path === '/summary') {
       const stub = me();
       if (request.method === 'GET') {
@@ -4472,8 +4641,19 @@ Your task:
        household code, because "me" is meaningless without one. */
     if (path === '/me' && request.method === 'GET') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
-      const st = await me().read();
-      return json({ ok: true, ...session, profile: st.profile || null, block: (st.plan || {}).block || null }, 200, origin);
+      const stub = me();
+      /* Opening the app is the rollover trigger, so it happens before anything
+         reports which block is live. Idempotent and free - no model call, and
+         it does nothing at all on any read where the month has not turned. */
+      const roll = await stub.rollBlocks(new Date().toISOString().slice(0, 7));
+      const st = await stub.read();
+      return json({
+        ok: true, ...session,
+        profile: st.profile || null,
+        block: (st.plan || {}).block || null,
+        next_block: roll.ok ? roll.next : null,
+        rolled: roll.ok ? roll.rolled : null,
+      }, 200, origin);
     }
 
     /* Self-service account deletion. */
@@ -4576,7 +4756,12 @@ Your task:
     }
 
     if (path === '/state' && request.method === 'GET') {
-      return json(await me().read(), 200, origin);
+      const stub = me();
+      const roll = await stub.rollBlocks(new Date().toISOString().slice(0, 7));
+      /* The NAME of the queued month, never the month itself: it is ~77 KB that
+         nobody is looking at yet, and this response is already the largest the
+         app fetches. GET /plan/next hands over the whole thing when asked. */
+      return json({ ...(await stub.read()), next_block: roll.ok ? roll.next : null }, 200, origin);
     }
 
     /* Today's plan, today's actual riding, and one piece of judgement about

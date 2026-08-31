@@ -227,17 +227,17 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
         </div>
 
         <div class="card" style="margin-bottom:20px">
-          <h3>Draft Next Month's Plan</h3>
-          <p id="genHint" style="margin-bottom:14px">Carries your current training block onto next month's calendar with weekly volume ramping and a scheduled recovery week.</p>
+          <h3>Next Month</h3>
+          <p id="genHint" style="margin-bottom:14px">Next month is built for you a month ahead and goes live on its own when the month turns. Rebuild it here to change how the volume ramps.</p>
+          <div id="nextStat" style="margin-bottom:14px"></div>
           <div class="row" id="genRow">
             <div class="field"><label for="rp">Weekly Ramp %</label><input id="rp" type="number" min="0" max="15" step="1" value="4"></div>
             <div class="field"><label for="rw">Recovery Week (1–5)</label><input id="rw" type="number" min="1" max="5" step="1" value="4"></div>
           </div>
-          <button id="gen" class="btn primary full" type="button">Draft Next Month</button>
+          <button id="gen" class="btn primary full" type="button">Rebuild Next Month</button>
           <div id="draft" class="hidden" style="margin-top:18px">
             <div id="draftBody"></div>
-            <button id="pub" class="btn primary full" type="button" style="margin-top:14px">Publish This Plan</button>
-            <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--ink-3)">Publishing deploys the new plan across all household devices.</p>
+            <p style="text-align:center;margin-top:10px;font-size:13px;color:var(--ink-3)">Rebuilt in place. Nothing on your devices changes until the month turns.</p>
           </div>
         </div>
 
@@ -345,7 +345,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
   var API = 'https://api.musetteapp.com';
   var FULL_APP_URL = 'https://app.musetteapp.com';
   var $ = function (id) { return document.getElementById(id); };
-  var token = null, draft = null, fullState = null;
+  var token = null, fullState = null;
 
   try { token = localStorage.getItem('musette.token') || sessionStorage.getItem('musette.token'); } catch (e) {}
   var m = /[#&]t=([^&]+)/.exec(location.hash || '');
@@ -463,57 +463,70 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     if ($('genRow')) $('genRow').className = hasPlan ? 'row' : 'row hidden';
     if ($('genHint')) {
       $('genHint').innerHTML = hasPlan
-        ? 'Carries your current training block onto next month\'s calendar with weekly volume ramping and a scheduled recovery week.'
-        : 'There is no active block to carry forward yet. Build your first month, and next month can then be drafted from it. '
+        ? 'Next month is built for you a month ahead and goes live on its own when the month turns. Rebuild it here to change how the volume ramps.'
+        : 'There is no active block to carry forward yet. Build your first month, and every month after it arrives on its own. '
           + '<a href="/welcome" style="font-weight:700">Build your first plan →</a>';
     }
   }
 
+  /* Rebuilding goes to /plan/queue, not /plan/publish. Publishing replaces the
+     block you are LIVING in - it resets the shopping list and swaps every meal
+     mid-month - which was the right verb when a month only existed if somebody
+     made it, and is the wrong one now that next month builds itself. Queueing
+     replaces the month that has not started, so nothing on screen moves. */
+  /* The queued month, named on load. Only the name: the month itself is another
+     ~77 KB and /state deliberately does not carry it. */
+  function paintNext(block) {
+    if (!$('nextStat')) return;
+    if (!block) { $('nextStat').innerHTML = ''; return; }
+    var d = new Date();
+    var goes = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+    $('nextStat').innerHTML = '<div class="stat"><span>Queued and waiting</span><b>' + esc(block) + '</b></div>'
+      + '<div class="stat"><span>Goes live</span><b>' + goes.toISOString().slice(0, 10) + '</b></div>';
+  }
+
+  function paintQueued(block, basis, weekly) {
+    if (!block) { $('draft').className = 'hidden'; return; }
+    var html = '<div class="stat"><span>Queued Block</span><b>' + esc(block) + '</b></div>';
+    if (basis) {
+      html += '<div class="stat"><span>Total Volume</span><b>' + esc(basis.total_hours) + ' hours</b></div>'
+        + '<div class="stat"><span>Energy Model</span><b>' + esc(basis.kcal_model) + '</b></div>'
+        + '<div class="stat"><span>Shopping Lines</span><b>' + esc(basis.shopping_lines) + '</b></div>';
+    }
+    var wk = weekly || {};
+    var keys = Object.keys(wk).sort();
+    if (keys.length) {
+      var max = Math.max.apply(null, keys.map(function (k) { return wk[k]; })) || 1;
+      html += '<p class="mono" style="margin:18px 0 8px">Weekly Volume Breakdown</p>';
+      keys.forEach(function (k) {
+        html += '<div class="wk"><span>' + esc(k.replace('week-', 'Week ')) + '</span><b>'
+          + wk[k].toFixed(2) + ' h</b></div>'
+          + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
+      });
+    }
+    $('draftBody').innerHTML = html;
+    $('draft').className = '';
+  }
+
   $('gen').addEventListener('click', async function () {
-    busy($('gen'), true, 'Drafting…');
+    busy($('gen'), true, 'Building…');
     try {
-      var out = await api('/plan/generate', { method: 'POST',
+      var out = await api('/plan/queue', { method: 'POST',
         body: { ramp_percent: Number($('rp').value), recovery_week: Number($('rw').value) } });
       if (!out.ok) {
         if (/no current block/i.test(out.why || '')) {
           setDraftReady(false);
           say('bad', 'There is no active block to carry forward yet - build your first month at /welcome.');
         } else {
-          say('bad', out.why || out.error || 'Could not draft the next block.');
+          say('bad', out.why || out.error || 'Could not rebuild next month.');
         }
         return;
       }
-      draft = out.plan;
-      var wk = {};
-      out.plan.training.forEach(function (t) { wk[t.wk] = (wk[t.wk] || 0) + t.h; });
-      var max = Math.max.apply(null, Object.keys(wk).map(function (k) { return wk[k]; })) || 1;
-      var html = '<div class="stat"><span>Target Block</span><b>' + out.plan.block + '</b></div>'
-        + '<div class="stat"><span>Total Days</span><b>' + out.plan.days.length + '</b></div>'
-        + '<div class="stat"><span>Total Volume</span><b>' + out.basis.total_hours + ' hours</b></div>'
-        + '<div class="stat"><span>Energy Model</span><b>' + out.basis.kcal_model + '</b></div>'
-        + '<p class="mono" style="margin:18px 0 8px">Weekly Volume Breakdown</p>';
-      Object.keys(wk).sort().forEach(function (k) {
-        html += '<div class="wk"><span>' + k.replace('week-', 'Week ') + '</span><b>' + wk[k].toFixed(2) + ' h</b></div>'
-          + '<div class="bar"><i style="width:' + Math.round((wk[k] / max) * 100) + '%"></i></div>';
-      });
-      $('draftBody').innerHTML = html;
-      $('draft').className = '';
-      say('ok', 'Draft created! Review the volume targets and publish when ready.');
+      paintQueued(out.block, out.basis, out.weekly);
+      paintNext(out.block);
+      say('ok', out.block + ' rebuilt. It goes live on its own when the month turns - nothing changes today.');
     } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('gen'), false, 'Draft Next Month'); }
-  });
-
-  $('pub').addEventListener('click', async function () {
-    if (!draft) return;
-    busy($('pub'), true, 'Publishing…');
-    try {
-      var out = await api('/plan/publish', { method: 'POST', body: { plan: draft, resetTicks: true } });
-      if (!out.ok) { say('bad', out.why || 'Could not publish plan.'); return; }
-      say('ok', 'Plan published successfully! All devices will sync the new block.');
-      $('draft').className = 'hidden';
-      load();
-    } catch (e) { if (e.message !== 'signed out') say('bad', 'Could not reach the server.'); }
-    finally { busy($('pub'), false, 'Publish This Plan'); }
+    finally { busy($('gen'), false, 'Rebuild Next Month'); }
   });
 
   /* intervals.icu Ingestion */
@@ -754,6 +767,12 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
     $('who').textContent = me.name || '';
     fillProfile(me.profile);
 
+    /* /me rolls the block over before it answers, so by here the month named is
+       the month being lived. Say so when it just changed, or the new block and
+       the emptied shopping list look like something going wrong. */
+    paintNext(me.next_block);
+    if (me.rolled) say('ok', me.rolled + ' started - it was built last month and is now live. Your shopping list has reset for the new block.');
+
     /* Update Launch Full App Button with authentication hash */
     if ($('btnLaunchApp') && token) {
       $('btnLaunchApp').href = FULL_APP_URL + '#t=' + encodeURIComponent(token);
@@ -772,6 +791,7 @@ color:var(--ink-3);max-width:84ch;line-height:1.6}
         renderPlan(st.plan);
         renderGroceries(st.plan, st.ticks);
         setDraftReady(!!(st.plan && st.plan.days && st.plan.days.length));
+        if (st.next_block) paintNext(st.next_block);
       }
     } catch(e) {}
 

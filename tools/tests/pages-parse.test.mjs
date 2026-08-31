@@ -73,7 +73,23 @@ for (const rel of pages) {
   ok(!bad, bad ? `${rel} - ${bad}` : `${rel} (${n} block${n === 1 ? '' : 's'})`);
 }
 
-console.log('\n2. The defect this was written for stays fixed');
+console.log('\n2. Every $(\'id\') the page wires up actually exists in its markup');
+/* Only pages whose $ is getElementById - the app's $ takes a CSS selector.
+   Removing an element while leaving its handler behind is a null dereference at
+   load, which kills the whole script exactly as a syntax error does: dropping
+   the Publish button from the profile card left $('pub').addEventListener
+   pointing at nothing, and that would have taken the page down with it. */
+for (const rel of pages) {
+  const html = readFileSync(join(ROOT, rel), 'utf8');
+  if (!/\$\s*=\s*function\s*\(\s*id\s*\)\s*\{\s*return document\.getElementById/.test(html)) continue;
+  const ids = new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map((m) => m[1]));
+  const refs = [...new Set([...html.matchAll(/\$\(\s*'([A-Za-z][\w-]*)'\s*\)/g)].map((m) => m[1]))];
+  const missing = refs.filter((r) => !ids.has(r));
+  ok(missing.length === 0,
+    missing.length ? `${rel} wires up ${missing.join(', ')} - no such element` : `${rel} (${refs.length} ids, all present)`);
+}
+
+console.log('\n3. The defect this was written for stays fixed');
 const app = readFileSync(join(ROOT, 'web/public/index.html'), 'utf8');
 /* The exact shape of it: a bare `return;` followed by the next handler with no
    brace between them. */
