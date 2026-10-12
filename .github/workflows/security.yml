@@ -17,7 +17,7 @@ jobs:
     name: regression scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -49,7 +49,7 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v3
         with:
           languages: javascript
@@ -63,7 +63,7 @@ jobs:
     steps:
       # Catches drift between the repo and what production actually serves -
       # e.g. someone deploying by hand from a laptop without _headers.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: production must serve the expected CSP
         run: |
           set -euo pipefail
