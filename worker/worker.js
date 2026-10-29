@@ -2415,57 +2415,82 @@ export class ListDO extends DurableObject {
     return { ok: true, ...d, age_days: ageDays, stale: ageDays >= DIGEST_STALE_DAYS };
   }
 
-  async removeAccount(username) {
-    const uname = String(username || '').trim().toLowerCase();
-    let uid = await this.ctx.storage.get('auth:user:' + uname);
-    let acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
-    if (!acct) {
-      /* Scan all accounts */
-      const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
-      for (const a of all.values()) {
-        if ((a.name || '').toLowerCase() === uname || (a.email || '').toLowerCase() === uname) {
-          acct = a;
-          uid = a.uid;
-        }
-      }
-    }
+  /* Deleting an account, or signing it out everywhere, is resolved by UID and
+     never by display name. Names are NOT unique: a passkey account takes a
+     client-chosen name with no uniqueness check (registerFinish defaults it to
+     'Rider'), so two phones can carry the same one, and a name can be chosen to
+     shadow another account's email login handle. The old path scanned for a
+     matching name with last-match-wins, so /me/delete (which passed
+     session.name) could erase - and signout-all could log out - the WRONG
+     person, including someone else's account. The name is now only an operator
+     convenience that must resolve to exactly one account or refuse. */
+
+  /* The one safe delete. Removes this account, every session it holds, its
+     passkey credential, and EVERY login handle that points at it - not just
+     name/email, so a password handle added later (addPassword, under a handle
+     that matches neither) cannot be left dangling at a dead uid. */
+  async removeAccountByUid(uid) {
+    const acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
+    if (!acct) return { ok: false, why: 'no account with that id' };
     const gone = [];
-    if (acct && acct.cred && acct.cred.id) { await this.ctx.storage.delete('auth:cred:' + acct.cred.id); gone.push('passkey'); }
-    await this.ctx.storage.delete('auth:user:' + uname);
-    await this.ctx.storage.delete('auth:pending:' + uname);
-    if (acct) {
-      if (acct.name) {
-        await this.ctx.storage.delete('auth:user:' + acct.name.toLowerCase());
-        await this.ctx.storage.delete('auth:pending:' + acct.name.toLowerCase());
-      }
-      if (acct.email) {
-        await this.ctx.storage.delete('auth:user:' + acct.email.toLowerCase());
-        await this.ctx.storage.delete('auth:pending:' + acct.email.toLowerCase());
-      }
-      const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
-      let n = 0;
-      for (const [k, v] of sess) if (v.uid === acct.uid) { await this.ctx.storage.delete(k); n++; }
-      await this.ctx.storage.delete('auth:acct:' + acct.uid);
-      gone.push(`${n} session(s)`);
-      return { ok: true, name: acct.name, removed: gone };
-    }
-    return { ok: true, name: uname, removed: ['cleared pending and user keys'] };
+    if (acct.cred && acct.cred.id) { await this.ctx.storage.delete('auth:cred:' + acct.cred.id); gone.push('passkey'); }
+    const handles = await this.ctx.storage.list({ prefix: 'auth:user:' });
+    let h = 0;
+    for (const [k, v] of handles) if (v === uid) { await this.ctx.storage.delete(k); h++; }
+    if (acct.name) await this.ctx.storage.delete('auth:pending:' + acct.name.toLowerCase());
+    if (acct.email) await this.ctx.storage.delete('auth:pending:' + acct.email.toLowerCase());
+    const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
+    let n = 0;
+    for (const [k, v] of sess) if (v.uid === uid) { await this.ctx.storage.delete(k); n++; }
+    await this.ctx.storage.delete('auth:acct:' + uid);
+    gone.push(`${h} handle(s)`, `${n} session(s)`);
+    return { ok: true, name: acct.name, uid, removed: gone };
   }
 
-  /* Signed out everywhere, account intact. The thing you reach for when a phone
-     goes missing rather than when a person leaves. */
-  async revokeSessions(username) {
-    const uname = String(username || '').trim().toLowerCase();
-    let uid = await this.ctx.storage.get('auth:user:' + uname);
-    if (!uid) {
-      const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
-      for (const [, a] of all) if ((a.name || '').toLowerCase() === uname) uid = a.uid;
-    }
-    if (!uid) return { ok: false, why: `no account called ${uname}` };
+  /* Sign out every device for one account, account left intact. Reach for this
+     when a phone goes missing rather than when a person leaves. */
+  async revokeSessionsByUid(uid) {
+    const acct = uid ? await this.ctx.storage.get('auth:acct:' + uid) : null;
+    if (!acct) return { ok: false, why: 'no account with that id' };
     const sess = await this.ctx.storage.list({ prefix: 'auth:sess:' });
     let n = 0;
     for (const [k, v] of sess) if (v.uid === uid) { await this.ctx.storage.delete(k); n++; }
     return { ok: true, signed_out: n };
+  }
+
+  /* Every account a display name or email resolves to. Not unique, so a
+     destructive caller must treat more than one as "refuse", never "pick one". */
+  async accountsNamed(username) {
+    const uname = String(username || '').trim().toLowerCase();
+    const direct = await this.ctx.storage.get('auth:user:' + uname);
+    const uids = [];
+    const all = await this.ctx.storage.list({ prefix: 'auth:acct:' });
+    for (const a of all.values()) {
+      if (a.uid === direct || (a.name || '').toLowerCase() === uname || (a.email || '').toLowerCase() === uname) {
+        if (!uids.includes(a.uid)) uids.push(a.uid);
+      }
+    }
+    return uids;
+  }
+
+  /* Operator-facing name path. Resolves to exactly one account or refuses: a
+     miss is {ok:false} (so the route answers 404 instead of a false "removed"),
+     and an ambiguous name is {ok:false, ambiguous:[...]} so the operator removes
+     by id rather than deleting whoever the scan happened to land on. */
+  async removeAccount(username) {
+    const uname = String(username || '').trim().toLowerCase();
+    const uids = await this.accountsNamed(uname);
+    if (uids.length === 0) return { ok: false, why: `no account called ${uname}` };
+    if (uids.length > 1) return { ok: false, why: `${uids.length} accounts are called ${uname} - remove by id`, ambiguous: uids };
+    return await this.removeAccountByUid(uids[0]);
+  }
+
+  async revokeSessions(username) {
+    const uname = String(username || '').trim().toLowerCase();
+    const uids = await this.accountsNamed(uname);
+    if (uids.length === 0) return { ok: false, why: `no account called ${uname}` };
+    if (uids.length > 1) return { ok: false, why: `${uids.length} accounts are called ${uname} - sign out by id`, ambiguous: uids };
+    return await this.revokeSessionsByUid(uids[0]);
   }
 
   /* There is no email, so there is no self-serve reset and pretending otherwise
@@ -4581,10 +4606,12 @@ Your task:
         if (!(await safeEqual(request.headers.get('X-Admin-Key') || '', env.ADMIN_KEY)))
           return json({ error: 'bad or missing X-Admin-Key' }, 401, origin);
         if (path === '/auth/invites') return json(await stub.listInvites(), 200, origin);
+        /* Prefer an unambiguous uid; fall back to name, which now refuses a
+           miss (404) and an ambiguous name (409) rather than deleting a guess. */
         const out = path === '/auth/remove'
-          ? await stub.removeAccount(b.username)
-          : await stub.revokeSessions(b.username);
-        return json(out, out.ok ? 200 : 404, origin);
+          ? (b.uid ? await stub.removeAccountByUid(String(b.uid)) : await stub.removeAccount(b.username))
+          : (b.uid ? await stub.revokeSessionsByUid(String(b.uid)) : await stub.revokeSessions(b.username));
+        return json(out, out.ok ? 200 : (out.ambiguous ? 409 : 404), origin);
       }
       if (path === '/auth/accounts') {
         if (!env.ADMIN_KEY) return json({ error: 'ADMIN_KEY not configured' }, 500, origin);
@@ -4660,8 +4687,10 @@ Your task:
     if (path === '/me/delete' && request.method === 'POST') {
       if (!session) return json({ ok: false, why: 'sign in first' }, 401, origin);
       const stub = dataStub(env, HOUSEHOLD);
-      const out = await stub.removeAccount(session.name);
-      return json(out, 200, origin);
+      /* By uid, not session.name: the name is not unique, and deleting by it
+         could erase whichever account the scan landed on - not the caller. */
+      const out = await stub.removeAccountByUid(session.uid);
+      return json(out, out.ok ? 200 : 404, origin);
     }
     /* Linking intervals.icu, per person.
        The key is verified against intervals.icu BEFORE it is stored, so a typo
